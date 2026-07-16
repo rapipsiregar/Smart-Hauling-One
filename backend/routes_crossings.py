@@ -13,6 +13,7 @@ from backend.fuzzy_matcher import find_best_fleet_match
 async def create_crossing(crossing: CrossingCreate):
     try:
         hull_id = find_best_fleet_match(crossing.hull_id)
+        warning_status = "low-confidence" if crossing.confidence < 85 else "normal"
         last_id = database.insert_crossing(
             hull_id=hull_id,
             confidence=crossing.confidence,
@@ -20,11 +21,13 @@ async def create_crossing(crossing: CrossingCreate):
             lane=crossing.lane,
             direction=crossing.direction,
             crop_image_path=crossing.crop_image_path,
-            context_image_path=crossing.context_image_path
+            context_image_path=crossing.context_image_path,
+            warning_status=warning_status
         )
         res = crossing.dict()
         res["hull_id"] = hull_id
         res["id"] = last_id
+        res["warning_status"] = warning_status
         res["created_at"] = datetime.utcnow().isoformat()
         await manager.broadcast(res)
         return CrossingResponse(**res)

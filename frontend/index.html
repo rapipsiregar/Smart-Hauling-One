@@ -45,7 +45,6 @@
                 </div>
 
                 <div class="dashboard-workspace">
-                    <!-- Left Split Pane: Detailed Proofs & Feeds -->
                     <div class="card visual-audit-card">
                         <div class="card-header"><h3>Split-Pane Visual Audit Verification</h3></div>
                         <div class="audit-split-view">
@@ -58,23 +57,22 @@
                                 <div class="image-wrapper"><img id="audit-context-img" src="/evidence/placeholder_context.jpg" alt="Context Frame"></div>
                             </div>
                         </div>
-                        <div class="audit-metadata" id="audit-details">Select an OHT crossing from the feed to inspect visual proofs.</div>
+                        <div class="audit-details" id="audit-details">Select a crossing from the live feed to display details.</div>
                     </div>
 
-                    <!-- Right Split Pane: Real-Time Live Feed -->
-                    <div class="card live-feed-card">
+                    <div class="card feed-card">
                         <div class="card-header">
-                            <h3>Real-Time Live Crossing Feed</h3>
-                            <button class="btn btn-secondary btn-sm" id="btn-refresh-feed">Refresh</button>
+                            <h3>Real-time Live Crossing Feed</h3>
+                            <button class="btn btn-secondary btn-sm" id="btn-refresh-feed">🔄 Refresh</button>
                         </div>
-                        <div class="live-feed-list" id="live-feed-list">
-                            <!-- Real-time crossing card items populated dynamically -->
-                        </div>
+                        <div class="live-feed-list" id="live-feed-list"></div>
                         <div class="distribution-area">
                             <h4>Lane Distribution</h4>
                             <div class="distribution-list" id="distribution-container"></div>
                         </div>
+                    </div>
                 </div>
+
                 <!-- Remote Towers Telemetry Panel -->
                 <div class="card telemetry-card" style="margin-top: 1.5rem;">
                     <div class="card-header"><h3>Deployed Mobile Skid Remote Towers</h3></div>
@@ -87,40 +85,41 @@
                 <div class="card form-card">
                     <div class="card-header"><h3>Run Edge OCR Video Ingestion</h3></div>
                     <form id="ingest-form" class="ingest-form">
-                        <div class="form-group">
-                            <label for="lane-select">Gate Lane / Checkpoint</label>
-                            <select id="lane-select" required>
-                                <option value="North Checkpoint">North Checkpoint</option>
-                                <option value="South Gate">South Gate</option>
-                                <option value="Main Portal">Main Portal</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="direction-select">Travel Direction</label>
-                            <select id="direction-select" required>
-                                <option value="inbound">Inbound (Entry)</option>
-                                <option value="outbound">Outbound (Exit)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Video File Upload</label>
-                            <div class="upload-dropzone" id="video-dropzone">
-                                <span class="dropzone-icon">📤</span>
-                                <p class="dropzone-text">Drag & drop OHT video here, or click to browse</p>
-                                <input type="file" id="video-input" accept="video/*" style="display:none">
-                                <p class="selected-filename" id="selected-filename"></p>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="lane-select">Select Checkpoint Lane</label>
+                                <select id="lane-select">
+                                    <option value="North Checkpoint">North Checkpoint</option>
+                                    <option value="South Gate">South Gate</option>
+                                    <option value="Main Portal">Main Portal</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="direction-select">Direction</label>
+                                <select id="direction-select">
+                                    <option value="inbound">Inbound (Loading Site)</option>
+                                    <option value="outbound">Outbound (Dumping Site)</option>
+                                </select>
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-primary" id="btn-submit-ingest">Start OCR Pipeline</button>
-                    </form>
-
-                    <div class="process-panel hidden" id="process-panel">
-                        <div class="processing-loader" id="process-loader">
-                            <div class="spinner"></div>
-                            <p>Edge server executing SAM3 segmentation and Nemotron OCR model...</p>
+                        <div class="upload-dropzone" id="video-dropzone">
+                            <div class="dropzone-icon">📤</div>
+                            <p>Drag and drop OHT crossing video file here or <strong>click to browse</strong></p>
+                            <input type="file" id="video-input" accept="video/*" style="display: none;">
+                            <div class="selected-filename" id="selected-filename"></div>
                         </div>
-                        <div class="process-result hidden" id="process-result">
-                            <h4 class="success-title">✓ OHT Passage Logged Successfully</h4>
+                        <button type="submit" class="btn btn-primary" id="btn-submit-ingest">⚡ Ingest & Extract OCR</button>
+                    </form>
+                </div>
+                <div class="card hidden" id="process-panel" style="margin-top: 1.5rem;">
+                    <div class="card-header"><h3>OCR Extraction Progress</h3></div>
+                    <div class="card-body">
+                        <div class="loader-container" id="process-loader">
+                            <div class="spinner"></div>
+                            <p>Running SAM3 Segmentation & PaddleOCR Core Pipeline...</p>
+                        </div>
+                        <div class="result-container hidden" id="process-result">
+                            <div class="success-banner">✔ Edge Ingestion Successful</div>
                             <div class="result-details" id="result-details"></div>
                         </div>
                     </div>
@@ -129,20 +128,15 @@
 
             <!-- Fleet Tab -->
             <section id="tab-fleet" class="tab-pane">
-                <div class="card fleet-card">
+                <div class="card">
                     <div class="card-header">
-                        <h3>Registered Hauling Fleet</h3>
-                        <button class="btn btn-primary btn-sm" id="btn-open-register">Add New OHT</button>
+                        <h3>Master OHT Fleet Registry</h3>
+                        <button class="btn btn-primary btn-sm" id="btn-open-register">➕ Add OHT Vehicle</button>
                     </div>
                     <div class="table-container">
-                        <table class="table">
+                        <table class="data-table">
                             <thead>
-                                <tr>
-                                    <th>Hull ID</th>
-                                    <th>Contractor</th>
-                                    <th>Model</th>
-                                    <th>Status</th>
-                                </tr>
+                                <tr><th>OHT Hull ID</th><th>Contractor Company</th><th>Vehicle Model</th><th>Registry Status</th></tr>
                             </thead>
                             <tbody id="fleet-tbody"></tbody>
                         </table>
@@ -152,56 +146,43 @@
 
             <!-- Reports Tab -->
             <section id="tab-reports" class="tab-pane">
-                <div class="card reports-card">
-                    <div class="card-header">
-                        <h3>Shift Summary & Productivity Audit</h3>
-                        <button class="btn btn-primary btn-sm" id="btn-refresh-reports">Run Shift Analysis</button>
-                    </div>
-                    <div class="reports-toolbar">
-                        <div class="toolbar-search">
-                            <input type="text" id="report-search-input" placeholder="Search Hull ID..." style="background:#0f172a; border:1px solid var(--border); color:white; padding:0.4rem; border-radius:6px; font-size:0.85rem;">
-                            <select id="report-lane-filter" style="background:#0f172a; border:1px solid var(--border); color:white; padding:0.4rem; border-radius:6px; font-size:0.85rem;">
-                                <option value="">All Lanes</option>
-                                <option value="North Checkpoint">North Checkpoint</option>
-                                <option value="South Gate">South Gate</option>
-                                <option value="Main Portal">Main Portal</option>
-                            </select>
-                            <select id="report-dir-filter" style="background:#0f172a; border:1px solid var(--border); color:white; padding:0.4rem; border-radius:6px; font-size:0.85rem;">
-                                <option value="">All Directions</option>
-                                <option value="inbound">Inbound</option>
-                                <option value="outbound">Outbound</option>
-                            </select>
-                            <button class="btn btn-secondary btn-sm" id="btn-export-csv">Export CSV</button>
-                        </div>
-                        <div class="toolbar-sync" style="display:flex; align-items:center; gap:0.75rem;">
-                            <button class="btn btn-primary btn-sm" id="btn-sync-cloud">☁ Sync Cloud</button>
-                            <span id="sync-status-indicator" style="font-size:0.8rem; color:var(--text-secondary);">Last sync: Not Synced</span>
-                        </div>
-                    </div>
-                    <div class="reports-workspace">
-                        <div class="report-section">
-                            <h4>Completed Ritase (Haulage Cycles)</h4>
+                <div class="reports-toolbar">
+                    <input type="text" id="report-search-input" placeholder="Search OHT Hull ID..." class="toolbar-input">
+                    <select id="report-lane-filter" class="toolbar-input">
+                        <option value="">All Lanes</option>
+                        <option value="North Checkpoint">North Checkpoint</option>
+                        <option value="South Gate">South Gate</option>
+                        <option value="Main Portal">Main Portal</option>
+                    </select>
+                    <select id="report-dir-filter" class="toolbar-input" style="display:none;">
+                        <option value="">All Directions</option>
+                        <option value="inbound">Inbound</option>
+                        <option value="outbound">Outbound</option>
+                    </select>
+                    <button class="btn btn-secondary" id="btn-refresh-reports">🔄 Refresh</button>
+                    <button class="btn btn-primary" id="btn-export-csv">📥 Export CSV</button>
+                    <button class="btn btn-primary" id="btn-sync-cloud">☁ Sync Cloud</button>
+                </div>
+                <div class="sync-status-indicator" id="sync-status-indicator">Last sync: Not run</div>
+                <div class="reports-grid">
+                    <div class="reports-left-column">
+                        <div class="card">
+                            <div class="card-header"><h3>OHT Haulage Cycle Records (Ritase)</h3></div>
                             <div class="table-container">
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th>OHT ID</th>
-                                            <th>Completed Cycles</th>
-                                            <th>Total Passages</th>
-                                        </tr>
-                                    </thead>
+                                <table class="data-table">
+                                    <thead><tr><th>Hull ID</th><th>Completed Ritase</th><th>Total Passages</th></tr></thead>
                                     <tbody id="ritase-tbody"></tbody>
                                 </table>
                             </div>
                         </div>
-                        <div class="report-section">
-                            <h4>Productivity By 4-Hour Slots</h4>
-                            <div class="distribution-list" id="shift-distribution-container"></div>
+                        <div class="card" style="margin-top: 1.5rem;">
+                            <div class="card-header"><h3>Shift Distribution (Passages per 4-Hour Block)</h3></div>
+                            <div class="card-body" id="shift-distribution-container"></div>
                         </div>
-                        <div class="report-section">
-                            <h4>Subcontractor Discrepancies & Audit Alerts</h4>
-                            <div class="discrepancies-list" id="discrepancies-container"></div>
-                        </div>
+                    </div>
+                    <div class="report-section">
+                        <h4>Subcontractor Discrepancies & Audit Alerts</h4>
+                        <div class="discrepancies-list" id="discrepancies-container"></div>
                     </div>
                 </div>
             </section>
@@ -212,34 +193,25 @@
     <div class="modal hidden" id="register-modal">
         <div class="modal-overlay" id="register-modal-overlay"></div>
         <div class="modal-content modal-sm">
-            <div class="modal-header">
-                <h3>Register OHT Vehicle</h3>
-                <button class="btn-close" id="btn-close-register">×</button>
-            </div>
+            <div class="modal-header"><h3>Register OHT Vehicle</h3><button class="btn-close" id="btn-close-register">×</button></div>
             <form id="register-form">
                 <div class="modal-body">
-                    <div class="form-group">
-                        <label for="reg-hull-id">Hull ID (e.g. DT-125)</label>
-                        <input type="text" id="reg-hull-id" placeholder="DT-125" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="reg-contractor">Contractor Company</label>
-                        <input type="text" id="reg-contractor" placeholder="e.g. Leighton Contractors" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="reg-model">Vehicle Model</label>
-                        <input type="text" id="reg-model" placeholder="e.g. Caterpillar 777D" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="reg-status">Status</label>
-                        <select id="reg-status">
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label for="reg-hull-id">Hull ID</label><input type="text" id="reg-hull-id" placeholder="DT-125" required></div>
+                    <div class="form-group"><label for="reg-contractor">Contractor Company</label><input type="text" id="reg-contractor" placeholder="e.g. Leighton" required></div>
+                    <div class="form-group"><label for="reg-model">Vehicle Model</label><input type="text" id="reg-model" placeholder="e.g. CAT 777D" required></div>
+                    <div class="form-group"><label for="reg-status">Status</label><select id="reg-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
                 </div>
                 <div class="modal-footer"><button type="submit" class="btn btn-primary">Save Vehicle</button></div>
             </form>
+        </div>
+    </div>
+
+    <!-- Telemetry Modal -->
+    <div class="modal hidden" id="telemetry-modal">
+        <div class="modal-overlay" id="telemetry-modal-overlay"></div>
+        <div class="modal-content modal-sm" style="max-width: 480px;">
+            <div class="modal-header"><h3 id="telemetry-modal-title">Skid Telemetry Trends</h3><button class="btn-close" id="btn-close-telemetry">×</button></div>
+            <div class="modal-body" id="telemetry-chart-container" style="padding: 1.5rem 0 0.5rem 0; min-height: 250px;"></div>
         </div>
     </div>
 </body>

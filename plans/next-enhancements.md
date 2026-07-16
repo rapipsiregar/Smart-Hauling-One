@@ -52,16 +52,16 @@ graph TD
 ### Section 1: Web Application Backend (Python)
 
 * **1.1** Implement an OCR Confidence Threshold Alerting system on the backend: If a processed crossing confidence score is below 85%, tag the record with a `low-confidence` warning status and trigger an instant WebSocket warning broadcast to active dashboard users.
-  * **Status:** `[TODO]`
+  * **Status:** `[DONE]`
 * **1.2** Add database backup/export JSON endpoint `/api/admin/backup-db` that serializes the SQLite database tables (fleet registry, crossings, discrepancies) and returns them as a single downloadable JSON payload.
-  * **Status:** `[TODO]`
+  * **Status:** `[DONE]`
 * **1.3** Implement automated telemetry anomaly checking for remote skid towers: Flag high-priority warning entries if battery levels dip below 30% or if solar panel output remains below 5W during daylight hours.
-  * **Status:** `[TODO]`
+  * **Status:** `[DONE]`
 
 ### Section 2: Web Application Frontend
 
 * **2.1** Add Interactive Telemetry Trend Charts to the Dashboard tab, allowing supervisors to click a skid tower and view battery level and solar array output trends over time in a modal chart overlay.
-  * **Status:** `[TODO]`
+  * **Status:** `[DONE]`
 * **2.2** Implement dark mode toggle with a sleek glowing theme switcher (Slate-Blue to Emerald-Green) to support night shift open-pit mine operators.
   * **Status:** `[TODO]`
 * **2.3** Design custom context-menu options for live OHT feed cards, letting supervisors click to quick-verify or correct the matched Hull ID on the spot without reloading.

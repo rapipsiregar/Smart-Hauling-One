@@ -162,6 +162,13 @@ body {
 .telemetry-specs { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary); }
 .spec-row { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; }
 
+/* Low OCR Confidence highlights */
+.crossing-feed-card.low-conf-card { border: 1.5px solid var(--danger); animation: alertPulse 2.5s infinite ease-in-out; }
+@keyframes alertPulse {
+    0%, 100% { box-shadow: 0 0 4px rgba(239, 68, 68, 0.2); }
+    50% { box-shadow: 0 0 12px rgba(239, 68, 68, 0.6); }
+}
+
 @media (max-width: 1024px) {
     .dashboard-workspace { grid-template-columns: 1fr; }
     .sidebar { width: 80px; }

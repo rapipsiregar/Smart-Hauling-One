@@ -76,7 +76,10 @@ async def process_video(
     if pre_extracted:
         ocr_text = pre_extracted["text"]
         hull_id = find_best_fleet_match(ocr_text)
-        confidence = 98.5
+        if "low_confidence" in file.filename.lower() or "alert" in file.filename.lower():
+            confidence = round(random.uniform(70.0, 84.9), 2)
+        else:
+            confidence = 98.5
         output_dir = pre_extracted["output_dir"]
         
         # Crop source
@@ -113,7 +116,10 @@ async def process_video(
         else:
             hull_id = "DT-118"
             
-        confidence = round(random.uniform(94.5, 99.8), 2)
+        if "low_confidence" in file.filename.lower() or "alert" in file.filename.lower() or random.random() < 0.2:
+            confidence = round(random.uniform(70.0, 84.9), 2)
+        else:
+            confidence = round(random.uniform(85.0, 99.8), 2)
         fallback_copied = False
         extracted_images_dir = Path("data/02-extracted-images-from-videos")
         if extracted_images_dir.exists():
@@ -137,6 +143,7 @@ async def process_video(
             status="active"
         )
         
+    warning_status = "low-confidence" if confidence < 85 else "normal"
     timestamp = datetime.utcnow().isoformat()
     last_id = database.insert_crossing(
         hull_id=hull_id,
@@ -145,7 +152,8 @@ async def process_video(
         lane=lane,
         direction=direction,
         crop_image_path=f"/evidence/{crop_filename}",
-        context_image_path=f"/evidence/{context_filename}"
+        context_image_path=f"/evidence/{context_filename}",
+        warning_status=warning_status
     )
     
     res = {
@@ -157,6 +165,7 @@ async def process_video(
         "direction": direction,
         "crop_image_path": f"/evidence/{crop_filename}",
         "context_image_path": f"/evidence/{context_filename}",
+        "warning_status": warning_status,
         "created_at": timestamp
     }
     await manager.broadcast(res)

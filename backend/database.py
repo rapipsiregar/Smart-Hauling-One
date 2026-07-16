@@ -38,10 +38,17 @@ def init_db():
         direction TEXT NOT NULL,
         crop_image_path TEXT,
         context_image_path TEXT,
+        warning_status TEXT NOT NULL DEFAULT 'normal',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
     
+    # Run migration to add warning_status if it is missing
+    try:
+        cursor.execute("ALTER TABLE crossings ADD COLUMN warning_status TEXT NOT NULL DEFAULT 'normal'")
+    except sqlite3.OperationalError:
+        pass
+
     conn.commit()
     
     # Seed data if empty
@@ -103,7 +110,8 @@ def insert_crossing(
     lane: str,
     direction: str,
     crop_image_path: Optional[str] = None,
-    context_image_path: Optional[str] = None
+    context_image_path: Optional[str] = None,
+    warning_status: str = "normal"
 ) -> int:
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -111,10 +119,10 @@ def insert_crossing(
         cursor.execute(
             """
             INSERT INTO crossings (
-                hull_id, confidence, timestamp, lane, direction, crop_image_path, context_image_path
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                hull_id, confidence, timestamp, lane, direction, crop_image_path, context_image_path, warning_status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (hull_id, confidence, timestamp, lane, direction, crop_image_path, context_image_path)
+            (hull_id, confidence, timestamp, lane, direction, crop_image_path, context_image_path, warning_status)
         )
         conn.commit()
         last_id = cursor.lastrowid

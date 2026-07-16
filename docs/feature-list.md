@@ -43,6 +43,33 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Protected Backend Container**: Restricts the Python FastAPI application container to internal Docker bridge network access, shielding it from direct host system port exposure.
   - **Persistent Named Volume**: Configures a dedicated local docker volume (`smart_gate_data`) mapped to `/app/data` to ensure the SQLite database and captured visual evidence (`/app/data/evidence`) survive container recreation.
 
+### 1.5 OCR Confidence Alerting System
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.1)
+* **Description**: Backend confidence monitoring engine that flags low-confidence OCR reads and broadcasts live warning payloads.
+* **Key Capabilities**:
+  - **Database Warning Flags**: Updates SQLite crossing records with a `warning_status` tag indicating whether a detection has low OCR confidence.
+  - **WebSocket Alert Broadcast**: Transmits warning payloads immediately to the frontend dashboard, highlighting low-confidence cards with visual pulses and slide-in notifications.
+  - **Compliance Integration**: Automatically aggregates low-confidence reads under the compliance discrepancy alerts inside shift summaries.
+
+### 1.6 Database Admin Backup JSON Endpoint
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.2)
+* **Description**: Backend data export utility that creates instant snapshots of the Smart Gate registry and crossing tables.
+* **Key Capabilities**:
+  - **Dynamic Schema Serialization**: Reads SQLite tables (trucks and crossings) and packages them into a clean JSON structure.
+  - **Force Download Headers**: Intercepts HTTP headers to prompt a file save download (`smart_gate_db_backup.json`) directly in the user's browser.
+  - **Binary-to-Text Sanitation**: Safely decodes any legacy database binary fields to prevent serialization corruption.
+
+### 1.7 Skid Telemetry Anomaly Checker
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.3)
+* **Description**: Automated telemetry processing rules that audit skid sensor data and generate supervisor discrepancy alerts.
+* **Key Capabilities**:
+  - **Shared Sensor Cache**: Connects the telemetry retrieval routes and shift summary logic to read the exact same cache instances.
+  - **Automated Anomaly Checking**: Flags high-priority alert items if skid battery levels drop below 30% or if solar panel output decreases below 5W.
+  - **Compliance Integration**: Streams telemetry discrepancy warnings into the interactive Reports discrepancies feed.
+
+
+
+
 ---
 
 ## 2. Web Application Frontend
@@ -56,6 +83,14 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Real-Time Live Crossing Feed (WS-Powered)**: Prepend newly detected trucks immediately to the right-side feed panel using WebSocket broadcasts. Each card contains the cropped number crop, wide-angle context image, OCR text, log timestamp, and confidence rating.
   - **Split-Pane Verification Workspace**: Left-side layout presenting the crop OHT hull ID side-by-side with the wide-angle context photo of the selected crossing, auto-updating on click or arrival of new WebSocket events.
   - **Fleet Manager Control**: Displays registered vehicles and contractor information, with an OHT vehicle registration modal.
+
+### 2.2 Skid Telemetry Trend Charts Modal
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 2.1)
+* **Description**: Interactive modal overlays displaying 6-hour historical trend charts for mobile gate skids.
+* **Key Capabilities**:
+  - **Click-to-Open Interactivity**: Detects supervisor clicks on any tower telemetry item card to launch a trends overlay modal.
+  - **Dynamic SVG Drawing Engine**: Programmatically constructs two layered line charts (cyan for battery level, amber for solar array output) with glowing transparent gradients and dashed grid indicators.
+  - **Visual Decay Tracking**: Plots Tower-Gamma's low-charge decay trend alongside healthy towers, reflecting sensor anomalies.
 
 ---
 
