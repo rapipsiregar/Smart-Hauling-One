@@ -24,6 +24,8 @@ class CrossingBase(BaseModel):
     crop_image_path: Optional[str] = Field(None, description="Path to the cropped hull ID proof image")
     context_image_path: Optional[str] = Field(None, description="Path to the wide-angle context proof image")
     warning_status: str = Field("normal", description="OCR warning status indicator, e.g., normal or low-confidence")
+    is_duplicate: int = Field(0, description="Flag indicating if the crossing is a duplicate")
+    vehicle_class: Optional[str] = Field("Dump Truck", description="Determined class of the vehicle")
 
 class CrossingCreate(CrossingBase):
     pass

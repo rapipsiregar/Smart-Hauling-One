@@ -8,47 +8,12 @@ from backend import database
 
 router = APIRouter()
 
-_towers_cache = {}
-
-def get_current_towers_telemetry():
-    import random
-    now = time.time()
-    if not _towers_cache or now - _towers_cache.get("last_refresh", 0) > 5:
-        gamma_battery = random.randint(25, 48)
-        gamma_solar = random.randint(2, 15)
-        _towers_cache["last_refresh"] = now
-        _towers_cache["towers"] = [
-            {
-                "id": "Tower-Alpha",
-                "location": "North Checkpoint",
-                "battery": random.randint(82, 86),
-                "solar_output": random.randint(115, 125),
-                "latency": random.randint(35, 45),
-                "status": "online"
-            },
-            {
-                "id": "Tower-Beta",
-                "location": "South Gate",
-                "battery": random.randint(89, 93),
-                "solar_output": random.randint(90, 100),
-                "latency": random.randint(55, 65),
-                "status": "online"
-            },
-            {
-                "id": "Tower-Gamma",
-                "location": "Main Portal",
-                "battery": gamma_battery,
-                "solar_output": gamma_solar,
-                "latency": random.randint(220, 245),
-                "status": "warning" if (gamma_battery < 30 or gamma_solar < 5) else "online"
-            }
-        ]
-    return _towers_cache["towers"]
+from backend.routes_telemetry import get_current_towers_telemetry
 
 @router.get("/reports/shift-summary")
 def get_shift_summary():
     try:
-        crossings = database.get_all_crossings()
+        crossings = [c for c in database.get_all_crossings() if not c.get("is_duplicate")]
         trucks = database.get_all_trucks()
         
         truck_crossings = {}
@@ -96,6 +61,13 @@ def get_shift_summary():
                 date_distribution[dt_str] = date_distribution.get(dt_str, 0) + 1
             except:
                 continue
+        from backend.database_stats import get_all_daily_stats
+        try:
+            for row in get_all_daily_stats():
+                d = row["date"]
+                date_distribution[d] = date_distribution.get(d, 0) + row["crossings"]
+        except:
+            pass
 
         discrepancies = []
         truck_registry = {t["hull_id"]: t for t in trucks}
@@ -107,6 +79,12 @@ def get_shift_summary():
                     "timestamp": c["timestamp"], "hull_id": hid, "lane": c["lane"],
                     "type": "Low Confidence OCR Alert", "severity": "medium",
                     "details": f"OCR prediction confidence level is too low: {c['confidence']}%."
+                })
+            if c.get("warning_status") == "cycle-discrepancy":
+                discrepancies.append({
+                    "timestamp": c["timestamp"], "hull_id": hid, "lane": c["lane"],
+                    "type": "Cycle Discrepancy Alert", "severity": "medium",
+                    "details": f"Consecutive {c['direction']} crossings logged without completing a full haulage cycle."
                 })
             if hid not in truck_registry:
                 discrepancies.append({
@@ -129,23 +107,70 @@ def get_shift_summary():
                         "details": "OHT belongs to an ad-hoc or unapproved contractor."
                     })
 
+        thresholds = database.get_thresholds()
+        b_low = thresholds["battery_low"]
+        s_low = thresholds["solar_low"]
         for t in get_current_towers_telemetry():
-            if t["battery"] < 30:
+            if t["battery"] < b_low or t["battery"] < 20.0:
+                severity = "high" if t["battery"] < 20.0 else "medium"
                 discrepancies.append({
                     "timestamp": datetime.utcnow().isoformat(), "hull_id": t["id"], "lane": t["location"],
-                    "type": "Critical Skid Battery Warning", "severity": "high",
+                    "type": "Critical Skid Battery Warning", "severity": severity,
                     "details": f"Skid battery level is critically low: {t['battery']}%."
                 })
-            if t["solar_output"] < 5:
+            if t["solar_output"] < s_low or t["solar_output"] < 15.0:
+                severity = "high" if t["solar_output"] < 15.0 else "medium"
                 discrepancies.append({
                     "timestamp": datetime.utcnow().isoformat(), "hull_id": t["id"], "lane": t["location"],
-                    "type": "Low Solar Array Output Alert", "severity": "high",
+                    "type": "Low Solar Array Output Alert", "severity": severity,
                     "details": f"Solar panel charging output is abnormally low: {t['solar_output']}W."
                 })
                     
+        active_hours = 1.0
+        if crossings:
+            try:
+                def parse_ts(ts):
+                    if ts.endswith("Z"): ts = ts[:-1]
+                    if "." in ts:
+                        parts = ts.split(".")
+                        parts[1] = parts[1][:6]
+                        ts = ".".join(parts)
+                    return datetime.fromisoformat(ts)
+                timestamps = [parse_ts(c["timestamp"]) for c in crossings]
+                diff = (max(timestamps) - min(timestamps)).total_seconds() / 3600.0
+                if diff > 0.1: active_hours = diff
+            except: pass
+
+        contractor_cycles = {}
+        for hid, cycles in completed_ritase.items():
+            truck = next((t for t in trucks if t["hull_id"] == hid), None)
+            contractor = truck["contractor"] if truck else "Ad-hoc Contractor"
+            contractor_cycles[contractor] = contractor_cycles.get(contractor, 0) + cycles
+
+        from backend.database_stats import get_all_daily_stats
+        try:
+            day_hours = {}
+            for row in get_all_daily_stats():
+                c = row["contractor"]
+                contractor_cycles[c] = contractor_cycles.get(c, 0) + row["cycles"]
+                day_hours[row["date"]] = max(day_hours.get(row["date"], 0.0), row.get("active_hours", 24.0))
+            active_hours += sum(day_hours.values())
+        except:
+            pass
+
+        contractor_thresholds = database.get_contractor_targets()
+
+        compliance = {}
+        for contractor, target in contractor_thresholds.items():
+            cycles = contractor_cycles.get(contractor, 0)
+            hourly_rate = round(cycles / active_hours, 2)
+            pct = round(min((hourly_rate / target) * 100, 100.0), 1)
+            compliance[contractor] = {"completed_cycles": cycles, "hourly_capacity": hourly_rate, "target_threshold": target, "compliance_pct": pct}
+
         return {
             "completed_ritase": completed_ritase, "crossings_per_truck": crossings_count,
-            "shift_distribution": shift_slots, "date_distribution": date_distribution, "discrepancies": discrepancies
+            "shift_distribution": shift_slots, "date_distribution": date_distribution, 
+            "discrepancies": discrepancies, "compliance": compliance
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -172,26 +197,47 @@ def export_csv(query: str = None, lane: str = None, direction: str = None):
 
 @router.post("/reports/sync")
 def sync_data():
-    try:
-        time.sleep(0.4)
-        return {"status": "success", "sync_time": datetime.utcnow().isoformat(), "synchronized_records_count": len(database.get_all_crossings())}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    try: time.sleep(0.4); return {"status": "success", "sync_time": datetime.utcnow().isoformat(), "synchronized_records_count": len(database.get_all_crossings())}
+    except Exception as e: raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/telemetry/towers")
-def get_towers_telemetry():
-    return get_current_towers_telemetry()
+# Backup & Restore endpoints moved to routes_admin.py
 
-@router.get("/admin/backup-db")
-def backup_database():
-    from fastapi.responses import JSONResponse
+from datetime import timedelta
+
+@router.get("/reports/utilization")
+def get_fleet_utilization():
     try:
-        clean = lambda rows: [{k: (v.decode("utf-8") if isinstance(v, bytes) else v) for k, v in dict(r).items()} for r in rows]
-        data = {
-            "backup_timestamp": datetime.utcnow().isoformat(),
-            "trucks": clean(database.get_all_trucks()),
-            "crossings": clean(database.get_all_crossings())
+        trucks = database.get_all_trucks()
+        crossings = database.get_all_crossings()
+        active_trucks = [t for t in trucks if t["status"] == "active"]
+        total_active = len(active_trucks)
+        now = datetime.utcnow()
+        day_ago = now - timedelta(days=1)
+        def parse_ts(ts):
+            if ts.endswith("Z"): ts = ts[:-1]
+            if "." in ts:
+                parts = ts.split(".")
+                parts[1] = parts[1][:6]
+                ts = ".".join(parts)
+            return datetime.fromisoformat(ts)
+        recent_crossings = []
+        for c in crossings:
+            try:
+                dt = parse_ts(c["timestamp"])
+                if dt >= day_ago:
+                    recent_crossings.append(c)
+            except:
+                pass
+        active_hids = {t["hull_id"] for t in active_trucks}
+        logged_active_hids = {c["hull_id"] for c in recent_crossings if c["hull_id"] in active_hids}
+        rate = 0.0
+        if total_active > 0:
+            rate = round((len(logged_active_hids) / total_active) * 100, 1)
+        return {
+            "total_active_registered": total_active,
+            "unique_active_logged": len(logged_active_hids),
+            "utilization_rate": rate,
+            "logged_trucks": list(logged_active_hids)
         }
-        return JSONResponse(content=data, headers={"Content-Disposition": "attachment; filename=smart_gate_db_backup.json"})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -54,8 +54,16 @@ from backend.websocket_manager import manager
 async def process_video(
     file: UploadFile = File(...),
     lane: str = Form("North CK"),
-    direction: str = Form("inbound")
+    direction: str = Form("inbound"),
+    vehicle_class: str = Form("Dump Truck")
 ):
+    if vehicle_class == "Dump Truck":
+        fn_lower = file.filename.lower()
+        if "light" in fn_lower:
+            vehicle_class = "Light Vehicle"
+        elif "excavator" in fn_lower or "exc" in fn_lower:
+            vehicle_class = "Excavator"
+
     # Save the uploaded video
     video_dir = Path("data/evidence/videos")
     video_dir.mkdir(parents=True, exist_ok=True)
@@ -153,20 +161,20 @@ async def process_video(
         direction=direction,
         crop_image_path=f"/evidence/{crop_filename}",
         context_image_path=f"/evidence/{context_filename}",
-        warning_status=warning_status
+        warning_status=warning_status,
+        vehicle_class=vehicle_class
     )
-    
-    res = {
-        "id": last_id,
-        "hull_id": hull_id,
-        "confidence": confidence,
-        "timestamp": timestamp,
-        "lane": lane,
-        "direction": direction,
-        "crop_image_path": f"/evidence/{crop_filename}",
-        "context_image_path": f"/evidence/{context_filename}",
-        "warning_status": warning_status,
-        "created_at": timestamp
-    }
-    await manager.broadcast(res)
-    return CrossingResponse(**res)
+    inserted = database.get_crossing_by_id(last_id)
+    if not inserted:
+        raise HTTPException(status_code=500, detail="Insert failed")
+    c_dict = dict(inserted)
+    if "created_at" in c_dict and isinstance(c_dict["created_at"], bytes):
+        c_dict["created_at"] = c_dict["created_at"].decode("utf-8")
+    await manager.broadcast(c_dict)
+
+    from backend import alerts_dispatcher
+    alert = alerts_dispatcher.trigger_crossing_alert(c_dict)
+    if alert:
+        await manager.broadcast(alert)
+
+    return CrossingResponse(**c_dict)

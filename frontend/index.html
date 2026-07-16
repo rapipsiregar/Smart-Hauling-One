@@ -1,30 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Gate - Integrated Smart Hauling Dashboard</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="index.css"><script defer src="app.js"></script>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Smart Gate - Integrated Smart Hauling Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="index.css"><link rel="stylesheet" href="print.css" media="print"><link rel="stylesheet" href="theater_mode.css"><script src="toast_alerts.js"></script><script defer src="app.js"></script><script defer src="map_tooltips.js"></script><script defer src="telemetry_logs.js"></script><script defer src="layout_switcher.js"></script><script defer src="contractor_targets.js"></script><script defer src="comparison_chart.js"></script><script defer src="class_filters.js"></script><script defer src="discrepancies_sorter.js"></script><script defer src="sound_alerts.js"></script><script defer src="theater_mode.js"></script><script defer src="contractor_warning.js"></script><script defer src="manual_ocr_crop.js"></script><script defer src="shift_cards.js"></script><script defer src="telemetry_chart.js"></script><script defer src="quick_filters.js"></script><script defer src="fleet_cache.js"></script><script defer src="compliance_stats_chart.js"></script>
 </head>
 <body>
     <div class="app-layout">
         <aside class="sidebar">
             <div class="logo-area"><div class="logo-icon">SG</div><h2>Smart Gate</h2></div>
             <nav class="nav-menu">
-                <button class="nav-item active" data-tab="dashboard"><span class="nav-icon">📊</span> Dashboard</button>
-                <button class="nav-item" data-tab="ingest"><span class="nav-icon">🎥</span> Ingest Video</button>
-                <button class="nav-item" data-tab="fleet"><span class="nav-icon">🚚</span> Fleet Registry</button>
-                <button class="nav-item" data-tab="reports"><span class="nav-icon">📁</span> Reports</button>
+                <button class="nav-item active" data-tab="dashboard"><span class="nav-icon">📊</span> Dashboard</button><button class="nav-item" data-tab="ingest"><span class="nav-icon">🎥</span> Ingest Video</button><button class="nav-item" data-tab="fleet"><span class="nav-icon">🚚</span> Fleet Registry</button><button class="nav-item" data-tab="reports"><span class="nav-icon">📁</span> Reports</button>
             </nav>
+            <div style="padding:1rem; border-top:1px solid var(--border); font-size:0.75rem;">
+                <details>
+                    <summary style="cursor:pointer; color:var(--primary); font-weight:600; outline:none; margin-bottom:0.5rem;">⚙️ Config Overrides</summary>
+                    <div style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.5rem;">
+                        <div><div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;"><span>Glow:</span><span id="val-glow">100%</span></div><input type="range" id="slider-glow" min="0" max="200" value="100" style="width:100%;"></div>
+                        <div><div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;"><span>Blur:</span><span id="val-blur">10px</span></div><input type="range" id="slider-blur" min="0" max="30" value="10" style="width:100%;"></div>
+                        <div style="margin-top:0.25rem;"><span style="display:block; margin-bottom:0.25rem; color:var(--text-secondary);">Layout Mode:</span><div style="display:flex; gap:0.4rem;"><button class="btn btn-secondary btn-sm active" id="btn-layout-detailed" style="flex:1; padding:0.25rem; font-size:0.7rem;">Detailed</button><button class="btn btn-secondary btn-sm" id="btn-layout-compact" style="flex:1; padding:0.25rem; font-size:0.7rem;">Compact</button></div></div><div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.25rem;"><span>Sound Alerts:</span><label class="switch"><input type="checkbox" id="toggle-sound-alerts" checked><span class="slider-toggle"></span></label></div>
+                    </div>
+                </details>
+            </div>
             <div class="sidebar-footer"><span class="status-indicator online"></span> Proxy System Online</div>
         </aside>
 
         <main class="main-content">
             <header class="top-header">
                 <h1 id="page-title">Operational Dashboard</h1>
-                <div class="user-profile"><span class="user-avatar">👤</span><span class="user-role">Gate Supervisor</span></div>
+                <div style="display:flex; align-items:center; gap:1.2rem;">
+                    <div id="ws-indicator" class="ws-pulse disconnected" title="WebSocket Connection Status">
+                        <span class="pulse-dot"></span>
+                        <span id="ws-text" class="pulse-text">WS Disconnected</span>
+                    </div>
+                    <button class="theme-toggle" id="btn-theme-toggle" style="background:none; border:1px solid var(--border); color:var(--text-primary); padding:0.4rem 0.8rem; border-radius:20px; font-size:0.8rem; cursor:pointer; font-weight:500; transition:all 0.3s;" title="Toggle Theme">🌓 Slate-Blue</button>
+                    <button class="theme-toggle" id="btn-toggle-drawer" style="background:none; border:1px solid var(--border); color:var(--text-primary); padding:0.4rem 0.8rem; border-radius:20px; font-size:0.8rem; cursor:pointer; font-weight:500; transition:all 0.3s; position:relative;">🔔 Alerts <span id="alerts-badge" class="hidden" style="background:var(--danger); color:#fff; border-radius:50%; padding:0.1rem 0.35rem; font-size:0.65rem; margin-left:0.25rem;">0</span></button>
+                    <div class="user-profile"><span class="user-avatar">👤</span><span class="user-role">Gate Supervisor</span></div>
+                </div>
             </header>
 
             <!-- Dashboard Tab -->
@@ -46,7 +57,7 @@
 
                 <div class="dashboard-workspace">
                     <div class="card visual-audit-card">
-                        <div class="card-header"><h3>Split-Pane Visual Audit Verification</h3></div>
+                        <div class="card-header"><h3>Split-Pane Visual Audit Verification</h3><button class="btn btn-secondary btn-sm" id="btn-theater-mode" style="padding:0.2rem 0.5rem; font-size:0.75rem;">🎭 Theater Mode</button></div>
                         <div class="audit-split-view">
                             <div class="audit-pane">
                                 <h4>Cropped OHT Hull ID Proof</h4>
@@ -65,6 +76,13 @@
                             <h3>Real-time Live Crossing Feed</h3>
                             <button class="btn btn-secondary btn-sm" id="btn-refresh-feed">🔄 Refresh</button>
                         </div>
+                        <div id="class-filters" style="display:flex; gap:0.75rem; padding:0.5rem 1.25rem; border-bottom:1px solid var(--border); align-items:center; font-size:0.8rem; background:rgba(255,255,255,0.01);">
+                            <strong>Filter Class:</strong>
+                            <label style="display:flex; align-items:center; gap:0.25rem; cursor:pointer;"><input type="checkbox" class="class-filter-cb" value="Dump Truck" checked> Dump Truck</label>
+                            <label style="display:flex; align-items:center; gap:0.25rem; cursor:pointer;"><input type="checkbox" class="class-filter-cb" value="Light Vehicle" checked> Light Vehicle</label>
+                            <label style="display:flex; align-items:center; gap:0.25rem; cursor:pointer;"><input type="checkbox" class="class-filter-cb" value="Excavator" checked> Excavator</label>
+                        </div>
+                        <div id="quick-filters" style="display:flex; gap:0.5rem; padding:0.5rem 1.25rem; border-bottom:1px solid var(--border); align-items:center; font-size:0.8rem; background:rgba(255,255,255,0.015); flex-wrap:wrap;"><strong>Quick Filters:</strong><button type="button" class="btn-quick-filter-tag active" data-filter="all" style="padding:0.15rem 0.5rem; font-size:0.7rem; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,0.05); color:var(--text-secondary); cursor:pointer;">Show All</button><button type="button" class="btn-quick-filter-tag" data-filter="low-confidence" style="padding:0.15rem 0.5rem; font-size:0.7rem; border-radius:12px; border:1px solid var(--danger); background:none; color:var(--danger); cursor:pointer;">⚠️ Low Conf</button><button type="button" class="btn-quick-filter-tag" data-filter="unregistered" style="padding:0.15rem 0.5rem; font-size:0.7rem; border-radius:12px; border:1px solid #a855f7; background:none; color:#a855f7; cursor:pointer;">🚫 Unregistered</button><button type="button" class="btn-quick-filter-tag" data-filter="cycle-discrepancy" style="padding:0.15rem 0.5rem; font-size:0.7rem; border-radius:12px; border:1px solid var(--warning); background:none; color:var(--warning); cursor:pointer;">🔄 Cycle Disc</button></div>
                         <div class="live-feed-list" id="live-feed-list"></div>
                         <div class="distribution-area">
                             <h4>Lane Distribution</h4>
@@ -75,8 +93,9 @@
 
                 <!-- Remote Towers Telemetry Panel -->
                 <div class="card telemetry-card" style="margin-top: 1.5rem;">
-                    <div class="card-header"><h3>Deployed Mobile Skid Remote Towers</h3></div>
-                    <div class="telemetry-grid" id="telemetry-container"></div>
+                    <div class="card-header"><h3>Deployed Mobile Skid Remote Towers & Site Map</h3></div>
+                    <div class="telemetry-split-layout"><div class="telemetry-grid" id="telemetry-container"></div><div class="map-container card"><div class="map-header"><h4>Haul Road Network & Skid Locations</h4></div><div class="map-view-wrapper"><svg class="map-svg" viewBox="0 0 400 300"><path d="M 50 150 Q 200 50 350 150 T 200 250 Z" fill="none" stroke="#1e293b" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><path d="M 50 150 Q 200 50 350 150 T 200 250 Z" fill="none" stroke="rgba(56, 189, 248, 0.08)" stroke-width="14" stroke-linecap="round"/><line x1="0" y1="50" x2="400" y2="50" stroke="#1e293b" stroke-opacity="0.2"/><line x1="0" y1="150" x2="400" y2="150" stroke="#1e293b" stroke-opacity="0.2"/><line x1="0" y1="250" x2="400" y2="250" stroke="#1e293b" stroke-opacity="0.2"/><line x1="100" y1="0" x2="100" y2="300" stroke="#1e293b" stroke-opacity="0.2"/><line x1="200" y1="0" x2="200" y2="300" stroke="#1e293b" stroke-opacity="0.2"/><line x1="300" y1="0" x2="300" y2="300" stroke="#1e293b" stroke-opacity="0.2"/><g class="map-zone" data-zone="loading" style="cursor:pointer;"><circle id="heat-loading" cx="70" cy="130" r="16" fill="rgba(16, 185, 129, 0.15)" style="transition:all 0.5s;"/><text x="35" y="130" fill="var(--text-secondary)" font-size="8" font-weight="600" opacity="0.6">LOADING ZONE</text></g><g class="map-zone" data-zone="dumping" style="cursor:pointer;"><circle id="heat-dumping" cx="350" cy="180" r="16" fill="rgba(16, 185, 129, 0.15)" style="transition:all 0.5s;"/><text x="315" y="180" fill="var(--text-secondary)" font-size="8" font-weight="600" opacity="0.6">DUMPING ZONE</text></g><g class="map-zone" data-zone="haulroad" style="cursor:pointer;"><circle id="heat-haulroad" cx="205" cy="40" r="16" fill="rgba(16, 185, 129, 0.15)" style="transition:all 0.5s;"/><text x="175" y="40" fill="var(--text-secondary)" font-size="8" font-weight="600" opacity="0.6">HAUL ROAD</text></g></svg><div id="map-pins-container"></div><div id="map-tooltip" class="hidden" style="position:absolute; background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:0.5rem 0.75rem; font-size:0.75rem; pointer-events:none; z-index:1000; box-shadow:0 4px 10px rgba(0,0,0,0.3); backdrop-filter:blur(8px);"></div></div></div></div>
+                    <div style="border-top:1px solid var(--border); padding:0.75rem 1.25rem;"><button class="btn btn-secondary btn-sm" id="btn-toggle-tel-logs">📋 View Telemetry Logs History</button><div id="tel-logs-container" class="hidden" style="margin-top:0.75rem;"><div class="table-container" style="max-height:180px; overflow-y:auto; border:1px solid var(--border); border-radius:6px;"><table class="data-table"><thead><tr><th>Timestamp</th><th>Skid Tower</th><th>Battery</th><th>Solar Output</th><th>Latency</th></tr></thead><tbody id="tel-logs-tbody"></tbody></table></div><div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.5rem;"><button class="btn btn-secondary btn-sm" id="btn-tel-prev">◀ Prev</button><span id="tel-page-info" style="font-size:0.75rem; color:var(--text-secondary);">Page 1</span><button class="btn btn-secondary btn-sm" id="btn-tel-next">Next ▶</button></div></div></div>
                 </div>
             </section>
 
@@ -124,6 +143,24 @@
                         </div>
                     </div>
                 </div>
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div class="card-header"><h3>Edge Skid Simulation Controls</h3></div>
+                    <div class="card-body" style="display:flex; flex-direction:column; gap:1rem; padding:1.25rem;">
+                        <div class="form-row" style="display:flex; gap:1rem; flex-wrap:wrap;">
+                            <div class="form-group" style="flex:1; min-width:140px;"><label for="sim-tower-select">Select Skid Tower</label><select id="sim-tower-select"><option value="Tower-Alpha">Tower-Alpha (North)</option><option value="Tower-Beta">Tower-Beta (South)</option><option value="Tower-Gamma">Tower-Gamma (Main)</option></select></div>
+                            <div class="form-group" style="flex:1; min-width:140px;"><label for="sim-status-select">Status Mode</label><select id="sim-status-select"><option value="online">Online / Normal</option><option value="warning">Warning / Critical</option><option value="offline">Offline / Disconnected</option></select></div>
+                        </div>
+                        <div class="form-row" style="display:flex; gap:1rem; flex-wrap:wrap;">
+                            <div class="form-group" style="flex:1; min-width:100px;"><label for="sim-battery">Battery Level (%)</label><input type="number" id="sim-battery" placeholder="e.g. 15" min="0" max="100"></div>
+                            <div class="form-group" style="flex:1; min-width:100px;"><label for="sim-solar">Solar Output (W)</label><input type="number" id="sim-solar" placeholder="e.g. 2" min="0" max="200"></div>
+                            <div class="form-group" style="flex:1; min-width:100px;"><label for="sim-latency">Latency (ms)</label><input type="number" id="sim-latency" placeholder="e.g. 500" min="0"></div>
+                        </div>
+                        <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+                            <button class="btn btn-primary" id="btn-apply-sim" style="flex:1;">⚡ Apply Anomaly</button>
+                            <button class="btn btn-secondary" id="btn-reset-sim" style="flex:1;">🔄 Reset All Overrides</button>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- Fleet Tab -->
@@ -131,7 +168,11 @@
                 <div class="card">
                     <div class="card-header">
                         <h3>Master OHT Fleet Registry</h3>
-                        <button class="btn btn-primary btn-sm" id="btn-open-register">➕ Add OHT Vehicle</button>
+                        <div style="display:flex; gap:0.5rem;">
+                            <button class="btn btn-secondary btn-sm" id="btn-import-csv">📥 Import CSV</button>
+                            <input type="file" id="csv-import-input" accept=".csv" style="display:none;">
+                            <button class="btn btn-primary btn-sm" id="btn-open-register">➕ Add OHT Vehicle</button>
+                        </div>
                     </div>
                     <div class="table-container">
                         <table class="data-table">
@@ -146,21 +187,14 @@
 
             <!-- Reports Tab -->
             <section id="tab-reports" class="tab-pane">
+                <div id="print-custom-header" class="print-only-header" style="display:none; margin-bottom:1.5rem; border-bottom:2px solid #000; padding-bottom:0.75rem;"><h1 id="print-title-val" style="margin:0; font-size:20pt; font-weight:700; color:#000;"></h1><p id="print-date-val" style="margin:0.5rem 0 0 0; font-size:11pt; color:#475569;"></p></div>
                 <div class="reports-toolbar">
                     <input type="text" id="report-search-input" placeholder="Search OHT Hull ID..." class="toolbar-input">
-                    <select id="report-lane-filter" class="toolbar-input">
-                        <option value="">All Lanes</option>
-                        <option value="North Checkpoint">North Checkpoint</option>
-                        <option value="South Gate">South Gate</option>
-                        <option value="Main Portal">Main Portal</option>
-                    </select>
-                    <select id="report-dir-filter" class="toolbar-input" style="display:none;">
-                        <option value="">All Directions</option>
-                        <option value="inbound">Inbound</option>
-                        <option value="outbound">Outbound</option>
-                    </select>
+                    <select id="report-lane-filter" class="toolbar-input"><option value="">All Lanes</option><option value="North Checkpoint">North Checkpoint</option><option value="South Gate">South Gate</option><option value="Main Portal">Main Portal</option></select>
+                    <select id="report-dir-filter" class="toolbar-input" style="display:none;"><option value="">All Directions</option><option value="inbound">Inbound</option><option value="outbound">Outbound</option></select>
                     <button class="btn btn-secondary" id="btn-refresh-reports">🔄 Refresh</button>
                     <button class="btn btn-primary" id="btn-export-csv">📥 Export CSV</button>
+                    <button class="btn btn-primary" id="btn-print-report">🖨 Print PDF</button>
                     <button class="btn btn-primary" id="btn-sync-cloud">☁ Sync Cloud</button>
                 </div>
                 <div class="sync-status-indicator" id="sync-status-indicator">Last sync: Not run</div>
@@ -179,10 +213,27 @@
                             <div class="card-header"><h3>Shift Distribution (Passages per 4-Hour Block)</h3></div>
                             <div class="card-body" id="shift-distribution-container"></div>
                         </div>
+                        <div class="card" style="margin-top: 1.5rem;">
+                            <div class="card-header"><h3>Contractor Allocation Summary</h3></div>
+                            <div class="card-body" style="display:flex; align-items:center; gap:2rem; justify-content:center; padding:1.5rem;">
+                                <div id="contractor-donut" style="width:130px; height:130px; border-radius:50%; position:relative; display:flex; align-items:center; justify-content:center; box-shadow:0 0 15px rgba(0,0,0,0.3); flex-shrink:0;">
+                                    <div style="width:90px; height:90px; background:var(--bg-card); border-radius:50%; position:absolute; display:flex; align-items:center; justify-content:center; flex-direction:column; font-family:'Outfit';">
+                                        <span style="font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em;">Total Ritase</span>
+                                        <span id="donut-total-val" style="font-size:1.4rem; font-weight:700; color:var(--text-primary);">0</span>
+                                    </div>
+                                </div>
+                                <div id="contractor-legend" style="display:flex; flex-direction:column; gap:0.5rem; font-size:0.85rem; color:var(--text-secondary);"></div>
+                        </div>
+                        <div class="card" style="margin-top: 1.5rem;"><div class="card-header"><h3>Shift-Target Compliance Gauge</h3><div style="display:flex; gap:0.5rem;"><button class="btn btn-secondary btn-sm" id="btn-manage-targets">⚙️ Targets</button><button class="btn btn-secondary btn-sm" id="btn-open-warning">⚠️ Send Warning</button></div></div><div class="card-body" style="display:flex; flex-direction:column; gap:1.25rem; padding:1.5rem;"><div id="compliance-gauge-list" style="display:flex; flex-direction:column; gap:1.25rem;"></div><div id="compliance-stats-chart" style="border-top:1px solid rgba(255,255,255,0.05); padding-top:1rem; margin-top:0.5rem;"></div></div></div>
+                        <div class="card" style="margin-top: 1.5rem;"><div class="card-header"><h3>Contractor Performance Comparison Chart</h3></div><div class="card-body" style="padding:1rem;" id="contractor-comparison-chart"></div></div>
                     </div>
                     <div class="report-section">
                         <h4>Subcontractor Discrepancies & Audit Alerts</h4>
-                        <div class="discrepancies-list" id="discrepancies-container"></div>
+                        <div id="disc-filters" style="display:flex; flex-wrap:wrap; gap:0.75rem; margin-bottom:0.75rem; padding:0.5rem; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:6px; font-size:0.8rem; align-items:center;">
+                            <div style="display:flex; align-items:center; gap:0.5rem;"><strong>Lanes:</strong><label style="display:flex; align-items:center; gap:0.25rem;"><input type="checkbox" class="disc-lane-cb" value="North Checkpoint" checked> North Checkpoint</label><label style="display:flex; align-items:center; gap:0.25rem;"><input type="checkbox" class="disc-lane-cb" value="South Gate" checked> South Gate</label><label style="display:flex; align-items:center; gap:0.25rem;"><input type="checkbox" class="disc-lane-cb" value="Main Portal" checked> Main Portal</label></div>
+                            <div id="disc-contractors-filter" style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;"><strong>Contractors:</strong></div>
+                        </div>
+                        <div class="discrepancy-header-row" style="display:flex; justify-content:space-between; font-weight:600; padding:0.5rem 1rem; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-bottom:none; border-top-left-radius:6px; border-top-right-radius:6px; font-size:0.8rem; margin-top:1rem;"><div id="btn-sort-ts" style="cursor:pointer; width:30%; user-select:none;">🕒 Timestamp <span id="sort-ts-icon">▼</span></div><div id="btn-sort-severity" style="cursor:pointer; width:30%; user-select:none;">⚠️ Severity <span id="sort-severity-icon">⇅</span></div><div style="flex:1;">Description & Details</div></div><div class="discrepancies-list" id="discrepancies-container" style="border-top-left-radius:0; border-top-right-radius:0; border-top:none;"></div>
                     </div>
                 </div>
             </section>
@@ -190,29 +241,15 @@
     </div>
 
     <!-- Register Modal -->
-    <div class="modal hidden" id="register-modal">
-        <div class="modal-overlay" id="register-modal-overlay"></div>
-        <div class="modal-content modal-sm">
-            <div class="modal-header"><h3>Register OHT Vehicle</h3><button class="btn-close" id="btn-close-register">×</button></div>
-            <form id="register-form">
-                <div class="modal-body">
-                    <div class="form-group"><label for="reg-hull-id">Hull ID</label><input type="text" id="reg-hull-id" placeholder="DT-125" required></div>
-                    <div class="form-group"><label for="reg-contractor">Contractor Company</label><input type="text" id="reg-contractor" placeholder="e.g. Leighton" required></div>
-                    <div class="form-group"><label for="reg-model">Vehicle Model</label><input type="text" id="reg-model" placeholder="e.g. CAT 777D" required></div>
-                    <div class="form-group"><label for="reg-status">Status</label><select id="reg-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
-                </div>
-                <div class="modal-footer"><button type="submit" class="btn btn-primary">Save Vehicle</button></div>
-            </form>
-        </div>
-    </div>
+    <div class="modal hidden" id="register-modal"><div class="modal-overlay" id="register-modal-overlay"></div><div class="modal-content modal-sm"><div class="modal-header"><h3>Register OHT Vehicle</h3><button class="btn-close" id="btn-close-register">×</button></div><form id="register-form"><div class="modal-body"><div class="form-group"><label for="reg-hull-id">Hull ID</label><input type="text" id="reg-hull-id" placeholder="DT-125" required></div><div class="form-group" style="position:relative;"><label for="reg-contractor">Contractor Company</label><input type="text" id="reg-contractor" placeholder="e.g. Leighton" required autocomplete="off"><div id="reg-contractor-suggestions" class="autocomplete-suggestions hidden"></div></div><div class="form-group" style="position:relative;"><label for="reg-model">Vehicle Model</label><input type="text" id="reg-model" placeholder="e.g. CAT 777D" required autocomplete="off"><div id="reg-model-suggestions" class="autocomplete-suggestions hidden"></div></div><div class="form-group"><label for="reg-status">Status</label><select id="reg-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div></div><div class="modal-footer"><button type="submit" class="btn btn-primary">Save Vehicle</button></div></form></div></div>
 
+    <!-- Correct Modal -->
+    <div class="modal hidden" id="correct-modal"><div class="modal-overlay" id="correct-modal-overlay"></div><div class="modal-content modal-sm" style="max-width:420px;"><div class="modal-header"><h3>Correct OHT Hull ID</h3><button class="btn-close" id="btn-close-correct">×</button></div><form id="correct-form"><div class="modal-body"><div class="form-group" style="position:relative;"><label for="correct-search-input">Search Hull ID</label><input type="text" id="correct-search-input" placeholder="Start typing..." required autocomplete="off"><div id="correct-suggestions" class="autocomplete-suggestions hidden"></div></div><div class="form-group" style="margin-top:1rem;"><label style="margin-bottom:0.25rem; display:block;">Or Drag Bounding Box to Reprocess OCR:</label><div id="ocr-crop-container" style="position:relative; width:100%; border:1px solid var(--border); border-radius:4px; overflow:hidden; background:#000; user-select:none; aspect-ratio:16/9;"><img id="ocr-context-img" style="width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;"><div id="ocr-crop-box" style="position:absolute; border:2px dashed var(--primary); background:rgba(14,165,233,0.2); cursor:crosshair; box-sizing:border-box;"></div></div><div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.5rem;"><span style="font-size:0.75rem; color:var(--text-secondary);" id="ocr-bbox-label">BBox: [0.0, 0.0, 1.0, 1.0]</span><button type="button" class="btn btn-secondary btn-sm" id="btn-reprocess-ocr">Re-trigger OCR</button></div></div></div><div class="modal-footer"><button type="submit" class="btn btn-primary">Save Correction</button></div></form></div></div>
     <!-- Telemetry Modal -->
-    <div class="modal hidden" id="telemetry-modal">
-        <div class="modal-overlay" id="telemetry-modal-overlay"></div>
-        <div class="modal-content modal-sm" style="max-width: 480px;">
-            <div class="modal-header"><h3 id="telemetry-modal-title">Skid Telemetry Trends</h3><button class="btn-close" id="btn-close-telemetry">×</button></div>
-            <div class="modal-body" id="telemetry-chart-container" style="padding: 1.5rem 0 0.5rem 0; min-height: 250px;"></div>
-        </div>
-    </div>
+    <div class="modal hidden" id="telemetry-modal"><div class="modal-overlay" id="telemetry-modal-overlay"></div><div class="modal-content modal-sm" style="max-width:480px;"><div class="modal-header"><h3 id="telemetry-modal-title">Skid Telemetry Trends</h3><button class="btn-close" id="btn-close-telemetry">×</button></div><div class="modal-body" style="padding:1rem 1.5rem;"><div style="display:flex; justify-content:center; gap:0.5rem; margin-bottom:1rem;"><button class="btn btn-secondary btn-sm time-selector active" data-hours="6">6H</button><button class="btn btn-secondary btn-sm time-selector" data-hours="24">24H</button><button class="btn btn-secondary btn-sm time-selector" data-hours="168">7D</button></div><div id="telemetry-chart-container" style="min-height:200px;"></div></div></div></div>
+    <div id="alerts-drawer" class="hidden" style="position:fixed; top:0; right:0; width:320px; height:100%; background:var(--bg-card); border-left:1px solid var(--border); z-index:10000; box-shadow:-4px 0 15px rgba(0,0,0,0.3); display:flex; flex-direction:column;"><div style="padding:1.25rem; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;"><h3 style="margin:0; font-size:1.1rem; color:var(--text-primary);">System Alerts</h3><button class="btn btn-secondary btn-sm" id="btn-close-drawer" style="padding:0.2rem 0.5rem; font-size:1rem; cursor:pointer;">×</button></div><div id="drawer-alerts-list" style="padding:1.25rem; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:0.75rem;"></div></div>
+    <!-- Print Settings Modal -->
+    <div class="modal hidden" id="print-modal"><div class="modal-overlay" id="print-modal-overlay"></div><div class="modal-content modal-sm"><div class="modal-header"><h3>Print Report Settings</h3><button class="btn-close" id="btn-close-print-modal">×</button></div><form id="print-settings-form"><div class="modal-body"><div class="form-group"><label for="print-custom-title">Custom Report Title</label><input type="text" id="print-custom-title" value="Integrated Smart Hauling Dashboard Report"></div><div class="form-group"><label for="print-start-date">Start Date</label><input type="date" id="print-start-date"></div><div class="form-group"><label for="print-end-date">End Date</label><input type="date" id="print-end-date"></div></div><div class="modal-footer"><button type="submit" class="btn btn-primary">🖨 Generate & Print</button></div></form></div></div>
+    <div class="modal hidden" id="targets-modal"><div class="modal-overlay" id="targets-modal-overlay"></div><div class="modal-content modal-sm"><div class="modal-header"><h3>Manage Contractor Targets</h3><button class="btn-close" id="btn-close-targets">×</button></div><form id="targets-form"><div class="modal-body"><div class="form-group"><label for="target-contractor-select">Contractor Company</label><select id="target-contractor-select" required></select></div><div class="form-group"><label for="target-rate-input">Expected Compliance (ritase/hr)</label><input type="number" id="target-rate-input" step="0.1" min="0.1" required></div></div><div class="modal-footer"><button type="submit" class="btn btn-primary">Save Target Limit</button></div></form></div></div><div class="modal hidden" id="warning-modal"><div class="modal-overlay" id="warning-modal-overlay"></div><div class="modal-content modal-sm"><div class="modal-header"><h3>Dispatch Compliance Warning</h3><button class="btn-close" id="btn-close-warning">×</button></div><form id="warning-form"><div class="modal-body"><div class="form-group"><label for="warn-contractor-select">Subcontractor</label><select id="warn-contractor-select" required></select></div><div class="form-group"><label for="warn-email-input">Supervisor Email Recipient</label><input type="email" id="warn-email-input" placeholder="supervisor@contractor.com" required></div></div><div class="modal-footer"><button type="submit" class="btn btn-primary">✉ Dispatch Email Warning</button></div></form></div></div>
 </body>
 </html>

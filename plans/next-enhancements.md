@@ -43,7 +43,7 @@ graph TD
 * **Completed Roadmap Tasks:**
   - **1.1 - 1.4**: SQLite Backend, SAM3 Ingestion OCR endpoint, Docker Compose wrapping, and RapidFuzz fuzzy fleet match.
   - **2.1 - 2.3**: Vanilla CSS Operations Dashboard, WebSocket live feed list, and Split-pane comparison visual audit frames.
-  - **3.1 - 3.3**: Ritase shift calculator, CSV reconciliation/cloud sync buttons, and real-time remote tower telemetry bars.
+  - **3.1 - 3.3**: Ritase shift calculator, CSV reconciliation/cloud sync buttons, and real-time remote gate telemetry status bars.
 
 ---
 
@@ -51,27 +51,28 @@ graph TD
 
 ### Section 1: Web Application Backend (Python)
 
-* **1.1** Implement an OCR Confidence Threshold Alerting system on the backend: If a processed crossing confidence score is below 85%, tag the record with a `low-confidence` warning status and trigger an instant WebSocket warning broadcast to active dashboard users.
-  * **Status:** `[DONE]`
-* **1.2** Add database backup/export JSON endpoint `/api/admin/backup-db` that serializes the SQLite database tables (fleet registry, crossings, discrepancies) and returns them as a single downloadable JSON payload.
-  * **Status:** `[DONE]`
-* **1.3** Implement automated telemetry anomaly checking for remote skid towers: Flag high-priority warning entries if battery levels dip below 30% or if solar panel output remains below 5W during daylight hours.
-  * **Status:** `[DONE]`
+* **1.7** Implement automatic database backups scheduler: Add a background thread/task inside the FastAPI backend that executes a SQLite backup once every 24 hours and saves it to the `data/backups/` directory.
+  * **Status:** `[TODO]`
+* **1.8** Implement a JSON export REST API endpoint for audit trails: Add `GET /api/admin/audit-logs/export` returning the chronological supervisor action logs in JSON format with query filtering for external compliance reporting.
+  * **Status:** `[TODO]`
+* **1.9** Implement dynamic remote tower latency alert triggers: Automatically generate warning logs if a skid tower latency exceeds 400ms across 3 consecutive status polls.
+  * **Status:** `[TODO]`
 
 ### Section 2: Web Application Frontend
 
-* **2.1** Add Interactive Telemetry Trend Charts to the Dashboard tab, allowing supervisors to click a skid tower and view battery level and solar array output trends over time in a modal chart overlay.
-  * **Status:** `[DONE]`
-* **2.2** Implement dark mode toggle with a sleek glowing theme switcher (Slate-Blue to Emerald-Green) to support night shift open-pit mine operators.
+* **2.7** Add interactive grid layout toggle button: Add a toggle selector in the Dashboard tab header to switch between a standard listing view and a high-density, multi-column grid layout for the crossing feed.
   * **Status:** `[TODO]`
-* **2.3** Design custom context-menu options for live OHT feed cards, letting supervisors click to quick-verify or correct the matched Hull ID on the spot without reloading.
+* **2.8** Add inline manual registration action inside Feed items: Add a small "Add to Fleet" button directly inside the list cards of any "Unregistered OHT Crossing" to instantly open the registration modal pre-filled with the unregistered vehicle's detected Hull ID.
+  * **Status:** `[TODO]`
+* **2.9** Implement real-time audio status toggle: Add a speaker mute/unmute button next to the WS indicator in the dashboard header to allow supervisors to enable/disable sound alerts during live operations.
   * **Status:** `[TODO]`
 
 ### Section 3: Ingestion & Reporting Dashboard Features
 
-* **3.1** Add Contractor Allocation Summary panel showing a pie-chart breakdown of total completed ritase cycles performed by each subcontractor to audit contractor productivity.
+* **3.7** Implement an automated HTML report export button: Add a button inside the reports tab to download a standalone, styles-embedded HTML file of the current report tab's state for offline auditing.
   * **Status:** `[TODO]`
-* **3.2** Implement PDF Report Generator utilizing a print-friendly CSS stylesheet, allowing users to format and print daily shift summaries including discrepancy lists.
+* **3.8** Add contractor expected hourly capacity target settings: Expose expected capacity rates configuration in the targets dialog box to calculate and display target compliances dynamically based on the customized expectations.
   * **Status:** `[TODO]`
-* **3.3** Implement dynamic Edge Simulation toolbar on the Ingestion Tab, allowing users to simulate remote tower signal drops or low-battery states.
+* **3.9** Implement automatic chart printing styles toggle: Automatically hide the print modal parameters inputs when browser print operations are cancelled or completed, restoring the original state of interactive modal indicators.
   * **Status:** `[TODO]`
+

@@ -1,0 +1,37 @@
+.visual-audit-card.theater-active {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 99999 !important;
+    background: var(--bg-card) !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 1.5rem !important;
+}
+.visual-audit-card.theater-active .audit-split-view {
+    flex: 1 !important;
+    display: flex !important;
+    gap: 1.5rem !important;
+}
+.visual-audit-card.theater-active .audit-pane {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+.visual-audit-card.theater-active .image-wrapper {
+    flex: 1 !important;
+    height: auto !important;
+    max-height: calc(100vh - 160px) !important;
+}
+.visual-audit-card.theater-active .image-wrapper img {
+    object-fit: contain !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+body.theater-open {
+    overflow: hidden !important;
+}
