@@ -48,26 +48,26 @@ graph TD
 ### Section 1: Web Application Backend (Python)
 
 * **1.1** Build Python Backend Server (FastAPI or Flask) utilizing SQLite as the system database to handle API requests, authenticate users, and manage the fleet registry and crossing database.
-  * **Status:** `[TODO]`
+  * **Status:** `[DONE]`
 * **1.2** Develop OCR Video Processing API endpoint to accept hauling video uploads, run the edge OCR extraction pipeline, and store predictions and visual proof metadata in the SQLite database.
-  * **Status:** `[TODO]`
+  * **Status:** `[DONE]`
 * **1.3** Wrap the entire web application inside Docker Compose, configuring containerized services for the Python backend and web frontend, and mounting persistent docker volumes for SQLite database storage and visual evidence logs.
-  * **Status:** `[TODO]`
+  * **Status:** `[DONE]`
 
 ### Section 2: Web Application Frontend
 
 * **2.1** Initialize Dashboard User Interface using HTML, Vanilla CSS for premium styling, and JavaScript for live interaction.
-  * **Status:** `[TODO]`
-* **2.2** Implement Real-time Live Crossing Feed using WebSockets or SSE (Server-Sent Events) to display OHT passages on the dashboard as they occur.
-  * **Status:** `[TODO]`
-* **2.3** Create Split-Pane Visual Audit Verification Screen allowing supervisors to compare the cropped hull number crop side-by-side with the wide-angle context image.
-  * **Status:** `[TODO]`
+  * **Status:** `[DONE]`
+* **2.2** Implement Real-time Live Crossing Feed (right-side panel) displaying a list of detected trucks with the most recent on top once confidence is reached. Each list item must contain the captured frame, truck number crop, OCR result, date/time, and confidence score.
+  * **Status:** `[DONE]`
+* **2.3** Create Split-Pane Layout (left-side panel) on the frontend displaying front and rear camera feeds side-by-side, integrated with the crossing list to allow users to click any crossing row to display its detailed visual proofs (crop comparisons and context frames) and metadata.
+  * **Status:** `[DONE]`
 
 ### Section 3: Ingestion & Reporting Dashboard Features
 
-* **3.1** Build Shift Summary & Reporting Engine in Python to compute haulage cycle statistics, production volumes, and subcontractor discrepancies.
+* **3.1** Build Shift Summary & Reporting Engine in Python to auto-identify the inbound/outbound direction of trucks and compute/display haulage statistics (completed ritase, total crossings, per truck, per date, and per 4-hour shifts) and identify subcontractor discrepancies.
   * **Status:** `[TODO]`
-* **3.2** Implement Data Reconciliation & CSV/PDF Export to filter, search, and download verified crossing sheets for subcontractor reconciliation.
+* **3.2** Implement Data Reconciliation, CSV/PDF Export, and Sync Mockup to allow users to filter, search, export crossing sheets, and trigger a manual synchronization status indicator to a mockup central dashboard system.
   * **Status:** `[TODO]`
 * **3.3** Add Remote Tower Status & Telemetry Panel to display battery levels, solar array output, and connection latency for the deployed mobile skid towers.
   * **Status:** `[TODO]`
