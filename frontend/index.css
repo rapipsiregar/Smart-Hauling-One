@@ -154,6 +154,14 @@ body {
 .alert-title { font-weight: 700; font-size: 0.9rem; }
 .alert-desc { font-size: 0.85rem; color: var(--text-secondary); }
 
+/* Telemetry Panel */
+.telemetry-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+.telemetry-item { background-color: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.telemetry-header { display: flex; justify-content: space-between; align-items: center; }
+.telemetry-header h4 { font-size: 1rem; color: var(--primary); }
+.telemetry-specs { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary); }
+.spec-row { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; }
+
 @media (max-width: 1024px) {
     .dashboard-workspace { grid-template-columns: 1fr; }
     .sidebar { width: 80px; }

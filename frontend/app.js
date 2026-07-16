@@ -91,14 +91,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Render stats lane distribution
             const distContainer = document.getElementById('distribution-container');
-            distContainer.innerHTML = '';
             const total = stats.total_crossings || 1;
-            Object.entries(stats.lane_distribution).forEach(([lane, count]) => {
+            distContainer.innerHTML = Object.entries(stats.lane_distribution).map(([lane, count]) => {
                 const percentage = ((count / total) * 100).toFixed(0);
-                distContainer.innerHTML += `<div class="distribution-item"><div class="dist-label-row"><span>${lane}</span><span>${count} (${percentage}%)</span></div><div class="dist-bar-bg"><div class="dist-bar-fill" style="width: ${percentage}%"></div></div></div>`;
-            });
+                return `<div class="distribution-item"><div class="dist-label-row"><span>${lane}</span><span>${count} (${percentage}%)</span></div><div class="dist-bar-bg"><div class="dist-bar-fill" style="width: ${percentage}%"></div></div></div>`;
+            }).join('');
 
             updateDashboardUI();
+            loadTelemetry();
             if (currentCrossings.length > 0 && !selectedCrossingId) {
                 selectCrossing(currentCrossings[currentCrossings.length - 1].id);
             }
@@ -126,28 +126,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (crossing) {
             document.getElementById('audit-crop-img').src = crossing.crop_image_path;
             document.getElementById('audit-context-img').src = crossing.context_image_path;
-            document.getElementById('audit-details').innerHTML = `<div><strong>OHT Hull ID:</strong> ${crossing.hull_id} | <strong>Confidence Score:</strong> ${crossing.confidence}%</div><div><strong>Checkpoint Lane:</strong> ${crossing.lane} | <strong>Direction:</strong> ${crossing.direction}</div><div><strong>Timestamp Logged:</strong> ${new Date(crossing.timestamp).toLocaleString()}</div>`;
+            document.getElementById('audit-details').innerHTML = `<div><strong>OHT Hull ID:</strong> ${crossing.hull_id} | <strong>Confidence score:</strong> ${crossing.confidence}%</div><div><strong>Gate Lane:</strong> ${crossing.lane} | <strong>Direction:</strong> ${crossing.direction} | <strong>Timestamp:</strong> ${new Date(crossing.timestamp).toLocaleString()}</div>`;
         }
     }
 
     // Load & Render Fleet
     async function loadFleetData() {
         try {
-            const res = await fetch('/api/trucks');
-            const trucks = await res.json();
+            const trucks = await (await fetch('/api/trucks')).json();
             const tbody = document.getElementById('fleet-tbody');
-            tbody.innerHTML = '';
-            trucks.forEach(t => {
-                tbody.innerHTML += `<tr><td><strong>${t.hull_id}</strong></td><td>${t.contractor}</td><td>${t.model}</td><td><span class="badge ${t.status === 'active' ? 'badge-success' : 'badge-danger'}">${t.status}</span></td></tr>`;
-            });
+            tbody.innerHTML = trucks.map(t => `<tr><td><strong>${t.hull_id}</strong></td><td>${t.contractor}</td><td>${t.model}</td><td><span class="badge ${t.status === 'active' ? 'badge-success' : 'badge-danger'}">${t.status}</span></td></tr>`).join('');
         } catch (err) { console.error('Load fleet error:', err); }
     }
 
     // Load & Render Reports Data
     async function loadReportsData() {
         try {
-            const res = await fetch('/api/reports/shift-summary');
-            lastReportsData = await res.json();
+            lastReportsData = await (await fetch('/api/reports/shift-summary')).json();
             renderReports();
         } catch (err) { console.error('Load reports error:', err); }
     }
@@ -158,30 +153,38 @@ document.addEventListener('DOMContentLoaded', () => {
         const lane = document.getElementById('report-lane-filter').value;
 
         const tbody = document.getElementById('ritase-tbody');
-        tbody.innerHTML = '';
-        Object.entries(lastReportsData.completed_ritase).forEach(([hid, cycles]) => {
-            if (query && !hid.toLowerCase().includes(query)) return;
-            tbody.innerHTML += `<tr><td><strong>${hid}</strong></td><td>${cycles}</td><td>${lastReportsData.crossings_per_truck[hid] || 0}</td></tr>`;
-        });
+        tbody.innerHTML = Object.entries(lastReportsData.completed_ritase).filter(([hid]) => !query || hid.toLowerCase().includes(query)).map(([hid, cycles]) => `<tr><td><strong>${hid}</strong></td><td>${cycles}</td><td>${lastReportsData.crossings_per_truck[hid] || 0}</td></tr>`).join('');
 
         const shiftContainer = document.getElementById('shift-distribution-container');
-        shiftContainer.innerHTML = '';
         const maxVal = Math.max(...Object.values(lastReportsData.shift_distribution), 1);
-        Object.entries(lastReportsData.shift_distribution).forEach(([slot, count]) => {
+        shiftContainer.innerHTML = Object.entries(lastReportsData.shift_distribution).map(([slot, count]) => {
             const percentage = ((count / maxVal) * 100).toFixed(0);
-            shiftContainer.innerHTML += `<div class="distribution-item"><div class="dist-label-row"><span>${slot}</span><span>${count}</span></div><div class="dist-bar-bg"><div class="dist-bar-fill" style="width: ${percentage}%"></div></div></div>`;
-        });
+            return `<div class="distribution-item"><div class="dist-label-row"><span>${slot}</span><span>${count}</span></div><div class="dist-bar-bg"><div class="dist-bar-fill" style="width: ${percentage}%"></div></div></div>`;
+        }).join('');
 
         const alertContainer = document.getElementById('discrepancies-container');
-        const filteredAlerts = lastReportsData.discrepancies.filter(d => {
-            if (query && !d.hull_id.toLowerCase().includes(query)) return false;
-            if (lane && d.lane !== lane) return false;
-            return true;
-        });
-        alertContainer.innerHTML = filteredAlerts.length === 0 ? '<div style="color: var(--text-secondary); font-size: 0.9rem;">No subcontractor registry discrepancies detected.</div>' : '';
-        filteredAlerts.forEach(d => {
-            alertContainer.innerHTML += `<div class="alert-card severity-${d.severity}"><div class="alert-header"><span class="alert-title">${d.type}</span><span>${new Date(d.timestamp).toLocaleTimeString()}</span></div><div class="alert-desc">${d.details} (<strong>${d.hull_id}</strong>)</div></div>`;
-        });
+        const filtered = lastReportsData.discrepancies.filter(d => (!query || d.hull_id.toLowerCase().includes(query)) && (!lane || d.lane === lane));
+        alertContainer.innerHTML = filtered.length ? filtered.map(d => `<div class="alert-card severity-${d.severity}"><div class="alert-header"><span class="alert-title">${d.type}</span><span>${new Date(d.timestamp).toLocaleTimeString()}</span></div><div class="alert-desc">${d.details} (<strong>${d.hull_id}</strong>)</div></div>`).join('') : '<div style="color: var(--text-secondary); font-size: 0.9rem;">No subcontractor discrepancies detected.</div>';
+    }
+
+    // Fetch and render remote tower telemetry
+    async function loadTelemetry() {
+        try {
+            const towers = await (await fetch('/api/telemetry/towers')).json();
+            const container = document.getElementById('telemetry-container');
+            container.innerHTML = towers.map(t => `
+                <div class="telemetry-item">
+                    <div class="telemetry-header"><h4>${t.id}</h4><span class="badge ${t.status === 'online' ? 'badge-success' : 'badge-warning'}">${t.status}</span></div>
+                    <div class="telemetry-specs">
+                        <div class="spec-row"><span>📍 Lane:</span><span>${t.location}</span></div>
+                        <div class="spec-row"><span>🔋 Battery:</span><span>${t.battery}%</span></div>
+                        <div class="dist-bar-bg"><div class="dist-bar-fill" style="width: ${t.battery}%; background: ${t.battery > 50 ? 'var(--success)' : 'var(--warning)'}"></div></div>
+                        <div class="spec-row"><span>☀️ Solar Output:</span><span>${t.solar_output}W</span></div>
+                        <div class="spec-row"><span>📶 Latency:</span><span>${t.latency}ms</span></div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (err) { console.error('Telemetry error:', err); }
     }
 
     // Modal Control: Register OHT
@@ -189,9 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const registerForm = document.getElementById('register-form');
     const toggleModal = (modal, show) => modal.classList.toggle('hidden', !show);
 
-    document.getElementById('btn-open-register').addEventListener('click', () => toggleModal(registerModal, true));
-    document.getElementById('btn-close-register').addEventListener('click', () => toggleModal(registerModal, false));
-    document.getElementById('register-modal-overlay').addEventListener('click', () => toggleModal(registerModal, false));
+    ['btn-open-register', 'btn-close-register', 'register-modal-overlay'].forEach((id, i) => document.getElementById(id).addEventListener('click', () => toggleModal(registerModal, i === 0)));
 
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -240,6 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally { btnSync.disabled = false; btnSync.textContent = '☁ Sync Cloud'; }
     });
 
-    // Initial Load
+    // Initial Load & Telemetry Polling
     loadDashboardData();
+    setInterval(loadTelemetry, 8000);
 });

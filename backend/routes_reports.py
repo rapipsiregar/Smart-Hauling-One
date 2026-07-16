@@ -168,3 +168,33 @@ def sync_data():
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Cloud reconciliation sync failed: {str(e)}"
         )
+
+@router.get("/telemetry/towers")
+def get_towers_telemetry():
+    import random
+    return [
+        {
+            "id": "Tower-Alpha",
+            "location": "North Checkpoint",
+            "battery": random.randint(82, 86),
+            "solar_output": random.randint(115, 125),
+            "latency": random.randint(35, 45),
+            "status": "online"
+        },
+        {
+            "id": "Tower-Beta",
+            "location": "South Gate",
+            "battery": random.randint(89, 93),
+            "solar_output": random.randint(90, 100),
+            "latency": random.randint(55, 65),
+            "status": "online"
+        },
+        {
+            "id": "Tower-Gamma",
+            "location": "Main Portal",
+            "battery": random.randint(40, 48),
+            "solar_output": random.randint(5, 15),
+            "latency": random.randint(220, 245),
+            "status": "warning"
+        }
+    ]

@@ -77,6 +77,15 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Reconciliation CSV Exporter**: Generates a standard compliance-ready CSV log file, preserving user search queries and lane filters.
   - **HQ Cloud Sync Mockup**: Triggers a simulated synchronization request to a central headquarters database, returning transaction logs and updating status latency.
 
+### 3.3 Remote Gate Skid Status & Telemetry Panel
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.3)
+* **Description**: Live operations panel representing solar-powered remote edge skid tower health.
+* **Key Capabilities**:
+  - **Dynamic Sensor Polling**: Periodically fetches and animates battery percentage, solar panel generation levels, and network ping latency for deployed towers (Alpha, Beta, Gamma).
+  - **Color-Coded Status Warnings**: Flags battery dips and elevated latency levels (e.g. warning status indicators for Tower-Gamma).
+  - **Compact KPI Widgets**: Integrated directly under the operational workspace on the main dashboard tab.
+
+
 
 
 
