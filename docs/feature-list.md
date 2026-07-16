@@ -69,5 +69,14 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **4-Hour Productivity shifts**: Groups crossings into six daily 4-hour slots to trace peak passage periods and skid activity.
   - **Subcontractor Compliance Audit**: Automatically alerts supervisors if unregistered OHTs cross, if inactive OHTs trigger logs, or if unauthorized contractor plates pass checkpoints.
 
+### 3.2 Data Reconciliation, CSV Export, & Cloud Sync Mockup
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.2)
+* **Description**: Interactive query toolbar allowing supervisors to filter, reconcile records, download CSV sheets, and trigger a cloud synchronization status indicator.
+* **Key Capabilities**:
+  - **Dynamic Client Search**: Instantly filters OHT haulage tables and discrepancy alerts by vehicle code or lane.
+  - **Reconciliation CSV Exporter**: Generates a standard compliance-ready CSV log file, preserving user search queries and lane filters.
+  - **HQ Cloud Sync Mockup**: Triggers a simulated synchronization request to a central headquarters database, returning transaction logs and updating status latency.
+
+
 
 

@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    let currentCrossings = [], selectedCrossingId = null;
+    let currentCrossings = [], selectedCrossingId = null, lastReportsData = null;
 
     // Tab Navigation
     const navItems = document.querySelectorAll('.nav-item');
@@ -23,13 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
         ws.onmessage = (e) => {
             try {
                 const c = JSON.parse(e.data);
-                currentCrossings.push(c);
-                updateDashboardUI();
-                selectCrossing(c.id);
+                currentCrossings.push(c); updateDashboardUI(); selectCrossing(c.id);
             } catch (err) { console.error('WS JSON error:', err); }
         };
         ws.onclose = () => setTimeout(connectWS, 3000);
-        ws.onerror = (err) => ws.close();
+        ws.onerror = () => ws.close();
     }
     connectWS();
 
@@ -62,9 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!selectedFile) return alert('Select OHT video file.');
 
         submitBtn.disabled = true;
-        processPanel.classList.remove('hidden');
-        processLoader.classList.remove('hidden');
-        processResult.classList.add('hidden');
+        processPanel.classList.remove('hidden'); processLoader.classList.remove('hidden'); processResult.classList.add('hidden');
 
         const fd = new FormData();
         fd.append('file', selectedFile);
@@ -75,12 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/process-video', { method: 'POST', body: fd });
             if (!res.ok) throw new Error(await res.text());
             const data = await res.json();
-            processLoader.classList.add('hidden');
-            processResult.classList.remove('hidden');
-            resultDetails.innerHTML = `
-                <div><strong>Log ID:</strong> #${data.id} | <strong>Hull ID:</strong> ${data.hull_id}</div>
-                <div><strong>Lane:</strong> ${data.lane} | <strong>Confidence:</strong> ${data.confidence}%</div>
-            `;
+            processLoader.classList.add('hidden'); processResult.classList.remove('hidden');
+            resultDetails.innerHTML = `<div><strong>Log ID:</strong> #${data.id} | <strong>Hull ID:</strong> ${data.hull_id}</div><div><strong>Lane:</strong> ${data.lane} | <strong>Confidence:</strong> ${data.confidence}%</div>`;
             selectedFile = null; filenameDisplay.textContent = ''; ingestForm.reset();
         } catch (err) { alert(`OCR Failed: ${err.message}`); processPanel.classList.add('hidden'); }
         finally { submitBtn.disabled = false; }
@@ -103,12 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const total = stats.total_crossings || 1;
             Object.entries(stats.lane_distribution).forEach(([lane, count]) => {
                 const percentage = ((count / total) * 100).toFixed(0);
-                distContainer.innerHTML += `
-                    <div class="distribution-item">
-                        <div class="dist-label-row"><span>${lane}</span><span>${count} (${percentage}%)</span></div>
-                        <div class="dist-bar-bg"><div class="dist-bar-fill" style="width: ${percentage}%"></div></div>
-                    </div>
-                `;
+                distContainer.innerHTML += `<div class="distribution-item"><div class="dist-label-row"><span>${lane}</span><span>${count} (${percentage}%)</span></div><div class="dist-bar-bg"><div class="dist-bar-fill" style="width: ${percentage}%"></div></div></div>`;
             });
 
             updateDashboardUI();
@@ -126,14 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = `crossing-feed-card ${c.id === selectedCrossingId ? 'selected' : ''}`;
             card.dataset.id = c.id;
             const badgeClass = c.confidence >= 95 ? 'badge-success' : (c.confidence >= 85 ? 'badge-warning' : 'badge-danger');
-            card.innerHTML = `
-                <div class="feed-row-top"><span class="oht-id">${c.hull_id}</span><span class="badge ${badgeClass}">${c.confidence}%</span></div>
-                <div class="feed-row-mid">
-                    <div class="feed-thumb"><img src="${c.crop_image_path}"></div>
-                    <div class="feed-thumb"><img src="${c.context_image_path}"></div>
-                </div>
-                <div class="feed-row-bot"><span>📍 ${c.lane}</span><span>🕒 ${new Date(c.timestamp).toLocaleTimeString()}</span></div>
-            `;
+            card.innerHTML = `<div class="feed-row-top"><span class="oht-id">${c.hull_id}</span><span class="badge ${badgeClass}">${c.confidence}%</span></div><div class="feed-row-mid"><div class="feed-thumb"><img src="${c.crop_image_path}"></div><div class="feed-thumb"><img src="${c.context_image_path}"></div></div><div class="feed-row-bot"><span>📍 ${c.lane}</span><span>🕒 ${new Date(c.timestamp).toLocaleTimeString()}</span></div>`;
             card.addEventListener('click', () => selectCrossing(c.id));
             feedList.appendChild(card);
         });
@@ -146,11 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (crossing) {
             document.getElementById('audit-crop-img').src = crossing.crop_image_path;
             document.getElementById('audit-context-img').src = crossing.context_image_path;
-            document.getElementById('audit-details').innerHTML = `
-                <div><strong>OHT Hull ID:</strong> ${crossing.hull_id} | <strong>Confidence Score:</strong> ${crossing.confidence}%</div>
-                <div><strong>Checkpoint Lane:</strong> ${crossing.lane} | <strong>Direction:</strong> ${crossing.direction}</div>
-                <div><strong>Timestamp Logged:</strong> ${new Date(crossing.timestamp).toLocaleString()}</div>
-            `;
+            document.getElementById('audit-details').innerHTML = `<div><strong>OHT Hull ID:</strong> ${crossing.hull_id} | <strong>Confidence Score:</strong> ${crossing.confidence}%</div><div><strong>Checkpoint Lane:</strong> ${crossing.lane} | <strong>Direction:</strong> ${crossing.direction}</div><div><strong>Timestamp Logged:</strong> ${new Date(crossing.timestamp).toLocaleString()}</div>`;
         }
     }
 
@@ -162,14 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const tbody = document.getElementById('fleet-tbody');
             tbody.innerHTML = '';
             trucks.forEach(t => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td><strong>${t.hull_id}</strong></td>
-                        <td>${t.contractor}</td>
-                        <td>${t.model}</td>
-                        <td><span class="badge ${t.status === 'active' ? 'badge-success' : 'badge-danger'}">${t.status}</span></td>
-                    </tr>
-                `;
+                tbody.innerHTML += `<tr><td><strong>${t.hull_id}</strong></td><td>${t.contractor}</td><td>${t.model}</td><td><span class="badge ${t.status === 'active' ? 'badge-success' : 'badge-danger'}">${t.status}</span></td></tr>`;
             });
         } catch (err) { console.error('Load fleet error:', err); }
     }
@@ -178,40 +147,41 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadReportsData() {
         try {
             const res = await fetch('/api/reports/shift-summary');
-            const data = await res.json();
-
-            const tbody = document.getElementById('ritase-tbody');
-            tbody.innerHTML = '';
-            Object.entries(data.completed_ritase).forEach(([hid, cycles]) => {
-                tbody.innerHTML += `<tr><td><strong>${hid}</strong></td><td>${cycles}</td><td>${data.crossings_per_truck[hid] || 0}</td></tr>`;
-            });
-
-            const shiftContainer = document.getElementById('shift-distribution-container');
-            shiftContainer.innerHTML = '';
-            const maxVal = Math.max(...Object.values(data.shift_distribution), 1);
-            Object.entries(data.shift_distribution).forEach(([slot, count]) => {
-                const percentage = ((count / maxVal) * 100).toFixed(0);
-                shiftContainer.innerHTML += `
-                    <div class="distribution-item">
-                        <div class="dist-label-row"><span>${slot}</span><span>${count}</span></div>
-                        <div class="dist-bar-bg"><div class="dist-bar-fill" style="width: ${percentage}%"></div></div>
-                    </div>
-                `;
-            });
-
-            const alertContainer = document.getElementById('discrepancies-container');
-            alertContainer.innerHTML = data.discrepancies.length === 0 
-                ? '<div style="color: var(--text-secondary); font-size: 0.9rem;">No subcontractor registry discrepancies detected.</div>' 
-                : '';
-            data.discrepancies.forEach(d => {
-                alertContainer.innerHTML += `
-                    <div class="alert-card severity-${d.severity}">
-                        <div class="alert-header"><span class="alert-title">${d.type}</span><span>${new Date(d.timestamp).toLocaleTimeString()}</span></div>
-                        <div class="alert-desc">${d.details} (<strong>${d.hull_id}</strong>)</div>
-                    </div>
-                `;
-            });
+            lastReportsData = await res.json();
+            renderReports();
         } catch (err) { console.error('Load reports error:', err); }
+    }
+
+    function renderReports() {
+        if (!lastReportsData) return;
+        const query = document.getElementById('report-search-input').value.toLowerCase();
+        const lane = document.getElementById('report-lane-filter').value;
+
+        const tbody = document.getElementById('ritase-tbody');
+        tbody.innerHTML = '';
+        Object.entries(lastReportsData.completed_ritase).forEach(([hid, cycles]) => {
+            if (query && !hid.toLowerCase().includes(query)) return;
+            tbody.innerHTML += `<tr><td><strong>${hid}</strong></td><td>${cycles}</td><td>${lastReportsData.crossings_per_truck[hid] || 0}</td></tr>`;
+        });
+
+        const shiftContainer = document.getElementById('shift-distribution-container');
+        shiftContainer.innerHTML = '';
+        const maxVal = Math.max(...Object.values(lastReportsData.shift_distribution), 1);
+        Object.entries(lastReportsData.shift_distribution).forEach(([slot, count]) => {
+            const percentage = ((count / maxVal) * 100).toFixed(0);
+            shiftContainer.innerHTML += `<div class="distribution-item"><div class="dist-label-row"><span>${slot}</span><span>${count}</span></div><div class="dist-bar-bg"><div class="dist-bar-fill" style="width: ${percentage}%"></div></div></div>`;
+        });
+
+        const alertContainer = document.getElementById('discrepancies-container');
+        const filteredAlerts = lastReportsData.discrepancies.filter(d => {
+            if (query && !d.hull_id.toLowerCase().includes(query)) return false;
+            if (lane && d.lane !== lane) return false;
+            return true;
+        });
+        alertContainer.innerHTML = filteredAlerts.length === 0 ? '<div style="color: var(--text-secondary); font-size: 0.9rem;">No subcontractor registry discrepancies detected.</div>' : '';
+        filteredAlerts.forEach(d => {
+            alertContainer.innerHTML += `<div class="alert-card severity-${d.severity}"><div class="alert-header"><span class="alert-title">${d.type}</span><span>${new Date(d.timestamp).toLocaleTimeString()}</span></div><div class="alert-desc">${d.details} (<strong>${d.hull_id}</strong>)</div></div>`;
+        });
     }
 
     // Modal Control: Register OHT
@@ -234,9 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const res = await fetch('/api/trucks', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
             });
             if (!res.ok) throw new Error(await res.text());
             toggleModal(registerModal, false); registerForm.reset(); loadFleetData();
@@ -245,6 +213,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-refresh-feed').addEventListener('click', loadDashboardData);
     document.getElementById('btn-refresh-reports').addEventListener('click', loadReportsData);
+
+    // Search, Filter, Export & Cloud Sync Triggers
+    document.getElementById('report-search-input').addEventListener('input', renderReports);
+    document.getElementById('report-lane-filter').addEventListener('change', renderReports);
+    document.getElementById('report-dir-filter').addEventListener('change', renderReports);
+
+    document.getElementById('btn-export-csv').addEventListener('click', () => {
+        const q = document.getElementById('report-search-input').value;
+        const l = document.getElementById('report-lane-filter').value;
+        const d = document.getElementById('report-dir-filter').value;
+        window.open(`/api/reports/export-csv?query=${encodeURIComponent(q)}&lane=${encodeURIComponent(l)}&direction=${encodeURIComponent(d)}`);
+    });
+
+    const btnSync = document.getElementById('btn-sync-cloud');
+    const syncIndicator = document.getElementById('sync-status-indicator');
+    btnSync.addEventListener('click', async () => {
+        btnSync.disabled = true; btnSync.textContent = 'Syncing...';
+        try {
+            const res = await fetch('/api/reports/sync', { method: 'POST' });
+            const result = await res.json();
+            syncIndicator.textContent = `Last sync: Success (Synced ${result.synchronized_records_count} logs)`;
+            syncIndicator.style.color = 'var(--success)';
+        } catch (err) {
+            syncIndicator.textContent = 'Last sync: Failed'; syncIndicator.style.color = 'var(--danger)';
+        } finally { btnSync.disabled = false; btnSync.textContent = '☁ Sync Cloud'; }
+    });
 
     // Initial Load
     loadDashboardData();

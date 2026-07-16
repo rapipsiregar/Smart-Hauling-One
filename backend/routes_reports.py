@@ -1,5 +1,9 @@
 from fastapi import APIRouter, HTTPException, status
+from fastapi.responses import StreamingResponse
 from datetime import datetime
+import io
+import csv
+import time
 from backend import database
 
 router = APIRouter()
@@ -113,4 +117,54 @@ def get_shift_summary():
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error compiling shift summary report: {str(e)}"
+        )
+
+@router.get("/reports/export-csv")
+def export_csv(lane: str = None, direction: str = None, query: str = None):
+    try:
+        crossings = database.get_all_crossings()
+        filtered_crossings = []
+        for c in crossings:
+            if lane and lane.strip().lower() != c["lane"].strip().lower():
+                continue
+            if direction and direction.strip().lower() != c["direction"].strip().lower():
+                continue
+            if query and query.strip().lower() not in c["hull_id"].strip().lower():
+                continue
+            filtered_crossings.append(c)
+            
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["Log ID", "Timestamp", "OHT Hull ID", "Lane", "Direction", "Confidence %", "Crop Image Path", "Context Image Path"])
+        for c in filtered_crossings:
+            writer.writerow([
+                c["id"], c["timestamp"], c["hull_id"], c["lane"], c["direction"],
+                c["confidence"], c["crop_image_path"], c["context_image_path"]
+            ])
+        output.seek(0)
+        return StreamingResponse(
+            output,
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=gate_crossings_reconciliation.csv"}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error exporting CSV crossings sheet: {str(e)}"
+        )
+
+@router.post("/reports/sync")
+def sync_data():
+    try:
+        crossings = database.get_all_crossings()
+        time.sleep(0.4)
+        return {
+            "status": "success",
+            "sync_time": datetime.utcnow().isoformat(),
+            "synchronized_records_count": len(crossings)
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Cloud reconciliation sync failed: {str(e)}"
         )

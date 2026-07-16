@@ -153,6 +153,27 @@
                         <h3>Shift Summary & Productivity Audit</h3>
                         <button class="btn btn-primary btn-sm" id="btn-refresh-reports">Run Shift Analysis</button>
                     </div>
+                    <div class="reports-toolbar">
+                        <div class="toolbar-search">
+                            <input type="text" id="report-search-input" placeholder="Search Hull ID..." style="background:#0f172a; border:1px solid var(--border); color:white; padding:0.4rem; border-radius:6px; font-size:0.85rem;">
+                            <select id="report-lane-filter" style="background:#0f172a; border:1px solid var(--border); color:white; padding:0.4rem; border-radius:6px; font-size:0.85rem;">
+                                <option value="">All Lanes</option>
+                                <option value="North Checkpoint">North Checkpoint</option>
+                                <option value="South Gate">South Gate</option>
+                                <option value="Main Portal">Main Portal</option>
+                            </select>
+                            <select id="report-dir-filter" style="background:#0f172a; border:1px solid var(--border); color:white; padding:0.4rem; border-radius:6px; font-size:0.85rem;">
+                                <option value="">All Directions</option>
+                                <option value="inbound">Inbound</option>
+                                <option value="outbound">Outbound</option>
+                            </select>
+                            <button class="btn btn-secondary btn-sm" id="btn-export-csv">Export CSV</button>
+                        </div>
+                        <div class="toolbar-sync" style="display:flex; align-items:center; gap:0.75rem;">
+                            <button class="btn btn-primary btn-sm" id="btn-sync-cloud">☁ Sync Cloud</button>
+                            <span id="sync-status-indicator" style="font-size:0.8rem; color:var(--text-secondary);">Last sync: Not Synced</span>
+                        </div>
+                    </div>
                     <div class="reports-workspace">
                         <div class="report-section">
                             <h4>Completed Ritase (Haulage Cycles)</h4>
