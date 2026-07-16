@@ -53,6 +53,8 @@ graph TD
   * **Status:** `[DONE]`
 * **1.3** Wrap the entire web application inside Docker Compose, configuring containerized services for the Python backend and web frontend, and mounting persistent docker volumes for SQLite database storage and visual evidence logs.
   * **Status:** `[DONE]`
+* **1.4** Implement Fuzzy Logic OCR Matching using `rapidfuzz` on the backend to resolve character segmentation and spelling errors by comparing extracted OCR hull IDs against the registered master OHT fleet.
+  * **Status:** `[DONE]`
 
 ### Section 2: Web Application Frontend
 
@@ -66,7 +68,7 @@ graph TD
 ### Section 3: Ingestion & Reporting Dashboard Features
 
 * **3.1** Build Shift Summary & Reporting Engine in Python to auto-identify the inbound/outbound direction of trucks and compute/display haulage statistics (completed ritase, total crossings, per truck, per date, and per 4-hour shifts) and identify subcontractor discrepancies.
-  * **Status:** `[TODO]`
+  * **Status:** `[DONE]`
 * **3.2** Implement Data Reconciliation, CSV/PDF Export, and Sync Mockup to allow users to filter, search, export crossing sheets, and trigger a manual synchronization status indicator to a mockup central dashboard system.
   * **Status:** `[TODO]`
 * **3.3** Add Remote Tower Status & Telemetry Panel to display battery levels, solar array output, and connection latency for the deployed mobile skid towers.

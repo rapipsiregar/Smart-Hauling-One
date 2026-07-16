@@ -140,6 +140,18 @@ body {
 .modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
 .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
 .hidden { display: none !important; }
+/* Reports Layout */
+.reports-workspace { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem; align-items: start; }
+.report-section { display: flex; flex-direction: column; gap: 1rem; background-color: #0f172a; padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border); }
+.report-section h4 { font-size: 1rem; color: var(--primary); margin-bottom: 0.25rem; }
+.discrepancies-list { display: flex; flex-direction: column; gap: 0.75rem; max-height: 400px; overflow-y: auto; }
+.alert-card { background-color: var(--bg-card); border-left: 4px solid var(--danger); padding: 0.75rem 1rem; border-radius: 4px; display: flex; flex-direction: column; gap: 0.25rem; }
+.alert-card.severity-medium { border-left-color: var(--warning); }
+.alert-card.severity-low { border-left-color: var(--primary); }
+.alert-header { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); }
+.alert-title { font-weight: 700; font-size: 0.9rem; }
+.alert-desc { font-size: 0.85rem; color: var(--text-secondary); }
+
 @media (max-width: 1024px) {
     .dashboard-workspace { grid-template-columns: 1fr; }
     .sidebar { width: 80px; }

@@ -7,12 +7,14 @@ from backend import database
 router = APIRouter()
 
 from backend.websocket_manager import manager
+from backend.fuzzy_matcher import find_best_fleet_match
 
 @router.post("/crossings", response_model=CrossingResponse, status_code=status.HTTP_201_CREATED)
 async def create_crossing(crossing: CrossingCreate):
     try:
+        hull_id = find_best_fleet_match(crossing.hull_id)
         last_id = database.insert_crossing(
-            hull_id=crossing.hull_id,
+            hull_id=hull_id,
             confidence=crossing.confidence,
             timestamp=crossing.timestamp,
             lane=crossing.lane,
@@ -21,6 +23,7 @@ async def create_crossing(crossing: CrossingCreate):
             context_image_path=crossing.context_image_path
         )
         res = crossing.dict()
+        res["hull_id"] = hull_id
         res["id"] = last_id
         res["created_at"] = datetime.utcnow().isoformat()
         await manager.broadcast(res)

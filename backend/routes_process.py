@@ -7,6 +7,7 @@ import json
 import os
 from backend.models import CrossingResponse
 from backend import database
+from backend.fuzzy_matcher import find_best_fleet_match
 
 router = APIRouter()
 
@@ -74,11 +75,7 @@ async def process_video(
     
     if pre_extracted:
         ocr_text = pre_extracted["text"]
-        if ocr_text and not ocr_text.startswith("DT-"):
-            hull_id = f"DT-{ocr_text}"
-        else:
-            hull_id = ocr_text or "DT-Unknown"
-            
+        hull_id = find_best_fleet_match(ocr_text)
         confidence = 98.5
         output_dir = pre_extracted["output_dir"]
         

@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pageTitle.textContent = item.textContent.trim();
         if (tab === 'dashboard') loadDashboardData();
         if (tab === 'fleet') loadFleetData();
+        if (tab === 'reports') loadReportsData();
     }));
 
     // WebSocket Real-time Feed
@@ -28,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (err) { console.error('WS JSON error:', err); }
         };
         ws.onclose = () => setTimeout(connectWS, 3000);
-        ws.onerror = (err) => { console.error('WS error:', err); ws.close(); };
+        ws.onerror = (err) => ws.close();
     }
     connectWS();
 
@@ -38,20 +39,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const filenameDisplay = document.getElementById('selected-filename');
     let selectedFile = null;
 
+    const setFile = (f) => { selectedFile = f; filenameDisplay.textContent = `Selected: ${f.name}`; };
     dropzone.addEventListener('click', () => fileInput.click());
-    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#38bdf8'; });
+    dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.style.borderColor = '#38bdf8'; });
     dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = '');
-    dropzone.addEventListener('drop', (e) => {
+    dropzone.addEventListener('drop', e => {
         e.preventDefault(); dropzone.style.borderColor = '';
-        if (e.dataTransfer.files.length) handleFileSelect(e.dataTransfer.files[0]);
+        if (e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
     });
-    fileInput.addEventListener('change', () => {
-        if (fileInput.files.length) handleFileSelect(fileInput.files[0]);
-    });
-    const handleFileSelect = (f) => {
-        selectedFile = f;
-        filenameDisplay.textContent = `Selected: ${f.name} (${(f.size / (1024*1024)).toFixed(2)} MB)`;
-    };
+    fileInput.addEventListener('change', () => { if (fileInput.files.length) setFile(fileInput.files[0]); });
 
     // Ingest Form Submission
     const ingestForm = document.getElementById('ingest-form');
@@ -82,17 +78,12 @@ document.addEventListener('DOMContentLoaded', () => {
             processLoader.classList.add('hidden');
             processResult.classList.remove('hidden');
             resultDetails.innerHTML = `
-                <div><strong>Log ID:</strong> #${data.id}</div>
-                <div><strong>Hull ID:</strong> ${data.hull_id}</div>
-                <div><strong>Confidence:</strong> ${data.confidence}%</div>
-                <div><strong>Lane:</strong> ${data.lane}</div>
-                <div><strong>Direction:</strong> ${data.direction}</div>
-                <div><strong>Time:</strong> ${new Date(data.timestamp).toLocaleString()}</div>
+                <div><strong>Log ID:</strong> #${data.id} | <strong>Hull ID:</strong> ${data.hull_id}</div>
+                <div><strong>Lane:</strong> ${data.lane} | <strong>Confidence:</strong> ${data.confidence}%</div>
             `;
             selectedFile = null; filenameDisplay.textContent = ''; ingestForm.reset();
-        } catch (err) {
-            alert(`OCR Failed: ${err.message}`); processPanel.classList.add('hidden');
-        } finally { submitBtn.disabled = false; }
+        } catch (err) { alert(`OCR Failed: ${err.message}`); processPanel.classList.add('hidden'); }
+        finally { submitBtn.disabled = false; }
     });
 
     // Load & Render Dashboard Data
@@ -150,9 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function selectCrossing(id) {
         selectedCrossingId = id;
-        document.querySelectorAll('.crossing-feed-card').forEach(card => {
-            card.classList.toggle('selected', card.dataset.id == id);
-        });
+        document.querySelectorAll('.crossing-feed-card').forEach(card => card.classList.toggle('selected', card.dataset.id == id));
         const crossing = currentCrossings.find(c => c.id == id);
         if (crossing) {
             document.getElementById('audit-crop-img').src = crossing.crop_image_path;
@@ -185,6 +174,46 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) { console.error('Load fleet error:', err); }
     }
 
+    // Load & Render Reports Data
+    async function loadReportsData() {
+        try {
+            const res = await fetch('/api/reports/shift-summary');
+            const data = await res.json();
+
+            const tbody = document.getElementById('ritase-tbody');
+            tbody.innerHTML = '';
+            Object.entries(data.completed_ritase).forEach(([hid, cycles]) => {
+                tbody.innerHTML += `<tr><td><strong>${hid}</strong></td><td>${cycles}</td><td>${data.crossings_per_truck[hid] || 0}</td></tr>`;
+            });
+
+            const shiftContainer = document.getElementById('shift-distribution-container');
+            shiftContainer.innerHTML = '';
+            const maxVal = Math.max(...Object.values(data.shift_distribution), 1);
+            Object.entries(data.shift_distribution).forEach(([slot, count]) => {
+                const percentage = ((count / maxVal) * 100).toFixed(0);
+                shiftContainer.innerHTML += `
+                    <div class="distribution-item">
+                        <div class="dist-label-row"><span>${slot}</span><span>${count}</span></div>
+                        <div class="dist-bar-bg"><div class="dist-bar-fill" style="width: ${percentage}%"></div></div>
+                    </div>
+                `;
+            });
+
+            const alertContainer = document.getElementById('discrepancies-container');
+            alertContainer.innerHTML = data.discrepancies.length === 0 
+                ? '<div style="color: var(--text-secondary); font-size: 0.9rem;">No subcontractor registry discrepancies detected.</div>' 
+                : '';
+            data.discrepancies.forEach(d => {
+                alertContainer.innerHTML += `
+                    <div class="alert-card severity-${d.severity}">
+                        <div class="alert-header"><span class="alert-title">${d.type}</span><span>${new Date(d.timestamp).toLocaleTimeString()}</span></div>
+                        <div class="alert-desc">${d.details} (<strong>${d.hull_id}</strong>)</div>
+                    </div>
+                `;
+            });
+        } catch (err) { console.error('Load reports error:', err); }
+    }
+
     // Modal Control: Register OHT
     const registerModal = document.getElementById('register-modal');
     const registerForm = document.getElementById('register-form');
@@ -210,13 +239,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(payload)
             });
             if (!res.ok) throw new Error(await res.text());
-            toggleModal(registerModal, false);
-            registerForm.reset();
-            loadFleetData();
+            toggleModal(registerModal, false); registerForm.reset(); loadFleetData();
         } catch (err) { alert(`Failed to register OHT: ${err.message}`); }
     });
 
     document.getElementById('btn-refresh-feed').addEventListener('click', loadDashboardData);
+    document.getElementById('btn-refresh-reports').addEventListener('click', loadReportsData);
 
     // Initial Load
     loadDashboardData();
