@@ -125,6 +125,17 @@ def get_shift_summary():
                     "type": "Low Solar Array Output Alert", "severity": severity,
                     "details": f"Solar panel charging output is abnormally low: {t['solar_output']}W."
                 })
+            
+            from backend.routes_telemetry import _latency_history
+            tid = t["id"]
+            if tid in _latency_history:
+                hist = _latency_history[tid]
+                if len(hist) == 3 and all(l > 400 for l in hist):
+                    discrepancies.append({
+                        "timestamp": datetime.utcnow().isoformat(), "hull_id": tid, "lane": t["location"],
+                        "type": "Critical Skid Latency Warning", "severity": "high",
+                        "details": f"Skid tower latency has exceeded 400ms across 3 consecutive polls: {t['latency']}ms."
+                    })
                     
         active_hours = 1.0
         if crossings:

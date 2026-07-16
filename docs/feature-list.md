@@ -24,6 +24,7 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Dynamic Pipeline/Mock Hybrid Engine**: Integrates with the pre-extracted edge OCR datasets (PaddleOCR-VL and Nemotron OCR-v2 summaries) to run matching, and implements a fail-safe fallback generating mock OHT crossings for unrecognized uploads.
   - **Evidence Asset Replication**: Automatically populates cropped hull number images and wide-angle context photos inside the static `/evidence` path.
   - **Automated Fleet Auto-Registration**: Detects if an extracted truck hull number is unrecognized in the system registry, auto-enrolling it to prevent lost hauling records.
+  - **Sample Video Selector Support**: Exposes `GET /api/sample-videos` listing available videos in `data/01-playlist`, and accepts processing them directly using `sample_filename` parameter in the processing endpoint.
 
 ### 1.4 Fuzzy OHT ID Matcher & Spelling Corrector
 * **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.4)
@@ -104,6 +105,30 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Database Registry Pre-verification**: Evaluates lines against existing database registrations to separate skipped warnings from failed block errors.
   - **Transaction Safe Atomic Rejection**: Rejects import entirely with details of all failed rows if any row contains formatting errors, while safely ignoring duplicates only.
 
+### 1.12 Automatic Database Backup Scheduler
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.7)
+* **Description**: Backend daemon scheduler that periodically creates timestamped backups of the master SQLite database.
+* **Key Capabilities**:
+  - **Uptime Daemon Thread**: Runs a non-blocking background thread that executes automatically at system startup and schedules itself every 24 hours.
+  - **Native SQLite Backup API**: Performs high-fidelity database replication using Python's native `sqlite3.Connection.backup()` to prevent table lock disruptions.
+  - **Timestamped File Persistence**: Saves database copies into `data/backups/smart_gate_YYYYMMDD_HHMMSS.db` for easy rollback auditing.
+
+### 1.13 Supervisor Audit Logs JSON Export API
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.8)
+* **Description**: REST API endpoint providing a downloadable JSON export of chronological supervisor audit trail actions.
+* **Key Capabilities**:
+  - **Dynamic Query Filtering**: Supports query parameters for `action`, `operator`, `start_date`, and `end_date` to filter logs in the exported payload.
+  - **Chronological Sorting**: Automatically sorts logs from oldest to newest to simplify timeline tracing.
+  - **Compliance Integration**: Prompts file downloads automatically via HTTP headers (`smart_gate_audit_export.json`) for seamless ingest by compliance auditing systems.
+
+### 1.14 Remote Tower Consecutive Latency Alert Triggers
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.9)
+* **Description**: Backend latency monitoring pipeline that automatically triggers critical alert logs when a skid tower connection experiences high latency over 3 consecutive status polls.
+* **Key Capabilities**:
+  - **Rolling Window Latency Cache**: Tracks the last 3 polled latency times per skid tower in a sliding cache window.
+  - **Threshold Verification**: Triggers an alert when all 3 consecutive readings exceed the 400ms threshold limit.
+  - **Multi-channel Dispatch & Logging**: Broadcasters WebSocket alert messages, writes entries to the `dispatch_logs` database, and appends a "Critical Skid Latency Warning" to reports' discrepancies feed.
+
 ---
 
 ## 2. Web Application Frontend
@@ -114,9 +139,10 @@ This document lists all active and implemented features of the Smart Gate (Integ
 * **Key Capabilities**:
   - **KPI Dashboard**: Displays real-time operational statistics, including total crossings, active fleet size, unrecognized vehicle warnings, and lane traffic distribution.
   - **Live Ingest Form**: Supports drag-and-drop or select video file uploading, displaying real-time loading feedback while running the backend OCR pipeline.
+  - **Sample Video Selection & Preview Layout**: Dynamically queries available videos from the playlist storage, displays a preview of the selected video, and presents the OCR extraction progress and results side-by-side next to the playing video.
   - **Real-Time Live Crossing Feed (WS-Powered)**: Prepend newly detected trucks immediately to the right-side feed panel using WebSocket broadcasts. Each card contains the cropped number crop, wide-angle context image, OCR text, log timestamp, and confidence rating.
   - **Split-Pane Verification Workspace**: Left-side layout presenting the crop OHT hull ID side-by-side with the wide-angle context photo of the selected crossing, auto-updating on click or arrival of new WebSocket events.
-  - **Fleet Manager Control**: Displays registered vehicles and contractor information, with an OHT vehicle registration modal.
+  - **Fleet Master Data Management**: Displays registered OHT vehicles and contractor information in an interactive table, supporting full CRUD operations (adding new vehicles, editing existing registration details, toggling operational statuses, and deleting inactive OHTs) dynamically synced with the database.
   - **Dynamic Layout Mode Selector**: Toggles the dashboard between **Detailed Feed View** (larger card thumbnails, detailed metrics) and **Compact Grid View** (dense spacing, smaller preview frames, reduced gaps/paddings). Persists mode state in browser localStorage.
   - **Quick-Verify Badge Action**: Displays a clickable verification checkmark (`✔`) next to the confidence badge for unverified/low-confidence crossings in the Live Feed, allowing supervisors to confirm details in one click and bypass context menus.
   - **Vehicle Classification Filter**: Real-time checkbox filter toolbar above the Live Crossing Feed allowing supervisors to toggle crossings visibility by class (Dump Truck, Light Vehicle, Excavator) instantly.

@@ -10,6 +10,7 @@ from datetime import datetime
 _towers_cache = {}
 _simulation_overrides = {}
 _telemetry_history_logs = []
+_latency_history = {}
 
 def get_current_towers_telemetry():
     import random
@@ -62,6 +63,28 @@ def get_current_towers_telemetry():
         from backend.websocket_manager import manager
         import asyncio
         for t in _towers_cache["towers"]:
+            tid = t["id"]
+            if tid not in _latency_history:
+                _latency_history[tid] = []
+            _latency_history[tid].append(t["latency"])
+            if len(_latency_history[tid]) > 3:
+                _latency_history[tid].pop(0)
+                
+            if len(_latency_history[tid]) == 3 and all(l > 400 for l in _latency_history[tid]):
+                import logging
+                logging.warning(f"Skid tower {tid} latency has exceeded 400ms across 3 consecutive status polls: {_latency_history[tid]}")
+                alert = alerts_dispatcher.trigger_latency_alert(
+                    tower_id=tid,
+                    latency=t["latency"],
+                    location=t["location"]
+                )
+                if alert:
+                    try:
+                        loop = asyncio.get_running_loop()
+                        loop.create_task(manager.broadcast(alert))
+                    except Exception:
+                        pass
+
             if t["battery"] < b_low or t["solar_output"] < s_low or t["latency"] > l_high:
                 t["status"] = "warning"
                 alert = alerts_dispatcher.trigger_telemetry_alert(

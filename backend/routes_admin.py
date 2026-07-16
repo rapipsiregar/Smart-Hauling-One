@@ -196,12 +196,6 @@ async def override_contractor_targets(req: ContractorTargetsOverrideReq):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/admin/audit-logs")
-def get_audit_logs():
-    try:
-        return database.get_all_audits()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/admin/backup-db")
 def backup_database():

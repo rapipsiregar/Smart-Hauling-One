@@ -121,6 +121,12 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label for="sample-select" style="display:block; margin-bottom:0.5rem; font-weight:500;">Or Select Sample Video from Playlist</label>
+                            <select id="sample-select" style="background:#0f172a; border:1px solid var(--border); color:white; padding:0.6rem; border-radius:6px; font-size:0.9rem; width:100%; box-sizing:border-box;">
+                                <option value="">-- Choose a sample video --</option>
+                            </select>
+                        </div>
                         <div class="upload-dropzone" id="video-dropzone">
                             <div class="dropzone-icon">📤</div>
                             <p>Drag and drop OHT crossing video file here or <strong>click to browse</strong></p>
@@ -130,16 +136,29 @@
                         <button type="submit" class="btn btn-primary" id="btn-submit-ingest">⚡ Ingest & Extract OCR</button>
                     </form>
                 </div>
-                <div class="card hidden" id="process-panel" style="margin-top: 1.5rem;">
-                    <div class="card-header"><h3>OCR Extraction Progress</h3></div>
-                    <div class="card-body">
-                        <div class="loader-container" id="process-loader">
-                            <div class="spinner"></div>
-                            <p>Running SAM3 Segmentation & PaddleOCR Core Pipeline...</p>
+                <div class="ingest-workspace hidden" id="process-panel" style="margin-top: 1.5rem;">
+                    <!-- Left: Video Preview Card -->
+                    <div class="card video-preview-card" style="flex: 1; margin: 0;">
+                        <div class="card-header"><h3>Video Preview</h3></div>
+                        <div class="card-body" style="padding: 1rem; display: flex; justify-content: center; align-items: center; background: #0b0f19;">
+                            <video id="ingest-video-player" controls style="max-width: 100%; max-height: 280px; border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);"></video>
                         </div>
-                        <div class="result-container hidden" id="process-result">
-                            <div class="success-banner">✔ Edge Ingestion Successful</div>
-                            <div class="result-details" id="result-details"></div>
+                    </div>
+                    <!-- Right: OCR Extraction Progress & Result -->
+                    <div class="card process-panel-card" style="flex: 1; margin: 0;">
+                        <div class="card-header"><h3>OCR Extraction Progress & Result</h3></div>
+                        <div class="card-body" style="display: flex; flex-direction: column; justify-content: center; min-height: 200px;">
+                            <div id="process-prompt" style="color: var(--text-secondary); text-align: center; padding: 2rem; font-size: 0.9rem;">
+                                Select checkpoint parameters and click <strong>⚡ Ingest & Extract OCR</strong> above to run the pipeline.
+                            </div>
+                            <div class="loader-container hidden" id="process-loader">
+                                <div class="spinner"></div>
+                                <p>Running SAM3 Segmentation & PaddleOCR Core Pipeline...</p>
+                            </div>
+                            <div class="result-container hidden" id="process-result">
+                                <div class="success-banner">✔ Edge Ingestion Successful</div>
+                                <div class="result-details" id="result-details"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -177,7 +196,7 @@
                     <div class="table-container">
                         <table class="data-table">
                             <thead>
-                                <tr><th>OHT Hull ID</th><th>Contractor Company</th><th>Vehicle Model</th><th>Registry Status</th></tr>
+                                <tr><th>OHT Hull ID</th><th>Contractor Company</th><th>Vehicle Model</th><th>Registry Status</th><th>Actions</th></tr>
                             </thead>
                             <tbody id="fleet-tbody"></tbody>
                         </table>

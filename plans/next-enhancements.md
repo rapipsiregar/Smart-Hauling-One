@@ -52,11 +52,11 @@ graph TD
 ### Section 1: Web Application Backend (Python)
 
 * **1.7** Implement automatic database backups scheduler: Add a background thread/task inside the FastAPI backend that executes a SQLite backup once every 24 hours and saves it to the `data/backups/` directory.
-  * **Status:** `[TODO]`
+  * **Status:** `[DONE]`
 * **1.8** Implement a JSON export REST API endpoint for audit trails: Add `GET /api/admin/audit-logs/export` returning the chronological supervisor action logs in JSON format with query filtering for external compliance reporting.
-  * **Status:** `[TODO]`
+  * **Status:** `[DONE]`
 * **1.9** Implement dynamic remote tower latency alert triggers: Automatically generate warning logs if a skid tower latency exceeds 400ms across 3 consecutive status polls.
-  * **Status:** `[TODO]`
+  * **Status:** `[DONE]`
 
 ### Section 2: Web Application Frontend
 

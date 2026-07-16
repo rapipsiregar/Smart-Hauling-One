@@ -39,17 +39,89 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     connectWS();
 
-    const dz = document.getElementById('video-dropzone'), fi = document.getElementById('video-input'), fn = document.getElementById('selected-filename'); let selectedFile = null;
-    dz.onclick = () => fi.click(); dz.ondragover = e => { e.preventDefault(); dz.style.borderColor = '#38bdf8'; }; dz.ondragleave = () => dz.style.borderColor = '';
-    dz.ondrop = e => { e.preventDefault(); dz.style.borderColor = ''; if (e.dataTransfer.files.length) selectedFile = e.dataTransfer.files[0], fn.textContent = `Selected: ${selectedFile.name}`; }; fi.onchange = () => { if (fi.files.length) selectedFile = fi.files[0], fn.textContent = `Selected: ${selectedFile.name}`; };
+    const sampleSelect = document.getElementById('sample-select');
+    async function loadSampleVideos() {
+        try {
+            const res = await fetch('/api/sample-videos');
+            if (res.ok) {
+                const videos = await res.json();
+                videos.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v.filename;
+                    opt.textContent = `${v.filename} (${(v.size_bytes / (1024 * 1024)).toFixed(2)} MB)`;
+                    sampleSelect.appendChild(opt);
+                });
+            }
+        } catch (err) { console.error('Failed to load sample videos:', err); }
+    }
+    loadSampleVideos();
 
+    const dz = document.getElementById('video-dropzone'), fi = document.getElementById('video-input'), fn = document.getElementById('selected-filename'); let selectedFile = null;
+    const ingestVideo = document.getElementById('ingest-video-player');
+    const processPrompt = document.getElementById('process-prompt');
     const ingestForm = document.getElementById('ingest-form'), processPanel = document.getElementById('process-panel'), processLoader = document.getElementById('process-loader'), processResult = document.getElementById('process-result'), resultDetails = document.getElementById('result-details'), submitBtn = document.getElementById('btn-submit-ingest');
 
+    function updateIngestPreview() {
+        const sampleVal = sampleSelect.value;
+        if (selectedFile) {
+            ingestVideo.src = URL.createObjectURL(selectedFile);
+            processPanel.classList.remove('hidden');
+            processPrompt.classList.remove('hidden');
+            processLoader.classList.add('hidden');
+            processResult.classList.add('hidden');
+        } else if (sampleVal) {
+            ingestVideo.src = `/playlist/${sampleVal}`;
+            processPanel.classList.remove('hidden');
+            processPrompt.classList.remove('hidden');
+            processLoader.classList.add('hidden');
+            processResult.classList.add('hidden');
+        } else {
+            ingestVideo.src = '';
+            processPanel.classList.add('hidden');
+        }
+    }
+
+    sampleSelect.onchange = () => {
+        if (sampleSelect.value) {
+            selectedFile = null;
+            fn.textContent = '';
+        }
+        updateIngestPreview();
+    };
+
+    dz.onclick = () => fi.click(); dz.ondragover = e => { e.preventDefault(); dz.style.borderColor = '#38bdf8'; }; dz.ondragleave = () => dz.style.borderColor = '';
+    dz.ondrop = e => { e.preventDefault(); dz.style.borderColor = ''; if (e.dataTransfer.files.length) { selectedFile = e.dataTransfer.files[0]; fn.textContent = `Selected: ${selectedFile.name}`; sampleSelect.value = ''; updateIngestPreview(); } }; 
+    fi.onchange = () => { if (fi.files.length) { selectedFile = fi.files[0]; fn.textContent = `Selected: ${selectedFile.name}`; sampleSelect.value = ''; updateIngestPreview(); } };
+
     ingestForm.onsubmit = async (e) => {
-        e.preventDefault(); if (!selectedFile) return alert('Select OHT video file.');
-        submitBtn.disabled = true; processPanel.classList.remove('hidden'); processLoader.classList.remove('hidden'); processResult.classList.add('hidden');
-        const fd = new FormData(); fd.append('file', selectedFile); fd.append('lane', document.getElementById('lane-select').value); fd.append('direction', document.getElementById('direction-select').value);
-        try { const res = await fetch('/api/process-video', { method: 'POST', body: fd }); if (!res.ok) throw new Error(await res.text()); const d = await res.json(); processLoader.classList.add('hidden'); processResult.classList.remove('hidden'); resultDetails.innerHTML = `<div><strong>Log ID:</strong> #${d.id} | <strong>Hull ID:</strong> ${d.hull_id}</div><div><strong>Lane:</strong> ${d.lane} | <strong>Confidence:</strong> ${d.confidence}%</div>`; selectedFile = null; fn.textContent = ''; ingestForm.reset(); } catch (err) { alert(`OCR Failed: ${err.message}`); processPanel.classList.add('hidden'); } finally { submitBtn.disabled = false; }
+        e.preventDefault(); 
+        const sampleVal = sampleSelect.value;
+        if (!selectedFile && !sampleVal) return alert('Select OHT video file or choose a sample video.');
+        submitBtn.disabled = true; 
+        processPanel.classList.remove('hidden'); 
+        processPrompt.classList.add('hidden');
+        processLoader.classList.remove('hidden'); 
+        processResult.classList.add('hidden');
+        const fd = new FormData();
+        if (selectedFile) {
+            fd.append('file', selectedFile);
+        } else {
+            fd.append('sample_filename', sampleVal);
+        }
+        fd.append('lane', document.getElementById('lane-select').value);
+        fd.append('direction', document.getElementById('direction-select').value);
+        try {
+            const res = await fetch('/api/process-video', { method: 'POST', body: fd });
+            if (!res.ok) throw new Error(await res.text());
+            const d = await res.json();
+            processLoader.classList.add('hidden'); 
+            processResult.classList.remove('hidden');
+            resultDetails.innerHTML = `<div><strong>Log ID:</strong> #${d.id} | <strong>Hull ID:</strong> ${d.hull_id}</div><div><strong>Lane:</strong> ${d.lane} | <strong>Confidence:</strong> ${d.confidence}%</div>`;
+        } catch (err) { 
+            alert(`OCR Failed: ${err.message}`); 
+            processPrompt.classList.remove('hidden');
+            processLoader.classList.add('hidden');
+        } finally { submitBtn.disabled = false; }
     };
 
     async function loadDashboardData() {
@@ -102,10 +174,38 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             try { fleetTrucks = await (await fetch('/api/trucks')).json(); localStorage.setItem('fleet_trucks_cache', JSON.stringify(fleetTrucks)); }
             catch (e) { fleetTrucks = JSON.parse(localStorage.getItem('fleet_trucks_cache') || '[]'); }
-            document.getElementById('fleet-tbody').innerHTML = fleetTrucks.map(t => `<tr><td><strong>${t.hull_id}</strong></td><td>${t.contractor}</td><td>${t.model}</td><td><label class="switch"><input type="checkbox" class="toggle-truck-status" data-hull="${t.hull_id}" ${t.status === 'active' ? 'checked' : ''}><span class="slider-toggle"></span></label></td></tr>`).join('');
+            document.getElementById('fleet-tbody').innerHTML = fleetTrucks.map(t => `<tr><td><strong>${t.hull_id}</strong></td><td>${t.contractor}</td><td>${t.model}</td><td><label class="switch"><input type="checkbox" class="toggle-truck-status" data-hull="${t.hull_id}" ${t.status === 'active' ? 'checked' : ''}><span class="slider-toggle"></span></label></td><td><button class="btn btn-secondary btn-sm edit-truck-btn" data-hull="${t.hull_id}" data-contractor="${t.contractor}" data-model="${t.model}" data-status="${t.status}">✏ Edit</button><button class="btn btn-danger btn-sm delete-truck-btn" data-hull="${t.hull_id}" style="margin-left: 0.5rem; background: var(--danger); border-color: var(--danger); color: white;">🗑 Delete</button></td></tr>`).join('');
+            
             document.querySelectorAll('.toggle-truck-status').forEach(cb => cb.onchange = async () => {
                 const hull = cb.dataset.hull, status = cb.checked ? 'active' : 'inactive';
                 try { if ((await fetch(`/api/trucks/${hull}/status`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) })).ok) showToast(`OHT ${hull} status synced!`); else throw new Error(); } catch (e) { cb.checked = !cb.checked; alert('Failed to sync status.'); }
+            });
+
+            document.querySelectorAll('.edit-truck-btn').forEach(btn => btn.onclick = () => {
+                editingHullId = btn.dataset.hull;
+                regModal.querySelector('h3').textContent = 'Edit OHT Vehicle';
+                document.getElementById('reg-hull-id').value = btn.dataset.hull;
+                document.getElementById('reg-contractor').value = btn.dataset.contractor;
+                document.getElementById('reg-model').value = btn.dataset.model;
+                document.getElementById('reg-status').value = btn.dataset.status;
+                regModal.classList.remove('hidden');
+            });
+
+            document.querySelectorAll('.delete-truck-btn').forEach(btn => btn.onclick = async () => {
+                const hull = btn.dataset.hull;
+                if (confirm(`Are you sure you want to delete OHT ${hull}?`)) {
+                    try {
+                        const res = await fetch(`/api/trucks/${hull}`, { method: 'DELETE' });
+                        if (res.ok) {
+                            showToast(`OHT ${hull} deleted successfully.`);
+                            loadFleetData();
+                        } else {
+                            throw new Error(await res.text());
+                        }
+                    } catch (e) {
+                        alert(`Failed to delete truck: ${e.message}`);
+                    }
+                }
             });
         } catch (err) { console.error(err); }
     }
@@ -194,10 +294,42 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('telemetry-container').onclick = (e) => { const item = e.target.closest('.telemetry-item'); if (item) openTelemetryTrends(item.dataset.id); };
     document.getElementById('map-pins-container').onclick = (e) => { const pin = e.target.closest('.map-marker-pin'); if (pin) openTelemetryTrends(pin.dataset.id); };
     document.querySelectorAll('.time-selector').forEach(btn => btn.onclick = () => { document.querySelectorAll('.time-selector').forEach(b => b.classList.toggle('active', b === btn)); openTelemetryTrends(); });
+    let editingHullId = null;
     const regModal = document.getElementById('register-modal'), regForm = document.getElementById('register-form');
-    ['btn-open-register', 'btn-close-register', 'register-modal-overlay'].forEach((id, i) => document.getElementById(id).onclick = () => regModal.classList.toggle('hidden', i !== 0));
+    document.getElementById('btn-open-register').onclick = () => {
+        editingHullId = null;
+        regModal.querySelector('h3').textContent = 'Register OHT Vehicle';
+        regForm.reset();
+        regModal.classList.remove('hidden');
+    };
+    ['btn-close-register', 'register-modal-overlay'].forEach(id => document.getElementById(id).onclick = () => regModal.classList.add('hidden'));
     ['btn-close-telemetry', 'telemetry-modal-overlay'].forEach(id => document.getElementById(id).onclick = () => telemetryModal.classList.add('hidden'));
-    regForm.onsubmit = async (e) => { e.preventDefault(); const body = JSON.stringify({ hull_id: document.getElementById('reg-hull-id').value, contractor: document.getElementById('reg-contractor').value, model: document.getElementById('reg-model').value, status: document.getElementById('reg-status').value }); try { const res = await fetch('/api/trucks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }); if (!res.ok) throw new Error(await res.text()); regModal.classList.add('hidden'); regForm.reset(); loadFleetData(); } catch (err) { alert(err.message); } };
+    
+    regForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const payload = {
+            hull_id: document.getElementById('reg-hull-id').value,
+            contractor: document.getElementById('reg-contractor').value,
+            model: document.getElementById('reg-model').value,
+            status: document.getElementById('reg-status').value
+        };
+        const url = editingHullId ? `/api/trucks/${editingHullId}` : '/api/trucks';
+        const method = editingHullId ? 'PUT' : 'POST';
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error(await res.text());
+            regModal.classList.add('hidden');
+            regForm.reset();
+            loadFleetData();
+            showToast(editingHullId ? 'OHT vehicle updated successfully!' : 'OHT vehicle registered successfully!');
+        } catch (err) {
+            alert(err.message);
+        }
+    };
     document.getElementById('btn-refresh-feed').onclick = loadDashboardData; document.getElementById('btn-refresh-reports').onclick = loadReportsData;
     ['report-search-input', 'report-lane-filter'].forEach(id => document.getElementById(id).oninput = document.getElementById(id).onchange = renderReports);
     document.getElementById('btn-export-csv').onclick = () => { const q = document.getElementById('report-search-input').value, l = document.getElementById('report-lane-filter').value, d = document.getElementById('report-dir-filter').value; window.open(`/api/reports/export-csv?query=${encodeURIComponent(q)}&lane=${encodeURIComponent(l)}&direction=${encodeURIComponent(d)}`); };

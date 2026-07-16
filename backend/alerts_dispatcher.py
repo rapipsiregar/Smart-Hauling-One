@@ -154,3 +154,42 @@ def trigger_compliance_warning_alert(contractor: str, recipient_email: str, payl
         except Exception:
             pass
     return alert
+
+def trigger_latency_alert(tower_id: str, latency: int, location: str) -> Optional[Dict[str, Any]]:
+    from backend import database
+    alert_id = f"ALT-L-{int(time.time())}-{random.randint(100, 999)}"
+    
+    alert = {
+        "alert_id": alert_id,
+        "type": "dispatch_alert",
+        "trigger_source": "latency",
+        "timestamp": datetime.utcnow().isoformat(),
+        "severity": "high",
+        "message": f"Skid Latency Warning: {tower_id} latency exceeded 400ms across 3 consecutive polls ({latency}ms)",
+        "dispatches": [
+            {
+                "channel": "SMS",
+                "recipient": "+62 811-555-0210 (Maintenance Lead)",
+                "status": "SENT",
+                "payload": f"CRITICAL ALERT: Skid tower {tower_id} at {location} has latency exceeding 400ms across 3 polls: {latency}ms."
+            },
+            {
+                "channel": "Email",
+                "recipient": "maintenance-alerts@tunasinti.co.id",
+                "status": "SENT",
+                "payload": f"Subject: [SmartGate Alert] Critical Skid Latency - {tower_id}\n\nBody: Skid tower {tower_id} at {location} reports high latency of {latency}ms across 3 consecutive status polls."
+            }
+        ]
+    }
+    
+    for a in _dispatches_log[:3]:
+        if a["trigger_source"] == "latency" and a["message"] == alert["message"]:
+            return None
+
+    _dispatches_log.insert(0, alert)
+    if len(_dispatches_log) > 20:
+        _dispatches_log.pop()
+    for d in alert["dispatches"]:
+        try: database.log_dispatch("Latency Alert", d["payload"], d["recipient"], d["channel"])
+        except Exception: pass
+    return alert

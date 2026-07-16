@@ -130,3 +130,41 @@ def update_truck_status_route(hull_id: str, req: UpdateStatusReq):
         return {"status": "success", "hull_id": hull_id, "new_status": req.status}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/trucks/{old_hull_id}", response_model=TruckResponse)
+def update_truck_route(old_hull_id: str, req: TruckCreate):
+    truck = database.get_truck_by_hull_id(old_hull_id)
+    if not truck:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Truck not found.")
+    
+    if req.hull_id != old_hull_id:
+        existing = database.get_truck_by_hull_id(req.hull_id)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Truck with Hull ID '{req.hull_id}' already exists."
+            )
+            
+    try:
+        database.update_truck(
+            old_hull_id=old_hull_id,
+            new_hull_id=req.hull_id,
+            contractor=req.contractor,
+            model=req.model,
+            status=req.status
+        )
+        updated_truck = database.get_truck_by_hull_id(req.hull_id)
+        return TruckResponse(**updated_truck)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/trucks/{hull_id}")
+def delete_truck_route(hull_id: str):
+    truck = database.get_truck_by_hull_id(hull_id)
+    if not truck:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Truck not found.")
+    try:
+        database.delete_truck(hull_id)
+        return {"status": "success", "message": f"Truck {hull_id} deleted."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

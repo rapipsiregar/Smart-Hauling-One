@@ -15,6 +15,8 @@ from backend import database, routes
 
 # Initialize database tables and seed values
 database.init_db()
+from backend.backup_scheduler import start_backup_scheduler
+start_backup_scheduler()
 
 # Create evidence directories
 os.makedirs("data/evidence", exist_ok=True)
@@ -36,6 +38,9 @@ app.add_middleware(
 
 # Serve cropped hull IDs and wide-angle context photos
 app.mount("/evidence", StaticFiles(directory="data/evidence"), name="evidence")
+
+# Serve sample videos from playlist
+app.mount("/playlist", StaticFiles(directory="data/01-playlist"), name="playlist")
 
 # Include the core API endpoints
 app.include_router(routes.router, prefix="/api")

@@ -141,6 +141,26 @@ def update_truck_status(hull_id: str, status: str) -> None:
     try: conn.execute("UPDATE trucks SET status = ? WHERE hull_id = ?", (status, hull_id)); conn.commit()
     finally: conn.close()
 
+def update_truck(old_hull_id: str, new_hull_id: str, contractor: str, model: str, status: str) -> None:
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "UPDATE trucks SET hull_id = ?, contractor = ?, model = ?, status = ? WHERE hull_id = ?",
+            (new_hull_id, contractor, model, status, old_hull_id)
+        )
+        conn.execute("UPDATE crossings SET hull_id = ? WHERE hull_id = ?", (new_hull_id, old_hull_id))
+        conn.commit()
+    finally:
+        conn.close()
+
+def delete_truck(hull_id: str) -> None:
+    conn = get_db_connection()
+    try:
+        conn.execute("DELETE FROM trucks WHERE hull_id = ?", (hull_id,))
+        conn.commit()
+    finally:
+        conn.close()
+
 def insert_crossing(hull_id: str, confidence: float, timestamp: str, lane: str, direction: str, crop_image_path: Optional[str] = None, context_image_path: Optional[str] = None, warning_status: str = "normal", vehicle_class: str = "Dump Truck") -> int:
     conn = get_db_connection(); cursor = conn.cursor()
     try:

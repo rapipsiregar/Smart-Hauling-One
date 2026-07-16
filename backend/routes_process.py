@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, UploadFile, File, Form
 from datetime import datetime
+from typing import Optional
 import shutil
 import random
 from pathlib import Path
@@ -10,6 +11,23 @@ from backend import database
 from backend.fuzzy_matcher import find_best_fleet_match
 
 router = APIRouter()
+
+@router.get("/sample-videos")
+def get_sample_videos():
+    playlist_dir = Path("data/01-playlist")
+    if not playlist_dir.exists():
+        return []
+    
+    video_extensions = {".mp4", ".webm", ".mkv", ".avi", ".mov"}
+    videos = []
+    for p in playlist_dir.iterdir():
+        if p.is_file() and p.suffix.lower() in video_extensions:
+            videos.append({
+                "filename": p.name,
+                "size_bytes": p.stat().st_size
+            })
+    videos.sort(key=lambda x: x["filename"])
+    return videos
 
 def create_dummy_image(dest_path: Path, text: str):
     try:
@@ -52,26 +70,46 @@ from backend.websocket_manager import manager
 
 @router.post("/process-video", response_model=CrossingResponse, status_code=status.HTTP_201_CREATED)
 async def process_video(
-    file: UploadFile = File(...),
+    file: Optional[UploadFile] = File(None),
+    sample_filename: Optional[str] = Form(None),
     lane: str = Form("North CK"),
     direction: str = Form("inbound"),
     vehicle_class: str = Form("Dump Truck")
 ):
+    if not file and not sample_filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Either video file upload or sample_filename must be provided."
+        )
+
+    # Save or copy the video
+    video_dir = Path("data/evidence/videos")
+    video_dir.mkdir(parents=True, exist_ok=True)
+    
+    if file:
+        filename = file.filename
+        video_path = video_dir / filename
+        with open(video_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    else:
+        sample_path = Path("data/01-playlist") / sample_filename
+        if not sample_path.exists():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Sample video '{sample_filename}' not found."
+            )
+        filename = sample_filename
+        video_path = video_dir / filename
+        shutil.copy2(sample_path, video_path)
+
     if vehicle_class == "Dump Truck":
-        fn_lower = file.filename.lower()
+        fn_lower = filename.lower()
         if "light" in fn_lower:
             vehicle_class = "Light Vehicle"
         elif "excavator" in fn_lower or "exc" in fn_lower:
             vehicle_class = "Excavator"
 
-    # Save the uploaded video
-    video_dir = Path("data/evidence/videos")
-    video_dir.mkdir(parents=True, exist_ok=True)
-    video_path = video_dir / file.filename
-    with open(video_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-        
-    video_id = Path(file.filename).stem
+    video_id = Path(filename).stem
     pre_extracted = find_pre_extracted_ocr(video_id)
     
     evidence_dir = Path("data/evidence")
@@ -84,7 +122,7 @@ async def process_video(
     if pre_extracted:
         ocr_text = pre_extracted["text"]
         hull_id = find_best_fleet_match(ocr_text)
-        if "low_confidence" in file.filename.lower() or "alert" in file.filename.lower():
+        if "low_confidence" in filename.lower() or "alert" in filename.lower():
             confidence = round(random.uniform(70.0, 84.9), 2)
         else:
             confidence = 98.5
@@ -124,7 +162,7 @@ async def process_video(
         else:
             hull_id = "DT-118"
             
-        if "low_confidence" in file.filename.lower() or "alert" in file.filename.lower() or random.random() < 0.2:
+        if "low_confidence" in filename.lower() or "alert" in filename.lower() or random.random() < 0.2:
             confidence = round(random.uniform(70.0, 84.9), 2)
         else:
             confidence = round(random.uniform(85.0, 99.8), 2)
