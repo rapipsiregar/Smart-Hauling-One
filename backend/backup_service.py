@@ -89,6 +89,8 @@ async def backup_loop_worker():
     while True:
         try:
             perform_backup()
+            from backend.backup_pruner import run_backup_pruning
+            run_backup_pruning()
         except Exception as e:
             print(f"Error performing automatic database backup: {e}")
         await asyncio.sleep(600)

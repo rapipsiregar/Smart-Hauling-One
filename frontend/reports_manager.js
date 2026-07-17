@@ -70,11 +70,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const filtered = lastReportsData.discrepancies.filter(d => {
             const truck = fleetTrucks.find(t => t.hull_id === d.hull_id);
             const severity = d.severity || 'low';
+            
+            const typeFilter = window.activeDiscrepancyFilter || 'all';
+            let matchesType = true;
+            if (typeFilter === 'speed') {
+                matchesType = d.type.toLowerCase().includes('speed') || d.type.toLowerCase().includes('duration') || d.type.toLowerCase().includes('anomaly');
+            } else if (typeFilter === 'compliance') {
+                matchesType = d.type.toLowerCase().includes('compliance') || d.type.toLowerCase().includes('target');
+            } else if (typeFilter === 'route') {
+                matchesType = d.type.toLowerCase().includes('route') || d.type.toLowerCase().includes('violation');
+            }
+
             return (!query || d.hull_id.toLowerCase().includes(query)) 
                 && (!lane || d.lane === lane) 
                 && checkedLanes.includes(d.lane) 
                 && checkedContractors.includes(truck ? truck.contractor : 'Ad-hoc Contractor')
-                && checkedSeverities.includes(severity);
+                && checkedSeverities.includes(severity)
+                && matchesType;
         });
         
         if (typeof window.sortDiscrepancies === 'function') {
@@ -152,11 +164,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }).join('');
             
             if (typeof window.onReportsRendered === 'function') window.onReportsRendered(lastReportsData.compliance);
+            if (typeof window.onDeviationChartRendered === 'function') window.onDeviationChartRendered(lastReportsData.compliance);
+            if (typeof window.renderSubcontractorLeaderboard === 'function') window.renderSubcontractorLeaderboard(lastReportsData.compliance);
             if (typeof window.renderComplianceStatsChart === 'function') window.renderComplianceStatsChart(lastReportsData.compliance);
             if (typeof window.renderComplianceTimelineChart === 'function') window.renderComplianceTimelineChart(lastReportsData.hourly_compliance);
             if (typeof window.renderContractorEfficiencyGrid === 'function') window.renderContractorEfficiencyGrid();
             if (typeof window.renderCycleDurationScatter === 'function') window.renderCycleDurationScatter();
             if (typeof window.renderCycleSpeedVarianceChart === 'function') window.renderCycleSpeedVarianceChart();
+            if (typeof window.renderDispatchDiscrepancyGrid === 'function') window.renderDispatchDiscrepancyGrid();
         }
     }
 

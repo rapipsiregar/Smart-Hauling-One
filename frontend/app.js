@@ -189,7 +189,32 @@ document.addEventListener('DOMContentLoaded', () => {
     correctSuggestions.onclick = (e) => { const item = e.target.closest('.suggestion-item'); if (item) { correctInput.value = item.dataset.val; correctSuggestions.classList.add('hidden'); } }; document.addEventListener('click', (e) => { if (!e.target.closest('#correct-search-input') && !e.target.closest('#correct-suggestions')) correctSuggestions.classList.add('hidden'); });
  
     const getCrossingHull = id => (currentCrossings.find(c => c.id === id) || {}).hull_id || '';
-    async function sendUpdate(id, payload) { try { const res = await fetch(`/api/crossings/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (!res.ok) throw new Error(await res.text()); } catch (err) { alert(`Update failed: ${err.message}`); } }
+    async function sendUpdate(id, payload, skipUndo = false) {
+        if (!skipUndo) {
+            const oldCrossing = currentCrossings.find(c => c.id === id);
+            if (oldCrossing) {
+                const oldHull = oldCrossing.hull_id;
+                const oldConf = oldCrossing.confidence;
+                const oldWarn = oldCrossing.warning_status;
+                if (window.showUndoToast) {
+                    window.showUndoToast(`Hull ID updated to ${payload.hull_id}`, async () => {
+                        await sendUpdate(id, { hull_id: oldHull, confidence: oldConf, warning_status: oldWarn }, true);
+                    });
+                }
+            }
+        }
+        try {
+            const res = await fetch(`/api/crossings/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error(await res.text());
+            loadDashboardData();
+        } catch (err) {
+            alert(`Update failed: ${err.message}`);
+        }
+    }
     document.getElementById('live-feed-list').oncontextmenu = (e) => {
         const card = e.target.closest('.crossing-feed-card'); if (!card) return; e.preventDefault(); const id = parseInt(card.dataset.id), existing = document.getElementById('active-context-menu'); if (existing) existing.remove();
         const menu = document.body.appendChild(Object.assign(document.createElement('div'), { id: 'active-context-menu', className: 'custom-context-menu', style: `left:${e.clientX}px;top:${e.clientY}px;` }));

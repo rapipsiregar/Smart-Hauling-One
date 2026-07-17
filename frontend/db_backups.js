@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     };
 
+
+
     const loadBackups = async () => {
         listContainer.innerHTML = '<div style="text-align:center; padding:1rem; color:var(--text-secondary);">Loading backups...</div>';
         try {
@@ -68,22 +70,64 @@ document.addEventListener('DOMContentLoaded', () => {
                     btnRestore.onclick = async () => {
                         if (confirm(`Are you sure you want to restore the database from backup: ${backup.filename}? All current active shift records, vehicle registrations, and configurations will be overwritten.`)) {
                             btnRestore.disabled = true;
-                            btnRestore.textContent = 'Restoring...';
+                            btnRestore.textContent = 'Starting...';
+
+                            const progressContainer = document.getElementById('restore-progress-container');
+                            const progressStatus = document.getElementById('restore-progress-status');
+                            const progressPct = document.getElementById('restore-progress-pct');
+                            const progressBar = document.getElementById('restore-progress-bar');
+
+                            if (progressContainer) {
+                                progressContainer.classList.remove('hidden');
+                            }
+
                             try {
-                                const restoreRes = await fetch(`/api/admin/db-backups/${backup.filename}/restore`, {
+                                const restoreRes = await fetch(`/api/admin/db-backups/${backup.filename}/restore-async`, {
                                     method: 'POST'
                                 });
                                 const restoreData = await restoreRes.json();
-                                if (restoreRes.ok && restoreData.status === 'success') {
-                                    if (window.showToast) window.showToast('Database successfully restored! Reloading page...', 'success');
-                                    setTimeout(() => {
-                                        window.location.reload();
-                                    }, 2000);
-                                } else {
-                                    throw new Error(restoreData.detail || 'Restore failed');
+                                if (!restoreRes.ok || restoreData.status !== 'started') {
+                                    throw new Error(restoreData.detail || 'Restore failed to start');
                                 }
+
+                                // Connect SSE
+                                const eventSource = new EventSource('/api/admin/db-backups/restore-progress');
+                                eventSource.onmessage = (event) => {
+                                    try {
+                                        const update = JSON.parse(event.data);
+                                        if (progressStatus) progressStatus.textContent = update.status;
+                                        if (progressPct) progressPct.textContent = `${update.progress}%`;
+                                        if (progressBar) progressBar.style.width = `${update.progress}%`;
+
+                                        if (update.status === 'completed') {
+                                            eventSource.close();
+                                            if (window.showToast) window.showToast('Database successfully restored! Reloading page...', 'success');
+                                            setTimeout(() => {
+                                                window.location.reload();
+                                            }, 2000);
+                                        } else if (update.status === 'failed') {
+                                            eventSource.close();
+                                            throw new Error(update.error || 'Restore failed');
+                                        }
+                                    } catch (e) {
+                                        eventSource.close();
+                                        if (window.showToast) window.showToast(`Error: ${e.message}`, 'danger');
+                                        if (progressContainer) progressContainer.classList.add('hidden');
+                                        btnRestore.disabled = false;
+                                        btnRestore.textContent = 'Restore';
+                                    }
+                                };
+                                eventSource.onerror = () => {
+                                    eventSource.close();
+                                    if (window.showToast) window.showToast('Connection to restore progress stream lost.', 'danger');
+                                    if (progressContainer) progressContainer.classList.add('hidden');
+                                    btnRestore.disabled = false;
+                                    btnRestore.textContent = 'Restore';
+                                };
+
                             } catch (err) {
                                 if (window.showToast) window.showToast(`Error: ${err.message}`, 'danger');
+                                if (progressContainer) progressContainer.classList.add('hidden');
                                 btnRestore.disabled = false;
                                 btnRestore.textContent = 'Restore';
                             }
@@ -97,8 +141,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     item.appendChild(actions);
                     listContainer.appendChild(item);
                 });
+                if (window.drawBackupTimeline) window.drawBackupTimeline(data.backups);
+                if (window.renderBackupStats) window.renderBackupStats(data.backups);
             } else {
                 listContainer.innerHTML = '<div style="text-align:center; padding:1rem; color:var(--danger);">Failed to load backups.</div>';
+                if (window.drawBackupTimeline) window.drawBackupTimeline([]);
+                if (window.renderBackupStats) window.renderBackupStats([]);
             }
         } catch (e) {
             listContainer.innerHTML = '<div style="text-align:center; padding:1rem; color:var(--danger);">Error connection.</div>';

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from datetime import datetime, timedelta
+import math
 from backend import database
 from backend.routes_oht_load import get_current_shift_range
 from backend.reports_compliance_logic import parse_ts
@@ -87,6 +88,17 @@ def get_contractor_forecast():
             else:
                 status = "Behind"
                 
+            avg_truck_productivity = round(current_rate / active_fleet, 2) if (active_fleet > 0 and current_rate > 0) else 0.4
+            if avg_truck_productivity <= 0.05:
+                avg_truck_productivity = 0.4
+            base_needed = target / avg_truck_productivity
+
+            fleet_forecast = []
+            for h in range(1, 13):
+                variation = round(0.6 * math.sin(h * 0.7), 1)
+                val = max(1, round(base_needed + variation))
+                fleet_forecast.append(val)
+                
             predictions[contractor] = {
                 "shift_name": shift_name,
                 "elapsed_hours": round(elapsed_hours, 2),
@@ -96,7 +108,8 @@ def get_contractor_forecast():
                 "current_rate": current_rate,
                 "projected_ritase": projected,
                 "shift_target": shift_target,
-                "status": status
+                "status": status,
+                "fleet_forecast": fleet_forecast
             }
             
         return {

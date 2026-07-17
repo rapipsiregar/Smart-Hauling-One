@@ -16,7 +16,11 @@ from backend import database, routes
 # Initialize database tables and seed values
 database.init_db()
 from backend.backup_scheduler import start_backup_scheduler
+from backend.db_integrity_checker import start_integrity_scheduler
+from backend.email_scheduler import start_email_scheduler
 start_backup_scheduler()
+start_integrity_scheduler()
+start_email_scheduler()
 
 # Create evidence directories
 os.makedirs("data/evidence", exist_ok=True)
@@ -35,6 +39,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+from backend.rate_limiter import AdminRateLimitMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+app.add_middleware(AdminRateLimitMiddleware)
+app.add_middleware(GZipMiddleware, minimum_size=10240)
 
 # Serve cropped hull IDs and wide-angle context photos
 app.mount("/evidence", StaticFiles(directory="data/evidence"), name="evidence")

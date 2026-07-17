@@ -24,17 +24,30 @@ def calculate_shift_summary():
         
     completed_ritase = {}
     crossings_count = {}
+    anomaly_trips = []
     for hid, c_list in truck_crossings.items():
         c_list.sort(key=lambda x: x["timestamp"])
         crossings_count[hid] = len(c_list)
         
         trips = 0
         last_dir = None
+        last_inbound_ts = None
         for c in c_list:
             direction = c["direction"].lower()
-            if last_dir == "inbound" and direction == "outbound":
+            if direction == "inbound":
+                last_inbound_ts = parse_ts(c["timestamp"])
+                last_dir = "inbound"
+            elif last_dir == "inbound" and direction == "outbound":
                 trips += 1
+                if last_inbound_ts:
+                    try:
+                        dur = (parse_ts(c["timestamp"]) - last_inbound_ts).total_seconds() / 60.0
+                        if dur < 15.0 or dur > 120.0:
+                            anomaly_trips.append((c["timestamp"], hid, c["lane"], dur))
+                    except:
+                        pass
                 last_dir = None
+                last_inbound_ts = None
             else:
                 last_dir = direction
         completed_ritase[hid] = trips
@@ -69,6 +82,14 @@ def calculate_shift_summary():
         pass
 
     discrepancies = []
+    for ts, hid, lane, dur in anomaly_trips:
+        sev = "medium" if dur < 15.0 else "low"
+        msg = f"Haulage cycle completed abnormally fast ({dur:.1f} mins < 15 mins)." if dur < 15.0 else f"Haulage cycle completed abnormally slow ({dur:.1f} mins > 120 mins)."
+        discrepancies.append({
+            "timestamp": ts, "hull_id": hid, "lane": lane,
+            "type": "Cycle Duration Anomaly", "severity": sev,
+            "details": msg
+        })
     truck_registry = {t["hull_id"]: t for t in trucks}
     
     thresholds = database.get_thresholds()

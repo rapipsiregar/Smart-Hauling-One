@@ -7,8 +7,18 @@ from backend.reports_compliance_logic import parse_ts
 
 router = APIRouter(prefix="/admin")
 
+_anomalies_cache = {
+    "data": None,
+    "last_fetched": 0
+}
+
 @router.get("/telemetry/anomalies")
 def get_telemetry_anomalies():
+    global _anomalies_cache
+    import time
+    now = time.time()
+    if _anomalies_cache["data"] is not None and now - _anomalies_cache["last_fetched"] < 15.0:
+        return _anomalies_cache["data"]
     try:
         # Group raw logs by tower and hour
         tower_hourly_logs = defaultdict(lambda: defaultdict(list))
@@ -99,9 +109,12 @@ def get_telemetry_anomalies():
                         "details": details
                     })
                     
-        return {
+        res = {
             "status": "success",
             "anomalies": anomalies
         }
+        _anomalies_cache["data"] = res
+        _anomalies_cache["last_fetched"] = now
+        return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

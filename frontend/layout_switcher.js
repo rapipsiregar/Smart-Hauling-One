@@ -9,14 +9,30 @@ document.addEventListener('DOMContentLoaded', () => {
     setLayoutMode(savedMode);
 
     btnDetailed.onclick = () => {
-        setLayoutMode('detailed');
+        const prev = document.body.classList.contains('layout-compact') ? 'compact' : 'detailed';
+        if (prev !== 'detailed') {
+            setLayoutMode('detailed');
+            if (window.showUndoToast) {
+                window.showUndoToast('Switched to Detailed layout', () => {
+                    setLayoutMode('compact', true);
+                });
+            }
+        }
     };
 
     btnCompact.onclick = () => {
-        setLayoutMode('compact');
+        const prev = document.body.classList.contains('layout-compact') ? 'compact' : 'detailed';
+        if (prev !== 'compact') {
+            setLayoutMode('compact');
+            if (window.showUndoToast) {
+                window.showUndoToast('Switched to Compact layout', () => {
+                    setLayoutMode('detailed', true);
+                });
+            }
+        }
     };
 
-    function setLayoutMode(mode) {
+    function setLayoutMode(mode, skipSave = false) {
         if (mode === 'compact') {
             document.body.classList.add('layout-compact');
             btnDetailed.classList.remove('active');

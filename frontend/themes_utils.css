@@ -12,6 +12,33 @@ body.emerald-theme {
     --secondary: #14b8a6;
     --success: #34d399;
 }
+body.light-theme {
+    --bg-main: #f1f5f9;
+    --bg-card: #ffffff;
+    --border: #cbd5e1;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --primary: #0284c7;
+    --primary-hover: #0369a1;
+    --secondary: #4f46e5;
+    --success: #16a34a;
+    --warning: #ca8a04;
+    --danger: #dc2626;
+}
+body.cyberpunk-theme {
+    --bg-main: #0c0817;
+    --bg-card: #160f29;
+    --border: #a855f7;
+    --text-primary: #f3e8ff;
+    --text-secondary: #d8b4fe;
+    --primary: #ec4899;
+    --primary-hover: #db2777;
+    --secondary: #e879f9;
+    --success: #22c55e;
+    --warning: #facc15;
+    --danger: #f87171;
+    --glow-intensity: 2.0;
+}
 #btn-theme-toggle {
     text-shadow: 0 0 8px var(--primary);
     box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);

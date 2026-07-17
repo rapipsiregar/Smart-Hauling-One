@@ -907,6 +907,244 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Auto-logging Audit Trails**: Automatically saves speed and shortcut violations to the SQLite audit log table, with checks to prevent duplicate logging.
   - **Infraction Reporting**: Exposes route infraction logs dynamically via the GET `/api/admin/reports/route-violations` REST endpoint.
 
+### 1.33 Database Backup FIFO Rotation Auto-Cleaner
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.33)
+* **Description**: Database backup watchdog task enforcing age-based retention limits and disk-capacity FIFO rotation.
+* **Key Capabilities**:
+  - **7-Day Retention Enforcer**: Automatically scans the backup directory and prunes backup files matching `backup_*.db.gz` older than 7 days.
+  - **Storage Watchdog Guard**: Tracks free disk space and triggers FIFO (First-In, First-Out) rotation to prune the oldest database backups when free space is under 50MB.
+  - **Audit Logging Records**: Saves backup cleanup details to the system audit trail.
+  - **Manual Trigger Endpoint**: Exposes a POST `/api/admin/backups/prune` route allowing supervisors to manually run disk safety cleanup.
+
+### 2.33 Interactive Visual Light/Dark/Neon Cyberpunk Theme Toggle
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 2.33)
+* **Description**: Multi-theme switch controller supporting Dark (Slate-Blue), Light, and neon Cyberpunk color styles.
+* **Key Capabilities**:
+  - **CSS Variables Injection**: Switches theme color parameters, shadows, and neon glows dynamically.
+  - **Local Persistence**: Saves selected theme state in `localStorage` to preserve settings on browser load.
+  - **Dynamic Toggle Button**: Rotates button text and icons to indicate active modes.
+
+### 3.31 Subcontractor Shift-Target Forecast Deviation Alert Banner
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.31)
+* **Description**: Real-time forecast monitoring alert banner prompting warnings if contractor projected shift ritase drops below 75% of targets.
+* **Key Capabilities**:
+  - **Automated Target Check**: Scans active rolling projections and compares expected total ritase with target bounds.
+  - **Color-Coded Severity Banners**: Renders a warning-orange banner for projected drops below 75% of target, and a danger-red banner for drops below 50%.
+  - **Interactive Close Trigger**: Includes a quick-close button allowing supervisors to dismiss the banner until the next crossing data update.
+
+### 3.32 Subcontractor Dispatch Discrepancy Heat Grid
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.32)
+* **Description**: Hourly heat grid layout comparing count of active shift fleet vehicles against completed ritase to identify subcontractor utilization issues.
+* **Key Capabilities**:
+  - **Hourly Block Aggregator**: Breaks down active haulage statistics into 1-hour intervals for the last 6 hours.
+  - **Dynamic Fleet Watcher**: Counts unique registered vehicles actively hauling during each block to measure exact operator mobilization.
+  - **Utilization Heat-Map Coding**: Applies conditional styling (Green for >= 90% utilization, Orange for 50-90%, Red for < 50%, Slate for idle) to highlight dispatch issues immediately.
+  - **Detailed Context Tooltips**: Exposes precise truck counts, completed cycles, and utilization percentages on grid cell hover.
+
+### 3.33 PDF Report Custom Branding Designer
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.33)
+* **Description**: Custom input fields allowing supervisors to specify custom client names and logo image URLs to dynamically render in printed shift report summaries.
+* **Key Capabilities**:
+  - **Dynamic Input Fields**: Exposes custom text inputs for Client Name and URL inputs for Logo Images inside the PDF print settings modal.
+  - **Responsive Header Injector**: Automatically updates the print-only document header structure inside the print preview page iframe before triggering the system print dialogue.
+  - **CSS Image Containment**: Wraps printed logos inside a max-height and aspect-ratio helper to ensure clean alignments on standard A4 layout pages.
+
+### 2.32 Database Restore Task Progress Bar
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 2.32)
+* **Description**: Real-time progress bar rendering decompression and restoration phases of a database backup restore via Server-Sent Events.
+* **Key Capabilities**:
+  - **Asynchronous Restorer Execution**: Dispatches database recovery tasks to background worker threads to avoid blocking FastAPI workers.
+  - **Dual-Phase Progress Aggregation**: Streams progress data divided between decompression/extraction (from 5% to 50%) and SQLite page copying (from 60% to 100%).
+  - **Server-Sent Events Stream**: Uses SSE endpoint `/api/admin/db-backups/restore-progress` to broadcast JSON status packets to active operator drawers.
+  - **Interactive Transition Controls**: Renders a glowing progress loader container in the backup drawer, closing connections upon successful recovery or error triggers.
+
+### 1.34 Database Integrity Check Cron Service
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.34)
+* **Description**: Weekly background watchdog thread executing structural database integrity verifications and reporting diagnostic logs to system audit records.
+* **Key Capabilities**:
+  - **Weekly Verification Loop**: Daemon worker thread executing SQLite integrity verifications automatically once every 7 days.
+  - **Audit Logging Alerts**: Automatically saves detailed structural failure alerts or success verifications directly into the SQLite logs.
+  - **Manual Check Endpoint**: Exposes a GET `/api/admin/db/integrity-check` REST route enabling direct supervisor check triggers on demand.
+
+### 1.35 Admin API Rate Limiter Middleware
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.35)
+* **Description**: Globally applied API middleware restricting sequential requests to admin endpoints to 10 requests per minute per IP address.
+* **Key Capabilities**:
+  - **Dynamic Route Interceptor**: Automatically monitors all HTTP endpoints starting with the `/api/admin` prefix.
+  - **IP-Based Sliding Window**: Keeps track of client IP addresses and rolling request timestamps over a 60-second sliding window.
+  - **Rate Limit Restriction Banner**: Instantly blocks requests exceeding 10 per minute and returns a clean `HTTP 429 Too Many Requests` JSON response.
+
+### 1.36 Subcontractor Haulage Payload Estimation API
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.36)
+* **Description**: REST API route calculating estimated total payload tonnage hauled per subcontractor during the current operational shift.
+* **Key Capabilities**:
+  - **Dynamic Capacity Map**: Maps registered vehicle hull models (e.g. CAT 777D, CAT 785) to standard haulage capacity tonnage metrics.
+  - **Shift Aggregator**: Filter crossings by active shift duration limits to compute exact trip sequences per vehicle.
+  - **Estimated Tonnage Exporter**: Exposes calculated metrics via the `GET /api/reports/subcontractor-payload` JSON endpoint, listing subcontractor totals and vehicle-by-vehicle cargo breakdowns.
+
+### 2.34 Operator Action Undo/Redo Toast Notifier
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 2.34)
+* **Description**: Interactive toast alerts enabling operators to undo vehicle registration corrections or layout mode switches within a 5-second grace window.
+* **Key Capabilities**:
+  - **Grace Window Countdown**: Displays a 5-second countdown timer, automatically dismissing and committing the action if not canceled by the operator.
+  - **Single-Click Undo Button**: Features a primary "Undo" button executing rollback logic and restoring the preceding state.
+  - **Visual Success State**: Transforms toast status directly to an "Action undone successfully" notice upon successful restoration.
+
+### 2.35 Customizable Grid Layout Configuration Drawer
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 2.35)
+* **Description**: User layout setting control drawer enabling operators to customize visibility and sequence order of dashboard metric cards.
+* **Key Capabilities**:
+  - **Grid Configuration Controls Drawer**: Side slide-out panel containing card checkboxes and up/down movement arrows.
+  - **Dynamic DOM Node Reordering**: Renders and reorders metrics elements on the fly in the DOM tree based on configuration priorities.
+  - **Reversion and Undo Integration**: Integrates directly with `localStorage` preferences and the undo/redo toast notifier system to allow instant rollbacks.
+
+### 2.36 Database Backups Visual Timeline Chart
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 2.36)
+* **Description**: Interactive canvas-based line chart displayed inside the database backups drawer showing backup sizes and timestamps.
+* **Key Capabilities**:
+  - **HTML5 Canvas Plotter**: Renders a custom vector-based graphic timeline visualization without loading bloated third-party charting libraries.
+  - **Backup Size Trends Line**: Draws an emerald glowing path connecting backup events, helping supervisors visualize data expansion rate trends.
+  - **Start/End Date Anchors**: Dynamically labels start and end timestamps at the base of the visualization path.
+
+### 3.34 Subcontractor Hourly Target Deviation Comparison Chart
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.34)
+* **Description**: Interactive side-by-side SVG bar chart displayed in the reports dashboard comparing expected hourly target rates vs actual hourly completed ritase.
+* **Key Capabilities**:
+  - **Side-by-Side Target-Actual Comparison**: Displays blue (actual) and purple (target) bar elements next to each other for immediate performance evaluation.
+  - **Dynamic Deviation Calculation**: Calculates and renders positive/negative (green/red) deviation values (e.g. "+0.2 rit/hr" or "-0.3 rit/hr") directly below each contractor.
+  - **Fully Integrated Custom Layouts**: Seamlessly registers with the user layout manager to support visibility and drag-and-drop order configuration.
+
+### 3.35 Shift Hand-over Digital Signature Verification
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.35)
+* **Description**: Secure digital signature verification module embedded inside the supervisor reports section enabling cryptographic shift validation seals.
+* **Key Capabilities**:
+  - **Operator Hand-over Consent**: Adds an interactive toggle checkbox demanding active operator approval before generating shift sign-off hashes.
+  - **Standard SHA-256 Signature Generator**: Leverages the browser Web Crypto API to securely hash the report data (including total ritase, signature text, and exact timestamps).
+  - **Verified Signature Seal**: Renders a glowing verification box containing the cryptographic token string (`SIG-SHA256-...`) upon successful operator sign-off.
+  - **Local Persistence**: Automatically remembers signature states and validated seals across session updates and page refreshes.
+
+### 3.36 Subcontractor Dispatch Efficiency Leaderboard
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.36)
+* **Description**: Live subcontractor leaderboard displaying dispatch efficiency ranks calculated from weighted target compliance and active fleet utilization.
+* **Key Capabilities**:
+  - **Dynamic Rank Medal Markers**: Automatically prefixes ranks with visual medals (🏆, 🥈, 🥉) or ordinal numbers for clean categorization.
+  - **Weighted Efficiency Performance Score**: Uses a 60/40 weighted formula to compute performance scores out of 100 based on targets and fleet ratios.
+  - **Color-Coded Status Tags**: Renders efficiency scores with color-coded alerts (green/warning/danger) matching critical thresholds.
+  - **Fully Integrated Custom Layouts**: Seamlessly registers with the user layout manager to support visibility and drag-and-drop order configuration.
+
+### 1.37 Contractor Haulage Cycle Anomaly Alert Service
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.37)
+* **Description**: Backend analytical service monitoring haulage cycle durations for dump trucks to flag speed anomalies.
+* **Key Capabilities**:
+  - **Dynamic Duration Calculator**: Automatically parses consecutive inbound and outbound crossings per vehicle to measure travel durations.
+  - **Speed Alert Thresholds**: Flags cycles under 15 minutes as abnormally fast (potential speed violations) and cycles exceeding 120 minutes as abnormally slow (delays/breakdowns).
+  - **Integrated Audit Trail**: Populates alerts directly to the subcontractor discrepancies feed with appropriate severity ratings (medium for speed, low for slow completion).
+
+### 1.38 Database Query Cache Middleware
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.38)
+* **Description**: Memory-based 15-second TTL cache middleware protecting database access from heavy operator telemetry polling.
+* **Key Capabilities**:
+  - **In-Memory Cache Cache Store**: Temporarily buffers calculated telemetry summaries in local process memory instead of re-querying the SQLite DB.
+  - **15-Second Time-To-Live (TTL)**: Automatically invalidates cached data blocks after 15 seconds to ensure operators receive reasonably fresh analytics.
+  - **Cache Pruning and Reset Bindings**: Automatically purges the cached buffer if a simulation override is configured or cleared.
+
+### 1.39 Automated End-of-Shift Email Report Distribution Service
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.39)
+* **Description**: Automated end-of-shift background scheduler compiling HTML reports and distributing them to subcontractor supervisor emails.
+* **Key Capabilities**:
+  - **Background Daemon Scheduler**: Starts a background thread checking configured settings and automatically running distribution tasks.
+  - **Dynamic Configuration Schema**: Supports GET and POST endpoints for `/admin/reports/email-schedule-settings` to toggle schedule triggers, recipient emails, and interval timing.
+  - **Rich HTML Summary Content**: Combines subcontractor compliance indicators and hourly efficiency heat grids dynamically into the email report payload.
+
+### 2.37 Database Backup Statistics Dashboard
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 2.37)
+* **Description**: Interactive database backup statistics panel integrated directly into the operator backups drawer.
+* **Key Capabilities**:
+  - **Growth Rate Indicator**: Chronologically analyzes backup log history to calculate and display file growth sizes and percentages.
+  - **Average Backup Size**: Computes the mean size of stored backups to evaluate storage metrics.
+  - **Total Storage Utilization**: Aggregates total database storage consumption history for clear disk space budgeting.
+
+### 2.38 Live Gate Lane Camera Feeds Grid Panel
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 2.38)
+* **Description**: Expandable/collapsible dashboard container hosting interactive simulated CCTV feeds for each checkpoint gate lane.
+* **Key Capabilities**:
+  - **Dynamic Video Stream Simulation**: Custom HTML5 canvas engines drawing simulated real-time video frames with scrolling scanlines and noise animations.
+  - **Rec Blinking Dot Indicators**: Renders standard red blinkers to represent live recording statuses across lanes.
+  - **Live OCR Detection Overlays**: Automatically generates bounding boxes with vehicle classification overlays (DT or LV) when simulated vehicles cross camera frames.
+
+### 2.39 Interactive Discrepancy Classification Filters
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 2.39)
+* **Description**: Pill-styled interactive classification filters allowing operators to filter discrepancy records by specific categories.
+* **Key Capabilities**:
+  - **Pill-Styled Toggles**: Highlights selected filter categories with intuitive, themed color tags.
+  - **Category Classification Matching**: Filters records into Speed/Cycle anomalies, Target Compliance warnings, and Route Violations.
+  - **Dynamic List Refreshes**: Triggers automatic list redraws as soon as an operator toggles the filter.
+
+### 3.37 Contractor Active-Fleet-Capacity Forecasting Line Chart
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.37)
+* **Description**: Interactive SVG line chart embedded inside forecast cards representing the predicted active fleet needed over the next 12 hours.
+* **Key Capabilities**:
+  - **Dynamic SVG Vector Line Drawing**: Automatically scales coordinates to plot fleet size trends based on current contractor compliance rates and target numbers.
+  - **Sinusoidal Capacity Variances**: Models operational fluctuations (such as night shift changes and efficiency shifts) to output high-fidelity predictions.
+  - **Interactive Hover Tooltips**: Renders SVG nodes indicating expected vehicle counts upon user pointer hover.
+
+### 3.38 Interactive Report Printing Layout Settings
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.38)
+* **Description**: Real-time interactive print preview overlay with sliders to adjust fonts, cell spacing, and margins dynamically.
+* **Key Capabilities**:
+  - **Dynamic Sidebar Slider Controls**: Renders range sliders for Font Size and Cell Padding, dynamically compiling style overrides into the preview iframe.
+  - **Orientational Flow Selection**: Supports toggling document layouts between Portrait and Landscape orientations dynamically.
+  - **Real-Time Visibility Toggles**: Live checkboxes syncing column visibility overrides instantly between the operator UI, preview document, and physical printer.
+
+### 3.39 Subcontractor Dispatch Leaderboard Sparkline Ranking Timeline
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.39)
+* **Description**: Embedded SVG sparkline inside leaderboard cards tracking contractor rank variations over the last 12 hours.
+* **Key Capabilities**:
+  - **Inverted Scaling Coordinate Mapping**: Correctly maps rank 1 to the top and rank 3 to the bottom of the SVG line canvas.
+  - **Deterministic Trend Graphing**: Computes deterministic chronological sequences based on contractor compliance metrics to render realistic trends.
+  - **Themed Color Schema**: Render lines and nodes using themed palette color styling for seamless integration.
+
+### 1.40 Automated Database Schema Migration Manager
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.40)
+* **Description**: Backend schema manager maintaining database structural versions programmatically with transaction rollback support.
+* **Key Capabilities**:
+  - **Schema Version Verification**: Exposes a GET `/admin/db/migrations` endpoint listing applied vs pending schema version updates.
+  - **Programmatic Migration Applier**: Exposes a POST `/admin/db/migrations/apply` endpoint running pending SQL queries sequentially.
+  - **Transaction Rollback Protection**: Automatically wraps migration execution inside database transaction rollbacks to prevent partial schema state failures.
+
+### 1.41 API Payload Compression Middleware
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.41)
+* **Description**: Backend Gzip compression middleware intercepting and compressing large API JSON responses.
+* **Key Capabilities**:
+  - **Bandwidth Usage Optimization**: Automatically applies standard Gzip algorithm to compress response bodies.
+  - **10KB Minimum Compression Threshold**: Restricts compression triggers strictly to responses over 10,240 bytes to prevent extra CPU latency overhead on small payloads.
+  - **Seamless Browser Decompression**: Integrates natively with all modern browsers using standard `Content-Encoding: gzip` headers.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

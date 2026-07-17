@@ -163,3 +163,27 @@ async def send_compliance_email_schedule(req: EmailScheduleReq):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+class EmailScheduleSettingsReq(BaseModel):
+    recipient: Optional[str] = None
+    interval_minutes: Optional[int] = None
+    is_enabled: Optional[bool] = None
+
+@router.get("/admin/reports/email-schedule-settings")
+def get_email_schedule_settings():
+    return {
+        "recipient": database.get_system_setting("email_schedule_recipient", "supervisor-shift-end@tunasinti.co.id"),
+        "interval_minutes": int(database.get_system_setting("email_schedule_interval", "60")),
+        "is_enabled": database.get_system_setting("email_schedule_enabled", "true") == "true"
+    }
+
+@router.post("/admin/reports/email-schedule-settings")
+def post_email_schedule_settings(req: EmailScheduleSettingsReq):
+    if req.recipient is not None:
+        database.set_system_setting("email_schedule_recipient", req.recipient)
+    if req.interval_minutes is not None:
+        database.set_system_setting("email_schedule_interval", str(req.interval_minutes))
+    if req.is_enabled is not None:
+        database.set_system_setting("email_schedule_enabled", "true" if req.is_enabled else "false")
+    return {"status": "success", "settings": get_email_schedule_settings()}
+
