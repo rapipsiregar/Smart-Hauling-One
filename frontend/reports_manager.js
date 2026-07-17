@@ -94,7 +94,58 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         if (alertContainer) {
-            alertContainer.innerHTML = filtered.length ? filtered.map(d => `<div class="alert-card severity-${d.severity}"><div class="alert-header"><span class="alert-title">${d.type}</span><span>${new Date(d.timestamp).toLocaleTimeString()}</span></div><div class="alert-desc">${d.details} (<strong>${d.hull_id}</strong>)</div></div>`).join('') : '<div style="color: var(--text-secondary); font-size: 0.9rem;">No subcontractor discrepancies detected.</div>';
+            alertContainer.innerHTML = filtered.length ? filtered.map(d => {
+                let actionHtml = '';
+                if (d.resolved) {
+                    actionHtml = `<div style="margin-top:0.5rem; font-size:0.75rem; color:#10b981; font-weight:600;">✅ Resolved: ${d.notes}</div>`;
+                } else {
+                    actionHtml = `
+                        <div class="resolve-discrepancy-form" style="margin-top:0.5rem; display:flex; gap:0.5rem; align-items:center;">
+                            <input type="text" placeholder="Resolution notes..." class="resolve-note-input" style="flex:1; padding:0.2rem 0.4rem; font-size:0.75rem; border-radius:4px; border:1px solid var(--border); background:rgba(0,0,0,0.2); color:var(--text);" id="note-${d.id}">
+                            <button class="btn btn-primary btn-sm btn-resolve-discrepancy" data-id="${d.id}" style="padding:0.2rem 0.5rem; font-size:0.75rem;">Resolve</button>
+                        </div>
+                    `;
+                }
+                return `
+                    <div class="alert-card severity-${d.severity}">
+                        <div class="alert-header">
+                            <span class="alert-title">${d.type}</span>
+                            <span>${new Date(d.timestamp).toLocaleTimeString()}</span>
+                        </div>
+                        <div class="alert-desc">${d.details} (<strong>${d.hull_id}</strong>)</div>
+                        ${actionHtml}
+                    </div>
+                `;
+            }).join('') : '<div style="color: var(--text-secondary); font-size: 0.9rem;">No subcontractor discrepancies detected.</div>';
+
+            // Attach event listeners
+            alertContainer.querySelectorAll('.btn-resolve-discrepancy').forEach(btn => {
+                btn.onclick = async (e) => {
+                    e.preventDefault();
+                    const did = btn.getAttribute('data-id');
+                    const noteInput = document.getElementById(`note-${did}`);
+                    const note = noteInput ? noteInput.value.trim() : '';
+                    if (!note) {
+                        if (window.showToast) window.showToast("Please enter a resolution note.", "warning");
+                        return;
+                    }
+
+                    try {
+                        const res = await fetch('/api/reports/resolve-discrepancy', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ discrepancy_id: did, operator_notes: note })
+                        });
+                        if (!res.ok) throw new Error("Failed to resolve discrepancy.");
+                        if (window.showToast) window.showToast("Discrepancy resolved successfully!", "success");
+                        if (typeof window.loadReportsData === 'function') {
+                            window.loadReportsData();
+                        }
+                    } catch (err) {
+                        if (window.showToast) window.showToast(err.message, "danger");
+                    }
+                };
+            });
         }
 
         let contractorCycles = {}, totalCycles = 0;
@@ -169,6 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (typeof window.renderComplianceStatsChart === 'function') window.renderComplianceStatsChart(lastReportsData.compliance);
             if (typeof window.renderComplianceTimelineChart === 'function') window.renderComplianceTimelineChart(lastReportsData.hourly_compliance);
             if (typeof window.renderContractorEfficiencyGrid === 'function') window.renderContractorEfficiencyGrid();
+            if (typeof window.renderFleetHeatmap === 'function') window.renderFleetHeatmap();
             if (typeof window.renderCycleDurationScatter === 'function') window.renderCycleDurationScatter();
             if (typeof window.renderCycleSpeedVarianceChart === 'function') window.renderCycleSpeedVarianceChart();
             if (typeof window.renderDispatchDiscrepancyGrid === 'function') window.renderDispatchDiscrepancyGrid();
@@ -184,32 +236,4 @@ document.addEventListener('DOMContentLoaded', () => {
         cb.onchange = renderReports;
     });
 
-    document.getElementById('btn-export-csv').onclick = () => {
-        const q = document.getElementById('report-search-input').value;
-        const l = document.getElementById('report-lane-filter').value;
-        const d = document.getElementById('report-dir-filter').value;
-        window.open(`/api/reports/export-csv?query=${encodeURIComponent(q)}&lane=${encodeURIComponent(l)}&direction=${encodeURIComponent(d)}`);
-    };
-
-
-
-    const btnSync = document.getElementById('btn-sync-cloud');
-    const syncIndicator = document.getElementById('sync-status-indicator');
-    if (btnSync && syncIndicator) {
-        btnSync.onclick = async () => {
-            btnSync.disabled = true; 
-            btnSync.textContent = 'Syncing...'; 
-            try { 
-                const r = await (await fetch('/api/reports/sync', { method: 'POST' })).json(); 
-                syncIndicator.textContent = `Last sync: Success (Synced ${r.synchronized_records_count} logs)`; 
-                syncIndicator.style.color = 'var(--success)'; 
-            } catch (e) { 
-                syncIndicator.textContent = 'Last sync: Failed'; 
-                syncIndicator.style.color = 'var(--danger)'; 
-            } finally { 
-                btnSync.disabled = false; 
-                btnSync.textContent = '☁ Sync Cloud'; 
-            }
-        };
-    }
 });

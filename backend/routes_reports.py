@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-from backend.reports_logic import calculate_shift_summary, calculate_class_distribution
+from backend.reports_logic import calculate_shift_summary
+from backend.reports_class_logic import calculate_class_distribution
 from backend.reports_excel_exporter import generate_reconciliation_excel
 
 router = APIRouter()
@@ -28,5 +29,24 @@ def get_reconciliation_export():
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={"Content-Disposition": "attachment; filename=hauling_reconciliation_report.xlsx"}
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+from pydantic import BaseModel
+
+class ResolveDiscrepancyReq(BaseModel):
+    discrepancy_id: str
+    operator_notes: str
+
+@router.post("/reports/resolve-discrepancy")
+def resolve_discrepancy(req: ResolveDiscrepancyReq):
+    try:
+        from backend import database
+        database.insert_discrepancy_resolution(
+            discrepancy_id=req.discrepancy_id,
+            operator_notes=req.operator_notes,
+            resolved_by="operator"
+        )
+        return {"status": "success", "message": "Discrepancy resolved successfully."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

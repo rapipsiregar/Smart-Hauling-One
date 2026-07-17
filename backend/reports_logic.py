@@ -223,27 +223,24 @@ def calculate_shift_summary():
             else:
                 consecutive_low = 0
 
+    import hashlib
+    resolutions = database.get_all_discrepancy_resolutions()
+    for d in discrepancies:
+        unique_str = f"{d['timestamp']}_{d['hull_id']}_{d['type']}"
+        did = hashlib.md5(unique_str.encode()).hexdigest()
+        d["id"] = did
+        if did in resolutions:
+            d["resolved"] = True
+            d["notes"] = resolutions[did]["operator_notes"]
+            d["resolved_at"] = resolutions[did]["resolved_at"]
+            d["resolved_by"] = resolutions[did]["resolved_by"]
+        else:
+            d["resolved"] = False
+            d["notes"] = None
+
     return {
         "completed_ritase": completed_ritase, "crossings_per_truck": crossings_count,
         "shift_distribution": shift_slots, "date_distribution": date_distribution, 
         "discrepancies": discrepancies, "compliance": compliance,
         "hourly_compliance": hourly_compliance
-    }
-
-def calculate_class_distribution() -> dict:
-    crossings = [c for c in database.get_all_crossings() if not c.get("is_duplicate")]
-    distribution = {
-        "Dump Truck": 0,
-        "Light Vehicle": 0,
-        "Excavator": 0
-    }
-    for c in crossings:
-        v_class = c.get("vehicle_class", "Dump Truck")
-        if v_class not in distribution:
-            distribution[v_class] = 0
-        distribution[v_class] += 1
-    return {
-        "status": "success",
-        "distribution": distribution,
-        "total_passages": sum(distribution.values())
     }

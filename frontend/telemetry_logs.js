@@ -6,6 +6,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnNext = document.getElementById('btn-tel-next');
     const pageInfo = document.getElementById('tel-page-info');
 
+    const btnExportTelemetry = document.getElementById('btn-export-telemetry');
+    if (btnExportTelemetry) {
+        btnExportTelemetry.onclick = () => {
+            window.open('/api/telemetry/export-csv');
+        };
+    }
+
     if (!btnToggle) return;
 
     let allLogs = [];

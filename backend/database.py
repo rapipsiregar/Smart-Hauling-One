@@ -197,5 +197,23 @@ def set_system_setting(key: str, value: str) -> None:
         conn.commit()
     finally: conn.close()
 
+def insert_discrepancy_resolution(discrepancy_id: str, operator_notes: str, resolved_by: str = "supervisor") -> None:
+    from datetime import datetime
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "INSERT INTO discrepancy_resolutions (discrepancy_id, operator_notes, resolved_at, resolved_by) VALUES (?, ?, ?, ?) ON CONFLICT(discrepancy_id) DO UPDATE SET operator_notes=excluded.operator_notes, resolved_at=excluded.resolved_at, resolved_by=excluded.resolved_by",
+            (discrepancy_id, operator_notes, datetime.utcnow().isoformat(), resolved_by)
+        )
+        conn.commit()
+    finally: conn.close()
+
+def get_all_discrepancy_resolutions() -> Dict[str, Dict[str, Any]]:
+    conn = get_db_connection()
+    try:
+        rows = conn.execute("SELECT * FROM discrepancy_resolutions").fetchall()
+        return {r["discrepancy_id"]: dict(r) for r in rows}
+    finally: conn.close()
+
 
 

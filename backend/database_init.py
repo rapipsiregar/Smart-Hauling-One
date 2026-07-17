@@ -102,6 +102,15 @@ def run_init_db():
     if cursor.fetchone()[0] == 0:
         cursor.execute("INSERT INTO system_settings (key, value) VALUES ('rtsp_url', 'rtsp://localhost:8554/live')")
 
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS discrepancy_resolutions (
+        discrepancy_id TEXT PRIMARY KEY,
+        operator_notes TEXT NOT NULL,
+        resolved_at TEXT NOT NULL,
+        resolved_by TEXT NOT NULL
+    )
+    """)
+
     conn.commit()
     from backend.database_stats import init_stats_db
     init_stats_db()

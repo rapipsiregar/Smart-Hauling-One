@@ -1128,6 +1128,14 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Dynamic DB Storage Footprint**: Calculates and formats the database file size dynamically in appropriate units (e.g. KB, MB, GB).
   - **Disk Mount Target Analysis**: Resolves disk usage parameters specifically for the mount volume holding the SQLite database files.
 
+### 1.43 Telemetry Data Export CSV Endpoint
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.43)
+* **Description**: Backend data export utility that converts in-memory remote skid tower telemetry logs history into downloadable CSV format.
+* **Key Capabilities**:
+  - **Dynamic Stream Generation**: Uses Python's native `io.StringIO` and `csv.writer` to stream formatted CSV rows dynamically.
+  - **Comprehensive Telemetry Metrics**: Includes Timestamp, Tower ID, Battery Level, Solar Output, Charging Current, and Latency fields.
+  - **Standardized Download Headers**: Configures attachment disposition HTTP headers to prompt download saving in user browsers under `telemetry_history.csv`.
+
 ### 2.40 Telemetry Status Notification Sound Manager
 * **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 2.40)
 * **Description**: Custom interactive telemetry sound alerts manager in the settings panel that plays specific beep tone sequences on remote skid tower events.
@@ -1143,4 +1151,44 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Live WebSocket Triggers**: Captures new crossing events directly from the WebSocket feed to trigger highlights in real time.
   - **Themed Pulsing Transitions**: Adds a CSS class-based transition that temporarily scales up the SVG circle element, glows with the primary theme color, and applies a drop-shadow.
   - **Map Style Compatibility**: Works seamlessly across all map view options (Schematic, Outline, Heatmap), automatically transitioning back to the correct baseline layout style.
+
+### 2.42 Custom Metric Threshold Control Sliders
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 2.42)
+* **Description**: Custom interactive range sliders inside the Workspace Settings drawer to configure remote skid tower warning and critical telemetry thresholds.
+* **Key Capabilities**:
+  - **Dynamic Range Customization**: Exposes sliders for low battery limits (0-100%), low solar array output (0-500W), and high network latency threshold (10-1000ms).
+  - **Live Synchronization**: Updates numeric labels next to the sliders in real time on drag inputs.
+  - **Backend API Integration**: Automatically synchronizes settings preferences by issuing a PUT request to `/api/admin/alert-thresholds` to store bounds in the backend database.
+
+### 2.43 Telemetry CSV Export Button
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 2.43)
+* **Description**: User interface action button added to the Deployed Mobile Skid Remote Towers & Site Map card header to trigger CSV telemetry logs downloads.
+* **Key Capabilities**:
+  - **Clean UI Placement**: Seamlessly nested within the diagnostics card header with standard styling.
+  - **One-Click CSV Retrieval**: Binds click events directly to route telemetry CSV downloader routes, prompting instant download saves.
+
+### 3.40 Fleet Utility Heatmap
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.40)
+* **Description**: A visual 2D grid matrix chart mapping active Off-Highway Trucks against the hours of the shift to analyze fleet utilization density.
+* **Key Capabilities**:
+  - **Interactive 2D Matrix Grid**: Plots active OHT units horizontally and chronological shift hour intervals vertically.
+  - **Dynamic Passage Count Heat Encoding**: Color-codes matrix cells dynamically (Idle, Low, Medium, High) to reflect passage intensity.
+  - **Auto-Anchoring Reference Clock**: Reference intervals dynamically scale and align to the latest crossing timestamp in the database to guarantee data visibility.
+
+### 3.41 Reports Export Scheduling Wizard
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.41)
+* **Description**: Form-based modal dialog enabling mining operations supervisors to schedule automated shift compliance reports dispatches.
+* **Key Capabilities**:
+  - **Flexible Email Scheduling**: Allows operators to define recipient email address, interval in minutes, and toggle automatic report relays.
+  - **API-Driven Configuration**: Persists schedule parameters directly to database settings via post-configuration endpoints.
+  - **Automated Dispatch Integration**: Seamlessly maps parameters to the background email scheduling daemon.
+
+### 3.42 Discrepancy Audit Resolution Workflow
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.42)
+* **Description**: Operational workflow module allowing Field Auditors and Supervisors to resolve detected subcontractor compliance discrepancies with custom audit notes.
+* **Key Capabilities**:
+  - **Inline Audit Form Action**: Dynamically inserts text note inputs and verification buttons directly inside discrepancy cards.
+  - **Database Persistence**: Stores resolutions inside a dedicated SQLite `discrepancy_resolutions` table.
+  - **Visual Resolution Feedback**: Automatically hides resolution controls and overlays a green checkmark badge displaying the resolution notes once updated.
+
 
