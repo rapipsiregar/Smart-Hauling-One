@@ -36,12 +36,13 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const recipient_email = document.getElementById('warn-email-input').value;
             const contractor = select.value;
+            const custom_message = document.getElementById('warn-custom-message').value;
             
             try {
                 const response = await fetch('/api/reports/contractor-performance/send-warning', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ recipient_email, contractor })
+                    body: JSON.stringify({ recipient_email, contractor, custom_message })
                 });
                 
                 if (response.ok) {

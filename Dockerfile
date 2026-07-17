@@ -35,6 +35,11 @@ FROM python:3.13-slim-bookworm
 
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy the synchronized virtual environment and source code
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app /app

@@ -12,8 +12,9 @@ from backend.fuzzy_matcher import find_best_fleet_match
 @router.post("/crossings", response_model=CrossingResponse, status_code=status.HTTP_201_CREATED)
 async def create_crossing(crossing: CrossingCreate):
     try:
-        hull_id = find_best_fleet_match(crossing.hull_id)
-        warning_status = "low-confidence" if crossing.confidence < 85 else "normal"
+        thresholds = database.get_thresholds()
+        conf_min = thresholds.get("ocr_confidence_min", 85.0)
+        warning_status = "low-confidence" if crossing.confidence < conf_min else "normal"
         last_id = database.insert_crossing(
             hull_id=hull_id,
             confidence=crossing.confidence,

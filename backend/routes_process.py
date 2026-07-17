@@ -22,10 +22,18 @@ def get_sample_videos():
     videos = []
     for p in playlist_dir.iterdir():
         if p.is_file() and p.suffix.lower() in video_extensions:
-            videos.append({
-                "filename": p.name,
-                "size_bytes": p.stat().st_size
-            })
+            video_id = p.stem
+            pre = find_pre_extracted_ocr(video_id)
+            if pre:
+                output_dir = pre.get("output_dir")
+                if output_dir:
+                    crops_dir = Path(output_dir) / "ocr" / "crops"
+                    frames_dir = Path(output_dir) / "frames"
+                    if crops_dir.exists() and list(crops_dir.glob("*.jpg")) and frames_dir.exists() and list(frames_dir.glob("*.jpg")):
+                        videos.append({
+                            "filename": p.name,
+                            "size_bytes": p.stat().st_size
+                        })
     videos.sort(key=lambda x: x["filename"])
     return videos
 
@@ -57,10 +65,15 @@ def find_pre_extracted_ocr(video_id: str):
                             texts = [e.get("text") for e in extractions if e.get("text")]
                             if texts:
                                 most_common = max(set(texts), key=texts.count)
+                                output_dir = video.get("output_dir")
+                                if not output_dir and video.get("output_video"):
+                                    output_dir = str(Path(video.get("output_video")).parent)
+                                if output_dir:
+                                    output_dir = output_dir.replace("/home/aiserver/LABS/TIA/ocr-hauling-truck/", "/app/")
                                 return {
                                     "text": most_common,
                                     "extractions": extractions,
-                                    "output_dir": video.get("output_dir")
+                                    "output_dir": output_dir
                                 }
             except Exception:
                 continue
@@ -122,29 +135,46 @@ async def process_video(
     if pre_extracted:
         ocr_text = pre_extracted["text"]
         hull_id = find_best_fleet_match(ocr_text)
+        # Deterministic seed based on video_id for realistic and varied confidence scores
+        state = random.getstate()
+        random.seed(video_id)
         if "low_confidence" in filename.lower() or "alert" in filename.lower():
             confidence = round(random.uniform(70.0, 84.9), 2)
         else:
-            confidence = 98.5
+            confidence = round(random.uniform(88.0, 99.8), 2)
+        random.setstate(state)
         output_dir = pre_extracted["output_dir"]
         
-        # Crop source
+        # Crop & Context source matching
         crop_src = None
+        context_src = None
+        import re
         if output_dir:
             crops_dir = Path(output_dir) / "ocr" / "crops"
+            frames_dir = Path(output_dir) / "frames"
+            
             if crops_dir.exists():
                 crop_files = list(crops_dir.glob("*.jpg"))
                 if crop_files:
-                    crop_src = crop_files[0]
+                    crop_files.sort()
+                    chosen_crop = crop_files[len(crop_files) // 2]
+                    crop_src = chosen_crop
                     
-        # Context source
-        context_src = None
-        extracted_images_dir = Path("data/02-extracted-images-from-videos")
-        if extracted_images_dir.exists():
-            context_files = list(extracted_images_dir.glob(f"{video_id}_*.jpg"))
-            if context_files:
-                context_src = context_files[0]
-                
+                    if frames_dir.exists():
+                        match = re.search(r"(_frame\d+)", chosen_crop.name)
+                        if match:
+                            frame_suffix = match.group(1)
+                            matching_frame = frames_dir / f"{video_id}{frame_suffix}.jpg"
+                            if matching_frame.exists():
+                                context_src = matching_frame
+                                
+            # Fallback for context image if matching frame not found
+            if not context_src and frames_dir.exists():
+                frame_files = list(frames_dir.glob("*.jpg"))
+                if frame_files:
+                    frame_files.sort()
+                    context_src = frame_files[len(frame_files) // 2]
+
         if crop_src and crop_src.exists():
             shutil.copy2(crop_src, crop_dest)
         else:
@@ -156,6 +186,8 @@ async def process_video(
             create_dummy_image(context_dest, f"Context: OHT {hull_id}")
     else:
         # Mock OHT crossing for unrecognized video
+        state = random.getstate()
+        random.seed(video_id)
         trucks = database.get_all_trucks()
         if trucks:
             hull_id = random.choice(trucks)["hull_id"]
@@ -166,6 +198,7 @@ async def process_video(
             confidence = round(random.uniform(70.0, 84.9), 2)
         else:
             confidence = round(random.uniform(85.0, 99.8), 2)
+        random.setstate(state)
         fallback_copied = False
         extracted_images_dir = Path("data/02-extracted-images-from-videos")
         if extracted_images_dir.exists():
@@ -189,7 +222,9 @@ async def process_video(
             status="active"
         )
         
-    warning_status = "low-confidence" if confidence < 85 else "normal"
+    thresholds = database.get_thresholds()
+    conf_min = thresholds.get("ocr_confidence_min", 85.0)
+    warning_status = "low-confidence" if confidence < conf_min else "normal"
     timestamp = datetime.utcnow().isoformat()
     last_id = database.insert_crossing(
         hull_id=hull_id,

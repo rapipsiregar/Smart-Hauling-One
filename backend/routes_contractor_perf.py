@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from datetime import datetime
+from datetime import datetime, timedelta
+from typing import Optional
 from backend import database
 
 router = APIRouter()
@@ -61,6 +62,27 @@ def get_contractor_performance():
             pass
 
         contractor_thresholds = database.get_contractor_targets()
+        contractor_min_fleet = database.get_contractor_min_fleet()
+
+        # Parse timestamps to find crossings in last 24 hours
+        now = datetime.utcnow()
+        day_ago = now - timedelta(days=1)
+        recent_crossings = []
+        for c in crossings:
+            try:
+                def parse_ts(ts):
+                    if ts.endswith("Z"): ts = ts[:-1]
+                    if "." in ts:
+                        parts = ts.split(".")
+                        parts[1] = parts[1][:6]
+                        ts = ".".join(parts)
+                    return datetime.fromisoformat(ts)
+                dt = parse_ts(c["timestamp"])
+                if dt >= day_ago:
+                    recent_crossings.append(c)
+            except:
+                pass
+        recent_hids = {c["hull_id"] for c in recent_crossings}
 
         perf = {}
         # Get list of unique contractors in fleet registry
@@ -77,13 +99,21 @@ def get_contractor_performance():
             target = contractor_thresholds.get(contractor, 1.0)
             compliance = round(min((hourly_rate / target) * 100, 100.0), 1)
             
+            # Subcontractor utilization score
+            min_fleet = contractor_min_fleet.get(contractor, 5)
+            logged_trucks = sum(1 for t in active_fleet if t["hull_id"] in recent_hids)
+            utilization = round(min((logged_trucks / max(min_fleet, 1)) * 100.0, 100.0), 1)
+            
             perf[contractor] = {
                 "total_cycles": total_cycles,
                 "active_fleet_size": fleet_size,
                 "avg_cycles_per_truck": avg_cycles,
                 "hourly_capacity": hourly_rate,
                 "target_threshold": target,
-                "compliance_pct": compliance
+                "compliance_pct": compliance,
+                "min_active_fleet": min_fleet,
+                "logged_active_trucks": logged_trucks,
+                "utilization_pct": utilization
             }
             
         return {"contractors": perf}
@@ -94,18 +124,24 @@ from pydantic import BaseModel
 class UpdateTargetReq(BaseModel):
     contractor: str
     target_rate: float
+    min_active_fleet: int = 5
 
 @router.post("/reports/contractor-performance/targets")
 def post_contractor_target(req: UpdateTargetReq):
     try:
-        database.set_contractor_target(req.contractor, req.target_rate)
-        return {"status": "success", "targets": database.get_contractor_targets()}
+        database.set_contractor_target(req.contractor, req.target_rate, req.min_active_fleet)
+        return {
+            "status": "success", 
+            "targets": database.get_contractor_targets(),
+            "min_fleet": database.get_contractor_min_fleet()
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 class SendWarningReq(BaseModel):
     recipient_email: str
     contractor: str
+    custom_message: Optional[str] = None
 
 @router.post("/reports/contractor-performance/send-warning")
 def send_contractor_warning(req: SendWarningReq):
@@ -116,9 +152,13 @@ def send_contractor_warning(req: SendWarningReq):
             raise HTTPException(status_code=404, detail="Contractor performance data not found")
             
         c_perf = contractors[req.contractor]
+        
+        custom_note = f"Supervisor's Remarks:\n\"{req.custom_message}\"\n\n" if req.custom_message else ""
+        
         warning_msg = (
             f"Subject: [SmartGate Compliance Warning] Low Ritase Capacity - {req.contractor}\n\n"
             f"Dear Team,\n\n"
+            f"{custom_note}"
             f"This is an automated compliance warning regarding subcontractor '{req.contractor}'.\n\n"
             f"Current active hourly capacity: {c_perf['hourly_capacity']} ritase/hr\n"
             f"Target expected capacity: {c_perf['target_threshold']} ritase/hr\n"
@@ -157,3 +197,47 @@ def send_contractor_warning(req: SendWarningReq):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/reports/contractor-performance/compliance-check")
+def check_contractor_compliance():
+    try:
+        perf_data = get_contractor_performance()
+        contractors = perf_data.get("contractors", {})
+        
+        triggered_alerts = []
+        
+        from backend import alerts_dispatcher
+        from backend.websocket_manager import manager
+        import asyncio
+        
+        for contractor, stats in contractors.items():
+            compliance_pct = stats.get("compliance_pct", 100.0)
+            if compliance_pct < 80.0:
+                alert = alerts_dispatcher.trigger_contractor_compliance_alert(
+                    contractor=contractor,
+                    compliance_pct=compliance_pct,
+                    hourly_rate=stats.get("hourly_capacity", 0.0),
+                    target=stats.get("target_threshold", 1.0)
+                )
+                if alert:
+                    triggered_alerts.append(alert)
+                    try:
+                        loop = asyncio.get_running_loop()
+                        loop.create_task(manager.broadcast(alert))
+                    except Exception:
+                        pass
+                        
+                    database.log_audit(
+                        action="compliance_alert_dispatch",
+                        details=f"Critical compliance drop alert dispatched for contractor {contractor} (Current: {compliance_pct}%)."
+                    )
+                    
+        return {
+            "status": "success",
+            "checked_count": len(contractors),
+            "triggered_count": len(triggered_alerts),
+            "triggered_alerts": triggered_alerts
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

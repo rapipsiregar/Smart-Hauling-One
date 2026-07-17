@@ -57,7 +57,7 @@ window.showToast = (msg) => {
     t.innerHTML = `
         <span style="font-size:1.15rem; line-height:1;">${icon}</span>
         <div style="flex:1; line-height:1.4;">${msg}</div>
-        <button style="background:none; border:none; color:rgba(255,255,255,0.6); cursor:pointer; font-size:1.1rem; padding:0; display:flex; align-items:center;" onclick="this.parentElement.style.transform='translateX(120%)';setTimeout(()=>this.parentElement.remove(),300)">×</button>
+        <button style="background:none; border:none; color:rgba(255,255,255,0.6); cursor:pointer; font-size:1.1rem; padding:0; display:flex; align-items:center;">×</button>
     `;
     
     c.appendChild(t);
@@ -66,11 +66,41 @@ window.showToast = (msg) => {
         t.style.transform = 'translateX(0)';
     });
     
-    setTimeout(() => {
+    let timeLeft = 4000;
+    let timerId = null;
+    let startTime = null;
+
+    const dismiss = () => {
         t.style.transform = 'translateX(120%)';
         t.style.opacity = '0';
         setTimeout(() => {
             t.remove();
         }, 300);
-    }, 4000);
+    };
+
+    const startTimer = () => {
+        startTime = Date.now();
+        timerId = setTimeout(dismiss, timeLeft);
+    };
+
+    const pauseTimer = () => {
+        clearTimeout(timerId);
+        timeLeft -= (Date.now() - startTime);
+        if (timeLeft < 0) timeLeft = 0;
+    };
+
+    t.addEventListener('mouseenter', pauseTimer);
+    t.addEventListener('mouseleave', () => {
+        if (timeLeft > 0) startTimer();
+    });
+
+    const closeBtn = t.querySelector('button');
+    if (closeBtn) {
+        closeBtn.onclick = () => {
+            clearTimeout(timerId);
+            dismiss();
+        };
+    }
+
+    startTimer();
 };

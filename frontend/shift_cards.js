@@ -2,26 +2,67 @@ window.renderShiftCards = (shift_distribution) => {
     const container = document.getElementById('shift-distribution-container');
     if (!container || !shift_distribution) return;
 
-    const values = Object.values(shift_distribution);
-    const maxVal = Math.max(...values, 1);
+    const sortedShifts = Object.entries(shift_distribution).sort((a, b) => {
+        const getHour = (str) => parseInt(str.split(':')[0]) || 0;
+        return getHour(a[0]) - getHour(b[0]);
+    });
+
+    const values = sortedShifts.map(([_, v]) => v);
+    const maxVal = Math.max(...values, 5);
+
+    const svgWidth = 600;
+    const svgHeight = 220;
+    const paddingLeft = 45;
+    const paddingRight = 15;
+    const paddingTop = 25;
+    const paddingBottom = 40;
+
+    const chartWidth = svgWidth - paddingLeft - paddingRight;
+    const chartHeight = svgHeight - paddingTop - paddingBottom;
+    
+    let gridLinesHtml = '';
+    const gridDivisions = 4;
+    for (let i = 0; i <= gridDivisions; i++) {
+        const yVal = paddingTop + chartHeight - (i / gridDivisions) * chartHeight;
+        const labelVal = Math.round((i / gridDivisions) * maxVal);
+        gridLinesHtml += `
+            <line x1="${paddingLeft}" y1="${yVal}" x2="${svgWidth - paddingRight}" y2="${yVal}" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+            <text x="${paddingLeft - 8}" y="${yVal + 3}" fill="var(--text-secondary)" font-size="9" text-anchor="end">${labelVal}</text>
+        `;
+    }
+
+    const numShifts = sortedShifts.length;
+    const slotWidth = chartWidth / (numShifts || 1);
+    const barWidth = slotWidth * 0.65;
+    
+    let barsHtml = '';
+    sortedShifts.forEach(([slot, count], idx) => {
+        const xVal = paddingLeft + idx * slotWidth + (slotWidth - barWidth) / 2;
+        const barHeight = (count / maxVal) * chartHeight;
+        const yVal = paddingTop + chartHeight - barHeight;
+
+        barsHtml += `
+            <rect x="${xVal}" y="${yVal}" width="${barWidth}" height="${barHeight}" rx="4" fill="url(#shiftBarGrad)" style="transition: all 0.3s ease; cursor: pointer;">
+                <title>${slot}: ${count} Passages</title>
+            </rect>
+            <text x="${xVal + barWidth / 2}" y="${yVal - 6}" fill="var(--primary)" font-size="10" font-weight="700" text-anchor="middle">${count}</text>
+            <text x="${xVal + barWidth / 2}" y="${svgHeight - paddingBottom + 18}" fill="var(--text-secondary)" font-size="9" font-weight="600" text-anchor="middle">${slot}</text>
+        `;
+    });
 
     container.innerHTML = `
-        <div class="shift-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem;">
-            ${Object.entries(shift_distribution).map(([slot, count]) => `
-                <div class="shift-summary-card" style="border: 1px solid var(--border); border-radius: 8px; padding: 1rem; background: var(--bg-card); display: flex; flex-direction: column; gap: 0.5rem; break-inside: avoid; page-break-inside: avoid;">
-                    <div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center;">
-                        <span>🕒 Shift Block</span>
-                        <span style="background: rgba(14, 165, 233, 0.1); color: var(--primary); padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.7rem;">Active</span>
-                    </div>
-                    <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-top: 0.25rem;">${slot}</div>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary); margin: 0.25rem 0;">
-                        ${count} <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-secondary);">Passages</span>
-                    </div>
-                    <div class="dist-bar-bg" style="margin-top: auto; height: 6px; background-color: #1e293b; border-radius: 3px; overflow: hidden;">
-                        <div class="dist-bar-fill" style="height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); border-radius: 3px; width: ${((count / maxVal) * 100).toFixed(0)}%"></div>
-                    </div>
-                </div>
-            `).join('')}
+        <div class="histogram-wrapper" style="width: 100%; padding: 0.5rem; background: var(--bg-card); border-radius: 8px;">
+            <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="width: 100%; height: auto; display: block; overflow: visible; font-family: 'Outfit', sans-serif;">
+                <defs>
+                    <linearGradient id="shiftBarGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="var(--primary)" />
+                        <stop offset="100%" stop-color="var(--secondary)" stop-opacity="0.6" />
+                    </linearGradient>
+                </defs>
+                ${gridLinesHtml}
+                <line x1="${paddingLeft}" y1="${paddingTop + chartHeight}" x2="${svgWidth - paddingRight}" y2="${paddingTop + chartHeight}" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
+                ${barsHtml}
+            </svg>
         </div>
     `;
 };

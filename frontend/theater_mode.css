@@ -35,3 +35,9 @@
 body.theater-open {
     overflow: hidden !important;
 }
+
+.visual-audit-card.audit-collapsed .audit-split-view,
+.visual-audit-card.audit-collapsed .audit-details {
+    display: none !important;
+}
+

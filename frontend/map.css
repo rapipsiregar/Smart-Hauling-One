@@ -1,0 +1,46 @@
+.telemetry-split-layout { display: grid; grid-template-columns: 1.2fr 1.3fr; gap: 1.5rem; } .map-container { background: #0f172a !important; padding: 1.25rem !important; border: 1px solid var(--border); border-radius: 8px; position: relative; } .map-header h4 { font-size: 0.95rem; color: var(--primary); margin-bottom: 0.75rem; }
+.map-view-wrapper { width: 100%; height: 260px; background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; position: relative; overflow: hidden; } .map-svg { width: 100%; height: 100%; }
+.map-marker-pin { position: absolute; cursor: pointer; transition: all 0.3s; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; }
+.map-marker-pin::after { content: ''; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+.map-marker-pin.online::after { background: var(--success); box-shadow: 0 0 calc(12px * var(--glow-intensity)) var(--success); } .map-marker-pin.warning::after { background: var(--warning); box-shadow: 0 0 calc(12px * var(--glow-intensity)) var(--warning); } .map-marker-pin.offline::after { background: var(--danger); box-shadow: 0 0 calc(12px * var(--glow-intensity)) var(--danger); }
+.map-marker-pin span { font-size: 0.7rem; font-weight: 700; color: #fff; background: rgba(15, 23, 42, 0.85); padding: 0.15rem 0.35rem; border-radius: 4px; border: 1px solid var(--border); margin-bottom: 4px; white-space: nowrap; }
+.map-marker-pin:hover { transform: translate(-50%, -105%) scale(1.15); }
+
+/* Signal indicator styles */
+.signal-indicator-row {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 3px;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.95);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.signal-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 1.5px;
+    height: 8px;
+}
+
+.signal-bars .bar {
+    width: 2px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 1px;
+    display: inline-block;
+}
+
+.signal-bars .bar-1 { height: 25%; }
+.signal-bars .bar-2 { height: 50%; }
+.signal-bars .bar-3 { height: 75%; }
+.signal-bars .bar-4 { height: 100%; }
+
+/* SNR color coding active classes */
+.signal-bars.excellent .bar.active { background: var(--success); }
+.signal-bars.good .bar.active { background: var(--success); }
+.signal-bars.moderate .bar.active { background: var(--warning); }
+.signal-bars.poor .bar.active { background: var(--danger); }
+.signal-bars.offline .bar.active { background: var(--text-secondary); }

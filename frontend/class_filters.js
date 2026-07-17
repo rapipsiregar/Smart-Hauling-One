@@ -2,6 +2,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const filters = document.querySelectorAll('.class-filter-cb');
     
     const applyFilters = () => {
+        if (typeof window.applyAllFilters === 'function') {
+            window.applyAllFilters();
+            return;
+        }
         const checked = Array.from(document.querySelectorAll('.class-filter-cb:checked')).map(cb => cb.value);
         const cards = document.querySelectorAll('.crossing-feed-card');
         cards.forEach(card => {

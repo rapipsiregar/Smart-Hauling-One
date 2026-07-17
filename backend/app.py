@@ -45,6 +45,14 @@ app.mount("/playlist", StaticFiles(directory="data/01-playlist"), name="playlist
 # Include the core API endpoints
 app.include_router(routes.router, prefix="/api")
 
+@app.on_event("startup")
+async def startup_event():
+    import asyncio
+    from backend.rtsp_engine import rtsp_ingestion_loop
+    from backend.telemetry_simulator import start_telemetry_simulator
+    asyncio.create_task(rtsp_ingestion_loop())
+    asyncio.create_task(start_telemetry_simulator())
+
 from fastapi import WebSocket, WebSocketDisconnect
 from backend.websocket_manager import manager
 

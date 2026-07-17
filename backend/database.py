@@ -12,109 +12,8 @@ def get_db_connection():
     return conn
 
 def init_db():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # Create trucks table
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS trucks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        hull_id TEXT UNIQUE NOT NULL,
-        contractor TEXT NOT NULL,
-        model TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'active',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-    
-    # Create crossings table
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS crossings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        hull_id TEXT NOT NULL,
-        confidence REAL NOT NULL,
-        timestamp TEXT NOT NULL,
-        lane TEXT NOT NULL,
-        direction TEXT NOT NULL,
-        crop_image_path TEXT,
-        context_image_path TEXT,
-        warning_status TEXT NOT NULL DEFAULT 'normal',
-        vehicle_class TEXT NOT NULL DEFAULT 'Dump Truck',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-    
-    try: cursor.execute("ALTER TABLE crossings ADD COLUMN warning_status TEXT NOT NULL DEFAULT 'normal'")
-    except sqlite3.OperationalError: pass
-    try: cursor.execute("ALTER TABLE crossings ADD COLUMN is_duplicate INTEGER NOT NULL DEFAULT 0")
-    except sqlite3.OperationalError: pass
-    try: cursor.execute("ALTER TABLE crossings ADD COLUMN vehicle_class TEXT NOT NULL DEFAULT 'Dump Truck'")
-    except sqlite3.OperationalError: pass
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS telemetry_thresholds (
-        key TEXT PRIMARY KEY,
-        value REAL NOT NULL
-    )
-    """)
-    cursor.execute("SELECT COUNT(*) FROM telemetry_thresholds")
-    if cursor.fetchone()[0] == 0:
-        cursor.executemany(
-            "INSERT INTO telemetry_thresholds (key, value) VALUES (?, ?)",
-            [("battery_low", 30.0), ("solar_low", 5.0), ("latency_high", 200.0)]
-        )
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS dispatch_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        timestamp TEXT NOT NULL,
-        alert_type TEXT NOT NULL,
-        message TEXT NOT NULL,
-        recipient TEXT NOT NULL,
-        channel TEXT NOT NULL
-    )
-    """)
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS contractor_compliance_targets (
-        contractor TEXT PRIMARY KEY,
-        target_rate REAL NOT NULL
-    )
-    """)
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS audit_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        timestamp TEXT NOT NULL,
-        action TEXT NOT NULL,
-        details TEXT NOT NULL,
-        operator TEXT NOT NULL
-    )
-    """)
-    cursor.execute("SELECT COUNT(*) FROM contractor_compliance_targets")
-    if cursor.fetchone()[0] == 0:
-        cursor.executemany(
-            "INSERT INTO contractor_compliance_targets (contractor, target_rate) VALUES (?, ?)",
-            [("PT Tunas Inti Abadi", 2.0), ("PT Borneo Indah Cemerlang", 1.5), ("Ad-hoc Contractor", 0.5)]
-        )
-    conn.commit()
-    from backend.database_stats import init_stats_db
-    init_stats_db()
-    
-    # Seed data if empty
-    cursor.execute("SELECT COUNT(*) FROM trucks")
-    if cursor.fetchone()[0] == 0:
-        seed_trucks = [
-            ("DT-118", "PT Tunas Inti Abadi", "Caterpillar 777D", "active"),
-            ("DT-119", "PT Tunas Inti Abadi", "Caterpillar 777D", "active"),
-            ("DT-120", "PT Borneo Indah Cemerlang", "Caterpillar 773E", "active"),
-            ("DT-121", "PT Borneo Indah Cemerlang", "Caterpillar 773E", "active"),
-            ("DT-202", "PT Borneo Indah Cemerlang", "Caterpillar 777E", "active"),
-        ]
-        cursor.executemany(
-            "INSERT INTO trucks (hull_id, contractor, model, status) VALUES (?, ?, ?, ?)",
-            seed_trucks
-        )
-        conn.commit()
-        
-    conn.close()
+    from backend.database_init import run_init_db
+    run_init_db()
 
 def insert_truck(hull_id: str, contractor: str, model: str, status: str = "active") -> int:
     conn = get_db_connection()
@@ -174,19 +73,21 @@ def insert_crossing(hull_id: str, confidence: float, timestamp: str, lane: str, 
             except: pass
         last_dir = cursor.execute("SELECT direction FROM crossings WHERE hull_id = ? ORDER BY timestamp DESC LIMIT 1", (hull_id,)).fetchone()
         if last_dir and last_dir[0].strip().lower() == direction.strip().lower() and warning_status == "normal": warning_status = "cycle-discrepancy"
-        cursor.execute("INSERT INTO crossings (hull_id, confidence, timestamp, lane, direction, crop_image_path, context_image_path, warning_status, is_duplicate, vehicle_class) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (hull_id, confidence, timestamp, lane, direction, crop_image_path, context_image_path, warning_status, is_duplicate, vehicle_class))
+        mode = get_system_setting("active_mode", "demo")
+        cursor.execute("INSERT INTO crossings (hull_id, confidence, timestamp, lane, direction, crop_image_path, context_image_path, warning_status, is_duplicate, vehicle_class, mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (hull_id, confidence, timestamp, lane, direction, crop_image_path, context_image_path, warning_status, is_duplicate, vehicle_class, mode))
         conn.commit(); return cursor.lastrowid
     finally: conn.close()
 
 def get_all_crossings(lane: Optional[str] = None, hull_id: Optional[str] = None, vehicle_class: Optional[str] = None) -> List[Dict[str, Any]]:
     conn = get_db_connection()
     try:
-        q, p = "SELECT * FROM crossings", []
+        mode = get_system_setting("active_mode", "demo")
+        q, p = "SELECT * FROM crossings WHERE mode = ?", [mode]
         conds = []
         if lane: conds.append("lane = ?"); p.append(lane)
         if hull_id: conds.append("hull_id = ?"); p.append(hull_id)
         if vehicle_class: conds.append("vehicle_class = ?"); p.append(vehicle_class)
-        if conds: q += " WHERE " + " AND ".join(conds)
+        if conds: q += " AND " + " AND ".join(conds)
         return [dict(r) for r in conn.execute(q + " ORDER BY timestamp DESC", p).fetchall()]
     finally: conn.close()
 
@@ -218,8 +119,8 @@ def get_thresholds() -> Dict[str, float]:
     conn = get_db_connection()
     try:
         rows = conn.execute("SELECT key, value FROM telemetry_thresholds").fetchall()
-        return {**{"battery_low": 30.0, "solar_low": 5.0, "latency_high": 200.0}, **{r[0]: r[1] for r in rows}}
-    except: return {"battery_low": 30.0, "solar_low": 5.0, "latency_high": 200.0}
+        return {**{"battery_low": 30.0, "solar_low": 5.0, "latency_high": 200.0, "ocr_confidence_min": 85.0}, **{r[0]: r[1] for r in rows}}
+    except: return {"battery_low": 30.0, "solar_low": 5.0, "latency_high": 200.0, "ocr_confidence_min": 85.0}
     finally: conn.close()
 
 def set_thresholds(thresholds: Dict[str, float]) -> None:
@@ -250,10 +151,21 @@ def get_contractor_targets() -> Dict[str, float]:
     except Exception: return {"PT Tunas Inti Abadi": 2.0, "PT Borneo Indah Cemerlang": 1.5, "Ad-hoc Contractor": 0.5}
     finally: conn.close()
 
-def set_contractor_target(contractor: str, target_rate: float) -> None:
+def get_contractor_min_fleet() -> Dict[str, int]:
     conn = get_db_connection()
     try:
-        conn.execute("INSERT INTO contractor_compliance_targets (contractor, target_rate) VALUES (?, ?) ON CONFLICT(contractor) DO UPDATE SET target_rate=excluded.target_rate", (contractor, float(target_rate)))
+        rows = conn.execute("SELECT contractor, min_active_fleet FROM contractor_compliance_targets").fetchall()
+        return {**{"PT Tunas Inti Abadi": 5, "PT Borneo Indah Cemerlang": 5, "Ad-hoc Contractor": 2}, **{r[0]: int(r[1]) for r in rows if r[1] is not None}}
+    except Exception: return {"PT Tunas Inti Abadi": 5, "PT Borneo Indah Cemerlang": 5, "Ad-hoc Contractor": 2}
+    finally: conn.close()
+
+def set_contractor_target(contractor: str, target_rate: float, min_active_fleet: Optional[int] = None) -> None:
+    conn = get_db_connection()
+    try:
+        if min_active_fleet is not None:
+            conn.execute("INSERT INTO contractor_compliance_targets (contractor, target_rate, min_active_fleet) VALUES (?, ?, ?) ON CONFLICT(contractor) DO UPDATE SET target_rate=excluded.target_rate, min_active_fleet=excluded.min_active_fleet", (contractor, float(target_rate), int(min_active_fleet)))
+        else:
+            conn.execute("INSERT INTO contractor_compliance_targets (contractor, target_rate) VALUES (?, ?) ON CONFLICT(contractor) DO UPDATE SET target_rate=excluded.target_rate", (contractor, float(target_rate)))
         conn.commit()
     finally: conn.close()
 
@@ -268,6 +180,21 @@ def log_audit(action: str, details: str, operator: str = "supervisor") -> None:
 def get_all_audits() -> List[Dict[str, Any]]:
     conn = get_db_connection()
     try: return [dict(r) for r in conn.execute("SELECT * FROM audit_logs ORDER BY id DESC").fetchall()]
+    finally: conn.close()
+
+def get_system_setting(key: str, default: str) -> str:
+    conn = get_db_connection()
+    try:
+        row = conn.execute("SELECT value FROM system_settings WHERE key = ?", (key,)).fetchone()
+        return row[0] if row else default
+    except Exception: return default
+    finally: conn.close()
+
+def set_system_setting(key: str, value: str) -> None:
+    conn = get_db_connection()
+    try:
+        conn.execute("INSERT INTO system_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (key, str(value)))
+        conn.commit()
     finally: conn.close()
 
 

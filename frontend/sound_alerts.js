@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.playAudioAlert = () => {
+        const soundEnabled = localStorage.getItem('soundAlertsEnabled') !== 'false';
         if (!soundEnabled) return;
         
         try {
@@ -29,7 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
             osc.frequency.setValueAtTime(520, ctx.currentTime); // C5
             osc.frequency.setValueAtTime(660, ctx.currentTime + 0.12); // E5
             
-            gain.gain.setValueAtTime(0.08, ctx.currentTime);
+            const volumeVal = parseFloat(localStorage.getItem('pref-audio-volume') || '80') / 100;
+            const alertVolume = volumeVal * 0.15;
+            gain.gain.setValueAtTime(alertVolume, ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
             
             osc.connect(gain);

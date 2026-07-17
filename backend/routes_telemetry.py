@@ -11,59 +11,72 @@ _towers_cache = {}
 _simulation_overrides = {}
 _telemetry_history_logs = []
 _latency_history = {}
+_last_battery_diagnostic_time = 0
+_last_checkin_times = {}
 
 def get_current_towers_telemetry():
-    import random
     from backend import database
+    from backend.telemetry_simulator import simulated_towers
+    global _last_battery_diagnostic_time
     now = time.time()
     if not _towers_cache or now - _towers_cache.get("last_refresh", 0) > 5:
+        if now - _last_battery_diagnostic_time > 60:
+            _last_battery_diagnostic_time = now
+            try:
+                import asyncio
+                from backend.routes_admin_telemetry_diagnostic import run_battery_diagnostic
+                loop = asyncio.get_running_loop()
+                loop.create_task(run_battery_diagnostic())
+                from backend.routes_telemetry_anomalies import get_telemetry_anomalies
+                loop.create_task(asyncio.to_thread(get_telemetry_anomalies))
+            except Exception:
+                pass
+
         thresholds = database.get_thresholds()
         b_low = thresholds["battery_low"]
         s_low = thresholds["solar_low"]
         l_high = thresholds["latency_high"]
-        gamma_battery = random.randint(25, 48)
-        gamma_solar = random.randint(2, 15)
-        gamma_latency = random.randint(220, 245)
+        
         _towers_cache["last_refresh"] = now
-        _towers_cache["towers"] = [
-            {
-                "id": "Tower-Alpha",
-                "location": "North Checkpoint",
-                "battery": random.randint(82, 86),
-                "solar_output": random.randint(115, 125),
-                "latency": random.randint(35, 45),
-                "status": "online"
-            },
-            {
-                "id": "Tower-Beta",
-                "location": "South Gate",
-                "battery": random.randint(89, 93),
-                "solar_output": random.randint(90, 100),
-                "latency": random.randint(55, 65),
-                "status": "online"
-            },
-            {
-                "id": "Tower-Gamma",
-                "location": "Main Portal",
-                "battery": gamma_battery,
-                "solar_output": gamma_solar,
-                "latency": gamma_latency,
-                "status": "warning" if (gamma_battery < b_low or gamma_solar < s_low or gamma_latency > l_high) else "online"
-            }
-        ]
-        for t in _towers_cache["towers"]:
-            tid = t["id"]
+        _towers_cache["towers"] = []
+        for tid, state in simulated_towers.items():
+            t = state.copy()
             if tid in _simulation_overrides:
                 for k, v in _simulation_overrides[tid].items():
                     if v is not None:
                         t[k] = v
-                        
-        # Check anomalies and dispatch mock alerts
+            _towers_cache["towers"].append(t)
+            
+        from backend.signal_estimator import estimate_signal_metrics
         from backend import alerts_dispatcher
         from backend.websocket_manager import manager
         import asyncio
         for t in _towers_cache["towers"]:
             tid = t["id"]
+            
+            is_offline = False
+            if t.get("status") == "offline" or now - _last_checkin_times.get(tid, now) > 300:
+                is_offline = True
+            else:
+                _last_checkin_times[tid] = now
+                
+            if is_offline:
+                t["connection_health"] = estimate_signal_metrics(0, True)
+                t["status"] = "offline"
+                t["battery"] = 0
+                t["solar_output"] = 0
+                t["latency"] = 999
+                alert = alerts_dispatcher.trigger_offline_alert(tid, t["location"])
+                if alert:
+                    try:
+                        loop = asyncio.get_running_loop()
+                        loop.create_task(manager.broadcast(alert))
+                    except Exception:
+                        pass
+                continue
+                
+            t["connection_health"] = estimate_signal_metrics(t.get("latency", 0), False)
+                
             if tid not in _latency_history:
                 _latency_history[tid] = []
             _latency_history[tid].append(t["latency"])
@@ -99,18 +112,6 @@ def get_current_towers_telemetry():
                         loop.create_task(manager.broadcast(alert))
                     except Exception:
                         pass
-        # Log to history
-        ts = datetime.utcnow().isoformat()
-        for t in _towers_cache["towers"]:
-            _telemetry_history_logs.insert(0, {
-                "timestamp": ts,
-                "tower_id": t["id"],
-                "battery": t["battery"],
-                "solar_output": t["solar_output"],
-                "latency": t["latency"]
-            })
-        if len(_telemetry_history_logs) > 300:
-            del _telemetry_history_logs[300:]
     return _towers_cache["towers"]
 
 @router.get("/telemetry/towers")
