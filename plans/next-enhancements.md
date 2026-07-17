@@ -69,14 +69,14 @@ graph TD
 * **1.41** Implement API payload compression middleware: Integrate Gzip compression for all JSON payloads over 10KB to optimize bandwidth usage.
   * **Status:** `[DONE]`
 * **1.42** Build a system load monitoring endpoint: Expose a `/system/health` endpoint returning server CPU, RAM, disk utilization, and DB file size metrics.
-  * **Status:** `[TODO]`
+  * **Status:** `[DONE]`
  
 ### Section 2: Web Application Frontend
  
 * **2.40** Create a telemetry status notification sound manager: Toggle customized beep tones for low battery, charging failures, and offline skid towers.
-  * **Status:** `[TODO]`
+  * **Status:** `[DONE]`
 * **2.41** Build interactive map zone highlights: Animate map loading/dumping circles when new crossings are registered on associated lanes.
-  * **Status:** `[TODO]`
+  * **Status:** `[DONE]`
 * **2.42** Build custom metric threshold control sliders in settings: Enable operators to dynamically edit critical boundaries for battery, solar, and latency directly from the settings drawer.
   * **Status:** `[TODO]`
  

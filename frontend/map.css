@@ -44,3 +44,12 @@
 .signal-bars.moderate .bar.active { background: var(--warning); }
 .signal-bars.poor .bar.active { background: var(--danger); }
 .signal-bars.offline .bar.active { background: var(--text-secondary); }
+
+/* Crossing registration map zone pulse animation */
+.pulse-active {
+    r: 38px !important;
+    fill: var(--primary) !important;
+    fill-opacity: 0.8 !important;
+    filter: drop-shadow(0 0 15px var(--primary));
+}
+

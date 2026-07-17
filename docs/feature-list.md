@@ -1120,38 +1120,27 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **10KB Minimum Compression Threshold**: Restricts compression triggers strictly to responses over 10,240 bytes to prevent extra CPU latency overhead on small payloads.
   - **Seamless Browser Decompression**: Integrates natively with all modern browsers using standard `Content-Encoding: gzip` headers.
 
+### 1.42 System Load Monitoring Endpoint
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.42)
+* **Description**: Diagnostic FastAPI endpoint returning real-time server load statistics and database storage footprints.
+* **Key Capabilities**:
+  - **Server Resource Telemetry**: Exposes `GET /api/system/health` returning server CPU, RAM, and disk utilization percentages.
+  - **Dynamic DB Storage Footprint**: Calculates and formats the database file size dynamically in appropriate units (e.g. KB, MB, GB).
+  - **Disk Mount Target Analysis**: Resolves disk usage parameters specifically for the mount volume holding the SQLite database files.
 
+### 2.40 Telemetry Status Notification Sound Manager
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 2.40)
+* **Description**: Custom interactive telemetry sound alerts manager in the settings panel that plays specific beep tone sequences on remote skid tower events.
+* **Key Capabilities**:
+  - **State Transition Watcher**: Tracks state differences across telemetry status polls to play beeps only on transition events.
+  - **Customized Audio Alerts**: Implements unique Web Audio synthesizer beep tones for Low Battery (sawtooth descending E4 to C4), Charging Failures (triangle/sine pulsing beat frequency), and Offline Towers (sine triple beep).
+  - **Independent Toggle Switches**: Adds dedicated checkboxes inside the Configuration drawer to toggle each telemetry alarm sound independently.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+### 2.41 Interactive Map Zone Crossing Highlights
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 2.41)
+* **Description**: Real-time interactive animations of SVG map zone circles (Loading, Dumping, and Haul Road) when new crossings are registered on associated lanes.
+* **Key Capabilities**:
+  - **Live WebSocket Triggers**: Captures new crossing events directly from the WebSocket feed to trigger highlights in real time.
+  - **Themed Pulsing Transitions**: Adds a CSS class-based transition that temporarily scales up the SVG circle element, glows with the primary theme color, and applies a drop-shadow.
+  - **Map Style Compatibility**: Works seamlessly across all map view options (Schematic, Outline, Heatmap), automatically transitioning back to the correct baseline layout style.
 

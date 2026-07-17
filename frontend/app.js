@@ -41,6 +41,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const c = JSON.parse(e.data);
                 if (c.type === 'dispatch_alert') return showToast(`Mock Dispatch: ${c.message}`), addAlert('Mock Dispatch', c.message, 'medium');
                 const idx = currentCrossings.findIndex(x => x.id === c.id); idx !== -1 ? currentCrossings[idx] = c : currentCrossings.push(c);
+                if (typeof window.highlightMapZoneForCrossing === 'function') {
+                    window.highlightMapZoneForCrossing(c);
+                }
                 updateDashboardUI(); if (selectedCrossingId === c.id) selectCrossing(c.id);
                 if (c.warning_status === 'low-confidence') { showToast(`Low confidence OCR: ${c.hull_id} (${c.confidence}%)`); addAlert('Low Confidence OCR', `OHT ${c.hull_id} detected at ${c.confidence}%`, 'medium'); if (typeof window.playAudioAlert === 'function') window.playAudioAlert(); }
                 if (c.warning_status === 'cycle-discrepancy') showToast(`Cycle discrepancy for ${c.hull_id}!`), addAlert('Cycle Discrepancy', `OHT ${c.hull_id} sequence mismatch`, 'high');
@@ -127,6 +130,9 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadTelemetry() {
         try {
             const towers = await (await fetch('/api/telemetry/towers')).json();
+            if (typeof window.checkTelemetrySoundTransitions === 'function') {
+                window.checkTelemetrySoundTransitions(towers);
+            }
             towers.forEach(t => t.status === 'warning' ? (!activeTowerWarns.has(t.id) && (activeTowerWarns.add(t.id), addAlert('Tower Warning', `${t.id} low battery or high latency!`, 'medium'))) : activeTowerWarns.delete(t.id));
             document.getElementById('telemetry-container').innerHTML = towers.map(t => `<div class="telemetry-item" data-id="${t.id}" style="cursor:pointer;"><div class="telemetry-header"><h4>${t.id}</h4><span class="badge ${t.status === 'online' ? 'badge-success' : 'badge-warning'}">${t.status}</span></div><div class="telemetry-specs"><div class="spec-row"><span>📍 Lane:</span><span>${t.location}</span></div><div class="spec-row"><span>🔋 Battery:</span><span>${t.battery}%</span></div><div class="dist-bar-bg"><div class="dist-bar-fill" style="width:${t.battery}%;background:${t.battery > 50 ? 'var(--success)' : 'var(--warning)'}"></div></div><div class="spec-row"><span>☀️ Solar Output:</span><span>${t.solar_output}W</span></div><div class="spec-row"><span>📶 Latency:</span><span>${t.latency}ms</span></div><div class="telemetry-sparkline-box" id="sparkline-${t.id}"></div></div></div>`).join('');
             if (typeof window.renderTelemetrySparklines === 'function') window.renderTelemetrySparklines(towers);

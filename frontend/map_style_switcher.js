@@ -98,4 +98,33 @@ document.addEventListener('DOMContentLoaded', () => {
     btnSchematic.addEventListener('click', () => setMapStyle('schematic'));
     btnOutline.addEventListener('click', () => setMapStyle('outline'));
     btnHeatmap.addEventListener('click', () => setMapStyle('heatmap'));
+
+    // Highlight map zone for new crossings
+    window.highlightMapZoneForCrossing = (c) => {
+        let el = null;
+        const lane = c.lane || '';
+        const dir = c.direction || '';
+        
+        if (lane === 'North Checkpoint' || dir === 'inbound') {
+            el = heatLoading;
+        } else if (lane === 'South Gate' || dir === 'outbound') {
+            el = heatDumping;
+        } else if (lane === 'Main Portal') {
+            el = heatHaulroad;
+        }
+        
+        if (el) {
+            // Remove pulse-active class if it was already applied
+            el.classList.remove('pulse-active');
+            // Force a reflow to restart animation/transition
+            void el.offsetWidth;
+            // Add pulse-active class
+            el.classList.add('pulse-active');
+            
+            // Remove pulse-active class after 1.5 seconds (allowing transition to reverse)
+            setTimeout(() => {
+                el.classList.remove('pulse-active');
+            }, 1500);
+        }
+    };
 });

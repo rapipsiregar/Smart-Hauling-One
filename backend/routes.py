@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from backend import routes_trucks, routes_crossings, routes_process, routes_reports, routes_telemetry, routes_contractor_perf, routes_dispatches, routes_admin, routes_admin_audit, routes_admin_integrity, routes_reports_trends, routes_admin_thresholds, routes_reports_csv, routes_admin_telemetry, routes_admin_backup, routes_system_mode, routes_admin_db, routes_watchdog, routes_oht_load, routes_contractor_efficiency, routes_cycle_scatter, routes_admin_telemetry_diagnostic, routes_admin_email_schedule, routes_admin_db_index_optimize, routes_contractor_forecast, routes_telemetry_anomalies, routes_route_violations, routes_backup_pruning, routes_dispatch_discrepancy, routes_restore_progress, routes_db_integrity, routes_payload_estimation
+from backend import routes_trucks, routes_crossings, routes_process, routes_reports, routes_telemetry, routes_contractor_perf, routes_dispatches, routes_admin, routes_admin_audit, routes_admin_integrity, routes_reports_trends, routes_admin_thresholds, routes_reports_csv, routes_admin_telemetry, routes_admin_backup, routes_system_mode, routes_admin_db, routes_watchdog, routes_oht_load, routes_contractor_efficiency, routes_cycle_scatter, routes_admin_telemetry_diagnostic, routes_admin_email_schedule, routes_admin_db_index_optimize, routes_contractor_forecast, routes_telemetry_anomalies, routes_route_violations, routes_backup_pruning, routes_dispatch_discrepancy, routes_restore_progress, routes_db_integrity, routes_payload_estimation, routes_system_health
 
 router = APIRouter()
 
@@ -36,5 +36,7 @@ router.include_router(routes_dispatch_discrepancy.router)
 router.include_router(routes_restore_progress.router)
 router.include_router(routes_db_integrity.router)
 router.include_router(routes_payload_estimation.router)
+router.include_router(routes_system_health.router)
+
 
 
