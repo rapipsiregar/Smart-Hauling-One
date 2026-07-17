@@ -18,9 +18,11 @@ database.init_db()
 from backend.backup_scheduler import start_backup_scheduler
 from backend.db_integrity_checker import start_integrity_scheduler
 from backend.email_scheduler import start_email_scheduler
+from backend.db_vacuum import start_vacuum_scheduler
 start_backup_scheduler()
 start_integrity_scheduler()
 start_email_scheduler()
+start_vacuum_scheduler()
 
 # Create evidence directories
 os.makedirs("data/evidence", exist_ok=True)

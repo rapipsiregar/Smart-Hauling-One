@@ -1136,6 +1136,14 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Comprehensive Telemetry Metrics**: Includes Timestamp, Tower ID, Battery Level, Solar Output, Charging Current, and Latency fields.
   - **Standardized Download Headers**: Configures attachment disposition HTTP headers to prompt download saving in user browsers under `telemetry_history.csv`.
 
+### 1.44 DB Vacuum and Defragment Scheduler
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.44)
+* **Description**: Backend daemon service periodically defragmenting and optimizing the SQLite registry database.
+* **Key Capabilities**:
+  - **Dynamic Schedule Check**: Periodically runs checks based on the `db_vacuum_interval_days` setting.
+  - **Storage Recovery optimization**: Executes `PRAGMA wal_checkpoint(TRUNCATE)`, `PRAGMA optimize`, and `VACUUM` queries to optimize storage footprint.
+  - **Uptime Defragment Logs**: Computes disk savings dynamically and logs performance metrics into the `audit_logs` table.
+
 ### 2.40 Telemetry Status Notification Sound Manager
 * **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 2.40)
 * **Description**: Custom interactive telemetry sound alerts manager in the settings panel that plays specific beep tone sequences on remote skid tower events.
@@ -1167,6 +1175,13 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Clean UI Placement**: Seamlessly nested within the diagnostics card header with standard styling.
   - **One-Click CSV Retrieval**: Binds click events directly to route telemetry CSV downloader routes, prompting instant download saves.
 
+### 2.44 Interactive Search Highlights in Trucks List
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 2.44)
+* **Description**: Live searching and character-level query highlighting within the Master OHT Fleet Registry table.
+* **Key Capabilities**:
+  - **Dynamic Row Filtering**: Filters matching OHT records in real time as supervisors type queries into the search bar.
+  - **Visual Match Highlighting**: Wraps matching character sequences in high-contrast styling inside Hull ID table cells.
+
 ### 3.40 Fleet Utility Heatmap
 * **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.40)
 * **Description**: A visual 2D grid matrix chart mapping active Off-Highway Trucks against the hours of the shift to analyze fleet utilization density.
@@ -1191,4 +1206,10 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Database Persistence**: Stores resolutions inside a dedicated SQLite `discrepancy_resolutions` table.
   - **Visual Resolution Feedback**: Automatically hides resolution controls and overlays a green checkmark badge displaying the resolution notes once updated.
 
-
+### 3.44 Dashboard Layout Reset Button
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.44)
+* **Description**: User action control to reset layout positions and card visibility configuration of the analytics dashboard.
+* **Key Capabilities**:
+  - **Single-Click Layout Reset**: Restores all dashboard widgets to default order and visibility preferences.
+  - **Storage Deletion**: Clears cached grid configurations stored inside browser `localStorage`.
+  - **Uptime Synchronization**: Automatically triggers page reloads to align DOM layout structures with default templates.

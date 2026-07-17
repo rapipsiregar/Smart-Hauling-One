@@ -74,12 +74,12 @@ graph TD
     4. `[DONE]` Return a `StreamingResponse` wrapping the CSV buffer with `text/csv` media header and download attachment disposition.
     5. `[DONE]` Register the router in [backend/routes.py](../backend/routes.py).
 * **1.44** Implement DB vacuum and defragment scheduler: Run an automatic SQLite VACUUM task every 7 days and log details in audit logs.
-  * **Status:** `[TODO]`
+  * **Status:** `[DONE]`
   * **Plan Breakdown:**
-    1. `[TODO]` Create `backend/db_vacuum.py` housing SQLite `VACUUM` processing logic.
-    2. `[TODO]` Add system setting check in `database.py` (e.g. `db_vacuum_interval_days`, default to 7 days).
-    3. `[TODO]` Build background thread routine that executes the defragment query sequentially.
-    4. `[TODO]` Compute database file size before and after execution, and commit a detailed entry in the `audit_logs` table.
+    1. `[DONE]` Create `backend/db_vacuum.py` housing SQLite `VACUUM` processing logic.
+    2. `[DONE]` Add system setting check in `database.py` (e.g. `db_vacuum_interval_days`, default to 7 days).
+    3. `[DONE]` Build background thread routine that executes the defragment query sequentially.
+    4. `[DONE]` Compute database file size before and after execution, and commit a detailed entry in the `audit_logs` table.
 * **1.45** Build an OHT classification status change logger endpoint: Add a route `POST /api/trucks/status` that logs contractor vehicle status changes to audit logs.
   * **Status:** `[TODO]`
   * **Plan Breakdown:**
@@ -96,11 +96,11 @@ graph TD
     2. `[DONE]` Insert `<button class="btn btn-secondary btn-sm" id="btn-export-telemetry" style="padding: 0.15rem 0.4rem; font-size: 0.65rem;">📥 Export Telemetry</button>`.
     3. `[DONE]` Register click handler event delegation in [frontend/telemetry_logs.js](../frontend/telemetry_logs.js) opening `window.open('/api/reports/telemetry-csv')`.
 * **2.44** Implement interactive search term query highlights for trucks list: Highlight matching characters dynamically inside the fleet manager registry list as supervisors type search terms.
-  * **Status:** `[TODO]`
+  * **Status:** `[DONE]`
   * **Plan Breakdown:**
-    1. `[TODO]` Add an event listener to the search input element inside [frontend/fleet_manager.js](../frontend/fleet_manager.js).
-    2. `[TODO]` Match typing inputs dynamically inside OHT Hull ID tags.
-    3. `[TODO]` Wrap matching sequences in a CSS-highlighted `<mark>` tag dynamically while retaining normal table interactions.
+    1. `[DONE]` Add an event listener to the search input element inside [frontend/fleet_manager.js](../frontend/fleet_manager.js).
+    2. `[DONE]` Match typing inputs dynamically inside OHT Hull ID tags.
+    3. `[DONE]` Wrap matching sequences in a CSS-highlighted `<mark>` tag dynamically while retaining normal table interactions.
 * **2.45** Create a diagnostic checkup list view: Expose a collapsible drawer listing all DB integrity check alerts with quick-fix buttons inside the fleet manager tab.
   * **Status:** `[TODO]`
   * **Plan Breakdown:**
@@ -118,11 +118,11 @@ graph TD
     3. `[TODO]` Draw projected compliance rates leading to shift end to spot anomalies in advance.
     4. `[TODO]` Link script tag to [frontend/index.html](../frontend/index.html).
 * **3.44** Create a dashboard layout customization settings reset button: Add a "Reset Grid" button to the grid layout drawer that restores default visibility and order for all metrics cards.
-  * **Status:** `[TODO]`
+  * **Status:** `[DONE]`
   * **Plan Breakdown:**
-    1. `[TODO]` Append a reset button `<button class="btn btn-secondary" id="btn-reset-layout" style="width: 100%;">Reset Default Layout</button>` inside `#grid-config-drawer` body in [frontend/index.html](../frontend/index.html).
-    2. `[TODO]` Edit [frontend/grid_config_drawer.js](../frontend/grid_config_drawer.js) to clear layout caches inside browser `localStorage` on click.
-    3. `[TODO]` Trigger dynamic page reload to re-render default card positions and visibilities.
+    1. `[DONE]` Append a reset button `<button class="btn btn-secondary" id="btn-reset-layout" style="width: 100%;">Reset Default Layout</button>` inside `#grid-config-drawer` body in [frontend/index.html](../frontend/index.html).
+    2. `[DONE]` Edit [frontend/grid_config_drawer.js](../frontend/grid_config_drawer.js) to clear layout caches inside browser `localStorage` on click.
+    3. `[DONE]` Trigger dynamic page reload to re-render default card positions and visibilities.
 * **3.45** Build a visual shift change log feed: Expose an operational notes stream showing shift handover digital signature details in the analytics tab.
   * **Status:** `[TODO]`
   * **Plan Breakdown:**

@@ -162,6 +162,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const btnResetLayout = document.getElementById('btn-reset-layout');
+    if (btnResetLayout) {
+        btnResetLayout.onclick = () => {
+            localStorage.removeItem('dashboard-grid-config');
+            window.location.reload();
+        };
+    }
+
     // Load initial config and apply layout at startup
     loadConfig();
     applyLayout();
