@@ -18,6 +18,11 @@ COMMANDS = {
         "description": "Download the YouTube playlist to data/01-playlist",
         "aliases": ["download"],
     },
+    "01b": {
+        "script": "01b-convert-videos-to-mp4.py",
+        "description": "Convert all videos in data/01-playlist to mp4 in data/01b-videos-converted-to-mp4 using ffmpeg",
+        "aliases": ["convert-mp4"],
+    },
     "02": {
         "script": "02-extract-videos.py",
         "description": "Extract 8 evenly-spaced frames from each video in data/01-playlist",
@@ -47,6 +52,11 @@ COMMANDS = {
         "script": "07-extract-video-using-sam3-and-ocr-using-nvidia-nemotron-ocr-v2.py",
         "description": "End-to-end video pipeline using Nemotron OCR v2 (via subprocess)",
         "aliases": ["pipeline-nemotron"],
+    },
+    "08": {
+        "script": "08-detect-truck-using-yolo26.py",
+        "description": "Detect trucks/vehicles in playlist videos using YOLO26n",
+        "aliases": ["detect-yolo26"],
     },
 }
 

@@ -54,12 +54,14 @@ uv run ocr-hauling-truck <command> [options]
 | Command | Alias | Target Script | Purpose |
 |---------|-------|---------------|---------|
 | `01` | `download` | `labs/01-download-playlist.py` | Download YouTube playlist |
+| `01b` | `convert-mp4` | `labs/01b-convert-videos-to-mp4.py` | Convert downloaded videos to mp4 |
 | `02` | `extract` | `labs/02-extract-videos.py` | Extract frames from videos |
 | `03` | `segment` | `labs/03-extract-truck-id.py` | Segment truck IDs with SAM 3 |
 | `04` | `ocr-paddle` | `labs/04-ocr-truck-id-using-paddle-ocr-vl-1.6.py` | Run OCR with PaddleOCR-VL 1.6 |
 | `05` | `ocr-nemotron` | `labs/05-ocr-truck-id-using-nvidia-nemotron-ocr-2.py` | Run OCR with Nemotron OCR v2 |
 | `06` | `pipeline` | `labs/06-extract-video-using-sam3-and-ocr.py` | End-to-end video pipeline |
 | `07` | `pipeline-nemotron` | `labs/07-extract-video-using-sam3-and-ocr-using-nvidia-nemotron-ocr-v2.py` | End-to-end pipeline with Nemotron |
+| `08` | `detect-yolo26` | `labs/08-detect-truck-using-yolo26.py` | Detect trucks/vehicles with YOLO26n |
 
 For help with any command, run:
 ```bash
@@ -72,12 +74,14 @@ uv run ocr-hauling-truck <command> --help
 |------|-------------|
 | `labs/` | Numbered lab scripts (`01-`, `02-`, …) |
 | `data/01-playlist/` | Downloaded videos |
+| `data/01b-videos-converted-to-mp4/` | Converted MP4 videos |
 | `data/02-extracted-images-from-videos/` | Extracted JPEG frames |
 | `data/03-extract-truck-id/` | SAM 3 detections, YOLO labels, annotated frames |
 | `data/04-ocr-truck-id-using-paddle-ocr-vl-1.6/` | PaddleOCR-VL crops and results |
 | `data/05-ocr-truck-id-using-nvidia-nemotron-ocr-2/` | Nemotron OCR crops and results |
 | `data/06-extract-video-using-sam3-and-ocr-using-*/` | End-to-end video pipeline (lab 06) |
 | `data/07-extract-video-using-sam3-and-ocr-using-nvidia-nemotron-ocr-v2/` | Nemotron end-to-end shortcut (lab 07) |
+| `data/08-detect-truck-using-yolo26/` | YOLO26n annotated videos and per-video JSON summaries |
 | `sam3/` | SAM 3 git submodule |
 
 ## Labs
@@ -90,6 +94,14 @@ Downloads the Truck Hauling 2026 YouTube playlist to `data/01-playlist/`. Uses `
 
 ```bash
 uv run labs/01-download-playlist.py
+```
+
+### 01b — Convert videos to MP4
+
+Converts all WebM and MKV video files in `data/01-playlist/` to standard MP4 format (using libx264/AAC encoding in `ffmpeg`) under `data/01b-videos-converted-to-mp4/`.
+
+```bash
+uv run labs/01b-convert-videos-to-mp4.py
 ```
 
 ### 02 — Extract frames
@@ -155,6 +167,18 @@ uv run labs/07-extract-video-using-sam3-and-ocr-using-nvidia-nemotron-ocr-v2.py 
 ```
 
 Accepts the same CLI flags as lab 06 (e.g. `--frames-per-video`, `--force`, `--no-output-video`).
+
+### 08 — Detect trucks/vehicles (YOLO26n)
+
+Runs Ultralytics YOLO26n on videos from `data/01-playlist/`, keeping COCO vehicle classes (`bicycle`, `car`, `motorcycle`, `bus`, `train`, `truck`). Writes annotated MP4s and per-video JSON summaries to `data/08-detect-truck-using-yolo26/`.
+
+```bash
+uv run labs/08-detect-truck-using-yolo26.py
+uv run labs/08-detect-truck-using-yolo26.py --video-id _6IZuVvNNYo
+uv run labs/08-detect-truck-using-yolo26.py --limit 1 --max-frames 60   # smoke test
+uv run labs/08-detect-truck-using-yolo26.py --force
+uv run labs/08-detect-truck-using-yolo26.py --confidence 0.4
+```
 
 ## Pipeline overview
 
