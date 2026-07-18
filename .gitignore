@@ -1,5 +1,7 @@
 # Generated / downloaded pipeline data
 data/
+runs/
+models/
 
 # Python
 __pycache__/

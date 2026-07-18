@@ -58,6 +58,11 @@ COMMANDS = {
         "description": "Detect trucks/vehicles in playlist videos using YOLO26n",
         "aliases": ["detect-yolo26"],
     },
+    "09": {
+        "script": "09-train-truck-id-detection.py",
+        "description": "Train YOLO models for Truck ID detection and segmentation",
+        "aliases": ["train-yolo26"],
+    },
 }
 
 # Expand aliases for quick lookup

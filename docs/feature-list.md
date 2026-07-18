@@ -112,6 +112,8 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Uptime Daemon Thread**: Runs a non-blocking background thread that executes automatically at system startup and schedules itself every 24 hours.
   - **Native SQLite Backup API**: Performs high-fidelity database replication using Python's native `sqlite3.Connection.backup()` to prevent table lock disruptions.
   - **Timestamped File Persistence**: Saves database copies into `data/backups/smart_gate_YYYYMMDD_HHMMSS.db` for easy rollback auditing.
+  - **Disable Options**: Supports bypassing automatic backups by setting the `DISABLE_AUTO_BACKUP=true` environment variable (in `.env`) or toggling the `auto_backup_enabled` system setting to `"false"` in the database.
+
 
 ### 1.13 Supervisor Audit Logs JSON Export API
 * **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 1.8)
@@ -1143,6 +1145,42 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Dynamic Schedule Check**: Periodically runs checks based on the `db_vacuum_interval_days` setting.
   - **Storage Recovery optimization**: Executes `PRAGMA wal_checkpoint(TRUNCATE)`, `PRAGMA optimize`, and `VACUUM` queries to optimize storage footprint.
   - **Uptime Defragment Logs**: Computes disk savings dynamically and logs performance metrics into the `audit_logs` table.
+
+### 1.45 YOLO Truck-ID Detection, Segmentation & OBB Model Trainer
+* **Implementation Status**: `[DONE]` (implemented in ad-hoc feature request)
+* **Description**: A dedicated training script (`labs/09-train-truck-id-detection.py`) to fine-tune YOLO detection (`yolo26n`), segmentation (`yolo26n-seg`), and oriented bounding box (`yolo26n-obb`) models specifically for Truck ID plate localization and extraction.
+* **Key Capabilities**:
+  - **Dynamic OBB Label Generator**: Generates oriented bounding box annotations (`labels_obb`) programmatically from segmentation polygons using OpenCV's `cv2.minAreaRect` algorithm.
+  - **Dynamic Directory Swapping**: Dynamically swaps the target label folder names (`labels`, `labels_seg`, or `labels_obb`) in place within a `try...finally` block to match YOLO's sibling search structure, bypassing symlink resolution overrides.
+  - **Task-Specific Execution**: Supports training either detection (`det`), segmentation (`seg`), oriented bounding box (`obb`), or all three (`all`) tasks via CLI arguments.
+  - **Standardized Model Naming Schema**: Saves best-performing weights to the `models` folder following the convention: `truck-id-yolo26{variant}-{det/seg/obb}-v{version-number}-{yyyymmdd}.pt`.
+
+### 1.46 SAM3 Video-Based Truck-ID Dataset Extractor
+* **Implementation Status**: `[DONE]` (implemented in ad-hoc feature request)
+* **Description**: An enhanced dataset extraction script ([labs/03-extract-truck-id.py](../labs/03-extract-truck-id.py)) supporting direct frame extraction and SAM3 segmentation annotation from converted MP4 video files under [data/01b-videos-converted-to-mp4/](../data/01b-videos-converted-to-mp4/).
+* **Key Capabilities**:
+  - **Direct Video Processing**: Extracts a customizable number of evenly-spaced frames from standard MP4 videos using `ffmpeg`/`ffprobe` and stores them in a temporary workspace directory before processing.
+  - **SAM3 Segmentation & YOLO Export**: Runs Segment Anything Model 2/3 (SAM3) text-prompted segmentation to generate bounding boxes, segmentation polygons, and YOLO-compatible format labels (`labels/` and `labels_seg/`).
+  - **Automatic Temporary Cleanup**: Cleans up all temporary extracted frames automatically post-processing to keep the dataset layout clean.
+  - **Backward Compatibility**: Fully supports pre-extracted frame image directory processing (`--input-dir`) and exposes the core functions to other lab pipeline scripts.
+
+### 1.47 YOLO Truck-ID Video Predictor
+* **Implementation Status**: `[DONE]` (implemented in ad-hoc feature request)
+* **Description**: A dedicated prediction script ([labs/10-detect-truck-id-using-yolo26.py](../labs/10-detect-truck-id-using-yolo26.py)) to run fine-tuned YOLO models on converted videos to detect, segment, or track truck IDs.
+* **Key Capabilities**:
+  - **Dynamic Model Task Identification**: Automatically determines the correct task type (`det` for standard detection, `seg` for segmentation, `obb` for oriented bounding box) from the loaded model's filename or attributes.
+  - **Multi-Task Annotations Drawer**: Integrates drawing handlers for standard bounding box rectangles, semi-transparent segmentation polygon overlays, and oriented bounding box polygons.
+  - **Structured Metadata Output**: Generates annotated video outputs alongside a corresponding JSON metadata summary containing processing stats.
+  - **Dynamic Output Routing**: Automatically directs outputs to separate directories based on model task type (`data/10-detect-truck-id-using-yolo26-det`, `data/10-detect-truck-id-using-yolo26-seg`, or `data/10-detect-truck-id-using-yolo26-obb`).
+
+### 1.48 PaddleOCR-VL Text Detection Dataset Generator
+* **Implementation Status**: `[DONE]` (implemented in ad-hoc feature request)
+* **Description**: A dedicated dataset generation script ([labs/11-detect-text-using-paddleocr-vl-16.py](../labs/11-detect-text-using-paddleocr-vl-16.py)) that runs PaddleOCR-VL 1.6 directly on extracted video frame images from [data/02-extracted-images-from-videos/](../data/02-extracted-images-from-videos/) to build a YOLO text detection dataset.
+* **Key Capabilities**:
+  - **Direct Frame OCR Processing**: Bypasses SAM3 requirements to run full-frame text detection directly using PaddleOCR-VL 1.6 layout-based segmentation.
+  - **Multi-Format Label Export**: Exports standard axis-aligned bounding boxes (`labels/`), segmentation polygons (`labels_seg/`), and oriented bounding boxes (`labels_obb/`) in normalized YOLO format.
+  - **Dataset Completeness**: Generates training components including images (`images/`), JSON annotations metadata (`annotations/`), visual verification overlays (`annotated/`), and class configurations (`data.yaml`).
+
 
 ### 2.40 Telemetry Status Notification Sound Manager
 * **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 2.40)
