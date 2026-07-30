@@ -1148,12 +1148,14 @@ This document lists all active and implemented features of the Smart Gate (Integ
 
 ### 1.45 YOLO Truck-ID Detection, Segmentation & OBB Model Trainer
 * **Implementation Status**: `[DONE]` (implemented in ad-hoc feature request)
-* **Description**: A dedicated training script (`labs/09-train-truck-id-detection.py`) to fine-tune YOLO detection (`yolo26n`), segmentation (`yolo26n-seg`), and oriented bounding box (`yolo26n-obb`) models specifically for Truck ID plate localization and extraction.
+* **Description**: A dedicated training script ([labs/09-train-truck-id-detection.py](../labs/09-train-truck-id-detection.py)) to fine-tune YOLO detection (`yolo26n`), segmentation (`yolo26n-seg`), and oriented bounding box (`yolo26n-obb`) models specifically for Truck ID plate localization and extraction.
 * **Key Capabilities**:
+  - **Numeric-Only Bounding Box Filtering**: Integrates a `--filter-numeric` option to filter the bounding boxes and polygons using PaddleOCR VL 1.6 results, retaining only annotations whose OCR-decoded text matches exactly 3-4 digit numbers (`^\d{3,4}$`).
+  - **Automated Filtered Dataset Copy**: Automatically generates a persistent filtered dataset copy under [data/03-extract-truck-id-filtered/](../data/03-extract-truck-id-filtered/) with its own `data.yaml`, copying only images that contain at least one valid numeric label.
   - **Dynamic OBB Label Generator**: Generates oriented bounding box annotations (`labels_obb`) programmatically from segmentation polygons using OpenCV's `cv2.minAreaRect` algorithm.
   - **Dynamic Directory Swapping**: Dynamically swaps the target label folder names (`labels`, `labels_seg`, or `labels_obb`) in place within a `try...finally` block to match YOLO's sibling search structure, bypassing symlink resolution overrides.
   - **Task-Specific Execution**: Supports training either detection (`det`), segmentation (`seg`), oriented bounding box (`obb`), or all three (`all`) tasks via CLI arguments.
-  - **Standardized Model Naming Schema**: Saves best-performing weights to the `models` folder following the convention: `truck-id-yolo26{variant}-{det/seg/obb}-v{version-number}-{yyyymmdd}.pt`.
+  - **Standardized Model Naming Schema**: Saves best-performing weights to the `models` folder following the convention: `truck-id-yolo26{variant}-{det/seg/obb}-v{version-number}-numeric-filtered-{yyyymmdd}.pt` (if filtered) or `truck-id-yolo26{variant}-{det/seg/obb}-v{version-number}-{yyyymmdd}.pt`.
 
 ### 1.46 SAM3 Video-Based Truck-ID Dataset Extractor
 * **Implementation Status**: `[DONE]` (implemented in ad-hoc feature request)
@@ -1180,6 +1182,45 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Direct Frame OCR Processing**: Bypasses SAM3 requirements to run full-frame text detection directly using PaddleOCR-VL 1.6 layout-based segmentation.
   - **Multi-Format Label Export**: Exports standard axis-aligned bounding boxes (`labels/`), segmentation polygons (`labels_seg/`), and oriented bounding boxes (`labels_obb/`) in normalized YOLO format.
   - **Dataset Completeness**: Generates training components including images (`images/`), JSON annotations metadata (`annotations/`), visual verification overlays (`annotated/`), and class configurations (`data.yaml`).
+
+### 1.49 YOLO Model Single-Image Inference Tester
+* **Implementation Status**: `[DONE]` (implemented in ad-hoc feature request)
+* **Description**: A dedicated, reusable inference utility script ([labs/12-test-single-image.py](../labs/12-test-single-image.py)) to run fine-tuned YOLO model predictions on single test images.
+* **Key Capabilities**:
+  - **Console Predictions Log**: Outputs coordinates, confidence scores, and classes for all detected entities to the console.
+  - **Detections Drawing**: Renders detected bounding boxes, class labels, and confidence text dynamically on the image frame.
+  - **Annotated Image Save**: Automatically saves visual predictions to standard output directories, such as [data/test_output/](../data/test_output/).
+
+### 1.50 YOLO & PaddleOCR Single-Image Pipeline Tester
+* **Implementation Status**: `[DONE]` (implemented in ad-hoc feature request)
+* **Description**: A dedicated, reusable pipeline tester script ([labs/13-ocr-single-image.py](../labs/13-ocr-single-image.py)) that combines the fine-tuned YOLO detector and the PaddleOCR-VL 1.6 engine to run full localization and text transcription on single image inputs.
+* **Key Capabilities**:
+  - **Bounding Box Crop Extraction**: Automatically crops localized truck ID regions from the image with configurable padding ratios (e.g. `0.1`).
+  - **OCR Transcription**: Runs PaddleOCR-VL 1.6 on cropped patches to transcribe numeric truck ID text.
+  - **Annotated Image Save**: Superimposes the localized bounding box and transcription text on the source image, saving it to [data/test_output/](../data/test_output/).
+
+### 1.51 Folder-Wide YOLO Inference Tester (Images and Videos)
+* **Implementation Status**: `[DONE]` (implemented in ad-hoc feature request)
+* **Description**: A directory-wide batch inference utility script ([labs/14-test-folder.py](../labs/14-test-folder.py)) that processes all images and videos inside a specified folder, runs YOLO predictions, draws bounding box overlays, and writes annotated outputs.
+* **Key Capabilities**:
+  - **Auto-Detection of Media Types**: Scans files and sorts them automatically into images and videos based on file extension.
+  - **OpenCV Video Stream Parsing**: Uses `cv2.VideoCapture` and `cv2.VideoWriter` to efficiently stream and predict on video frames sequentially.
+  - **Annotated Visual Outputs**: Saves all generated annotated images and MP4 videos containing overlays directly to [data/test_output/](../data/test_output/).
+  - **Hardware Device Override**: Supports selecting specific hardware processors via `--device` (e.g. CPU, CUDA, or specific GPU index) to prevent out-of-memory errors on concurrent systems.
+
+### 1.52 YOLO & PaddleOCR Video Pipeline Tester
+* **Implementation Status**: `[DONE]` (implemented in ad-hoc feature request)
+* **Description**: A dedicated frame-by-frame video OCR script ([labs/15-ocr-video.py](../labs/15-ocr-video.py)) that localizes truck IDs using standard detection and transcribes localized text frame-by-frame using PaddleOCR-VL 1.6.
+* **Key Capabilities**:
+  - **Frame-by-Frame Localized OCR**: Runs YOLO detector on each video frame, extracts localized crops with `0.1` padding, and runs PaddleOCR to transcribe the text.
+  - **Aesthetic Text Drawing**: Renders the localized bounding box and the extracted text directly on the video frame before writing.
+  - **Robust Hardware Parsing**: Separately translates the unified `--device` argument into format-compliant strings for both YOLO (`cuda:X` or `X`) and PaddleOCR (`gpu:X` or `cpu`).
+  - **Test Run Slicing**: Supports limiting the processed segment using the `--max-frames` argument to allow rapid validation on long video feeds without full render waits.
+
+
+
+
+
 
 
 ### 2.40 Telemetry Status Notification Sound Manager

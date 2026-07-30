@@ -17,6 +17,57 @@ from ultralytics import YOLO
 ROOT = Path(__file__).resolve().parent.parent
 
 
+def filter_dataset(base_dir: Path, filtered_dir: Path, ocr_results_dir: Path) -> None:
+    """Generate a filtered copy of the dataset containing only 3-4 digit numbers."""
+    import json, re, shutil
+    print(f"Filtering dataset to {filtered_dir}...")
+    ocr_results = {}
+    if ocr_results_dir.exists():
+        for json_path in ocr_results_dir.glob("*.json"):
+            try:
+                data = json.loads(json_path.read_text())
+                ocr_results[json_path.stem] = {
+                    d["detection_index"]: d.get("text", "").strip()
+                    for d in data.get("detections", [])
+                }
+            except Exception as e:
+                print(f"Warning: Failed to load {json_path}: {e}")
+
+    # Reset filtered directory
+    if filtered_dir.exists():
+        shutil.rmtree(filtered_dir)
+    for sub in ["images", "labels", "labels_seg"]:
+        (filtered_dir / sub).mkdir(parents=True, exist_ok=True)
+
+    pattern = re.compile(r"^\d{3,4}$")
+    for txt_file in (base_dir / "labels").glob("*.txt"):
+        frame = txt_file.stem
+        det_lines = txt_file.read_text().splitlines()
+        seg_file = base_dir / "labels_seg" / txt_file.name
+        seg_lines = seg_file.read_text().splitlines() if seg_file.exists() else []
+
+        valid_det, valid_seg = [], []
+        frame_ocr = ocr_results.get(frame, {})
+        for idx, line in enumerate(det_lines):
+            if pattern.match(frame_ocr.get(idx, "")):
+                valid_det.append(line)
+                if idx < len(seg_lines):
+                    valid_seg.append(seg_lines[idx])
+
+        if valid_det:
+            for ext in [".jpg", ".jpeg", ".png", ".webp"]:
+                img_src = base_dir / "images" / f"{frame}{ext}"
+                if img_src.exists():
+                    shutil.copy2(img_src, filtered_dir / "images" / f"{frame}{ext}")
+                    (filtered_dir / "labels" / txt_file.name).write_text("\n".join(valid_det) + "\n")
+                    if valid_seg:
+                        (filtered_dir / "labels_seg" / txt_file.name).write_text("\n".join(valid_seg) + "\n")
+                    break
+
+    (filtered_dir / "data.yaml").write_text(f"path: {filtered_dir.resolve()}\ntrain: images\nval: images\nnames:\n  0: truck_id\n")
+    print("Filtered dataset complete.")
+
+
 def train_model(
     task: str,
     variant: str,
@@ -25,9 +76,16 @@ def train_model(
     imgsz: int,
     device: str,
     version: int,
+    filter_numeric: bool = False,
 ) -> Path:
     """Train a single YOLO model (detection, segmentation, or oriented bounding box)."""
-    base_dir = ROOT / "data" / "03-extract-truck-id"
+    if filter_numeric:
+        base_dir = ROOT / "data" / "03-extract-truck-id-filtered"
+        ocr_results_dir = ROOT / "data" / "04-ocr-truck-id-using-paddle-ocr-vl-1.6" / "results"
+        filter_dataset(ROOT / "data" / "03-extract-truck-id", base_dir, ocr_results_dir)
+    else:
+        base_dir = ROOT / "data" / "03-extract-truck-id"
+        
     data_yaml = base_dir / "data.yaml"
 
     labels_dir = base_dir / "labels"
@@ -124,7 +182,8 @@ def train_model(
         models_dir.mkdir(exist_ok=True)
 
         today = datetime.now().strftime("%Y%m%d")
-        output_filename = f"truck-id-yolo26{variant}-{task}-v{version}-{today}.pt"
+        filter_suffix = "-numeric-filtered" if filter_numeric else ""
+        output_filename = f"truck-id-yolo26{variant}-{task}-v{version}{filter_suffix}-{today}.pt"
         dest_path = models_dir / output_filename
 
         shutil.copy(best_weights, dest_path)
@@ -160,6 +219,7 @@ def main() -> None:
     parser.add_argument("--imgsz", type=int, default=640, help="Image size")
     parser.add_argument("--device", default="", help="Device override (e.g. cpu, cuda, or empty for auto)")
     parser.add_argument("--version", type=int, default=1, help="Version number for output filename")
+    parser.add_argument("--filter-numeric", action="store_true", help="Only use bboxes containing 3-4 digit numbers from OCR results")
 
     args = parser.parse_args()
 
@@ -184,6 +244,7 @@ def main() -> None:
             imgsz=args.imgsz,
             device=device,
             version=args.version,
+            filter_numeric=args.filter_numeric,
         )
 
 
