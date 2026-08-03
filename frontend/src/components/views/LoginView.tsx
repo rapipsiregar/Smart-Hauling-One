@@ -43,7 +43,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
               </div>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed pt-2 font-sans">
-              Sistem Pengendalian Otomatisasi Ritase Tambang, Deteksi Kamera AI OCR, & Manajemen Telemetri Solar Tower.
+              Sistem Pengendalian Otomatisasi Ritase Tambang & Deteksi Kamera AI OCR.
             </p>
           </div>
 

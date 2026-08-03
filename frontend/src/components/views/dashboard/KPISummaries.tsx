@@ -43,7 +43,7 @@ export const KPISummaries: React.FC<KPISummariesProps> = ({
       <div
         onClick={() => onNavigate && onNavigate('fleet')}
         className="kpi-card-ishs p-6 space-y-4 flex flex-col justify-between hover:-translate-y-1 hover:border-emerald-500 hover:shadow-xl transition-all duration-200 cursor-pointer group relative border border-slate-200"
-        title="Klik untuk melihat status Armada & Driver"
+        title="Klik untuk melihat status Armada"
       >
         <div>
           <div className="flex items-center justify-between text-xs font-mono text-slate-500 uppercase tracking-wider font-bold mb-3">

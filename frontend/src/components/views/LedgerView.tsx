@@ -51,8 +51,6 @@ export const LedgerView: React.FC<{ crossings: CrossingLog[] }> = ({ crossings }
                 <th className="p-3">OHT ID</th>
                 <th className="p-3">KONTRAKTOR</th>
                 <th className="p-3">ARAH</th>
-                <th className="p-3">STATUS CARGO</th>
-                <th className="p-3 text-right">METODE INPUT</th>
                 <th className="p-3 text-center">VERIFIKASI AI</th>
                 <th className="p-3 text-center">BUKTI CROP</th>
               </tr>
@@ -69,8 +67,6 @@ export const LedgerView: React.FC<{ crossings: CrossingLog[] }> = ({ crossings }
                       {item.direction}
                     </span>
                   </td>
-                  <td className="p-3 font-bold text-slate-700">{item.cargo_status}</td>
-                  <td className="p-3 text-right font-bold text-slate-600">Otomatis AI</td>
                   <td className="p-3 text-center">
                     {item.is_verified ? (
                       <span className="inline-flex items-center gap-1 text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded border border-emerald-300">
@@ -112,7 +108,7 @@ export const LedgerView: React.FC<{ crossings: CrossingLog[] }> = ({ crossings }
             <div className="text-xs text-slate-700 space-y-1 font-mono">
               <p>Keyakinan OCR: <span className="text-emerald-600 font-bold">{selectedCrop.confidence}%</span></p>
               <p>Gerbang: <span className="text-slate-600">{selectedCrop.gate_name}</span></p>
-              <p>Status: <span className="text-cyan-700 font-bold">{selectedCrop.cargo_status} ({selectedCrop.direction})</span></p>
+              <p>Arah: <span className="text-cyan-700 font-bold">{selectedCrop.direction}</span></p>
             </div>
           </div>
         )}

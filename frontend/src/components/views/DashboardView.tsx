@@ -133,7 +133,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <ArrowUpRight className="w-4 h-4 text-cyan-600" />
                       )}
                       <span className="text-xs font-mono font-extrabold text-[#0f172a]">{item.oht_id}</span>
-                      <span className="text-[10px] font-mono text-slate-500">{item.cargo_status}</span>
                     </div>
                     <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
                       item.confidence >= 90 
@@ -173,7 +172,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="text-xs text-slate-700 space-y-1 font-mono">
               <p>Status Validasi: <span className="text-emerald-600 font-bold">Terverifikasi Otomatis</span></p>
               <p>Gerbang: <span className="text-slate-600">{selectedCrop.gate_name}</span></p>
-              <p>Status: <span className="text-cyan-700 font-bold">{selectedCrop.cargo_status} ({selectedCrop.direction})</span></p>
+              <p>Arah: <span className="text-cyan-700 font-bold">{selectedCrop.direction}</span></p>
             </div>
           </div>
         )}

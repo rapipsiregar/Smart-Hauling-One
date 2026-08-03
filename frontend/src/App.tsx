@@ -7,7 +7,6 @@ import { DashboardView } from './components/views/DashboardView';
 import { MapView } from './components/views/MapView';
 import { LedgerView } from './components/views/LedgerView';
 import { FleetView } from './components/views/FleetView';
-import { TelemetryView } from './components/views/TelemetryView';
 import { ReportsView } from './components/views/ReportsView';
 import { NavigationTab, KPISummary, CrossingLog } from './lib/types';
 import { mockKPIs, mockCrossings, mockTrucks, mockCycleTime } from './lib/api-client';
@@ -87,7 +86,6 @@ export function App() {
               {activeTab === 'map' && <MapView />}
               {activeTab === 'ledger' && <LedgerView crossings={crossings} />}
               {activeTab === 'fleet' && <FleetView trucks={mockTrucks} />}
-              {activeTab === 'telemetry' && <TelemetryView />}
               {activeTab === 'reports' && <ReportsView />}
             </>
           )}

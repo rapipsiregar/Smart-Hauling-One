@@ -3,7 +3,6 @@ export type NavigationTab =
   | 'map'
   | 'ledger'
   | 'fleet'
-  | 'telemetry'
   | 'reports';
 
 export interface CrossingLog {
@@ -12,7 +11,7 @@ export interface CrossingLog {
   oht_id: string;
   confidence: number;
   direction: 'INBOUND' | 'OUTBOUND';
-  cargo_status: 'LOADED' | 'EMPTY';
+  cargo_status?: 'LOADED' | 'EMPTY';
   contractor: string;
   gate_name: string;
   crop_image_url?: string;
@@ -27,12 +26,12 @@ export interface TruckAsset {
   oht_id: string;
   contractor: string;
   model: string;
-  capacity_tons: number;
+  capacity_tons?: number;
   status: 'ACTIVE' | 'MAINTENANCE' | 'IDLE' | 'OFFLINE';
   total_ritase_today: number;
   last_crossing_time: string;
-  driver_name: string;
-  compliance_score: number;
+  driver_name?: string;
+  compliance_score?: number;
 }
 
 export interface TowerTelemetry {

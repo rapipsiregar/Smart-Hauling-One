@@ -34,7 +34,6 @@ export const LiveCrossingFeed: React.FC<{ crossings: CrossingLog[] }> = ({ cross
               <div>
                 <div className="flex items-center space-x-2">
                   <span className="text-sm font-bold font-mono text-white tracking-wide">{item.oht_id}</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 font-mono">{item.cargo_status}</span>
                 </div>
                 <p className="text-[11px] text-slate-400">{item.contractor}</p>
               </div>

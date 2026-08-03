@@ -7,7 +7,7 @@ export const FleetView: React.FC<{ trucks: TruckAsset[] }> = ({ trucks }) => {
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'MAINTENANCE'>('ALL');
 
   const filtered = trucks.filter((t) => {
-    const matchesSearch = t.oht_id.toLowerCase().includes(search.toLowerCase()) || t.model.toLowerCase().includes(search.toLowerCase()) || t.driver_name.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = t.oht_id.toLowerCase().includes(search.toLowerCase()) || t.model.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === 'ALL' || t.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -23,7 +23,7 @@ export const FleetView: React.FC<{ trucks: TruckAsset[] }> = ({ trucks }) => {
           </h2>
         </div>
         <p className="text-xs text-slate-300 font-sans">
-          Inventarisasi armada Off-Highway Truck (OHT), total ritase harian, & skor kepatuhan driver
+          Inventarisasi armada Off-Highway Truck (OHT) dan total ritase harian
         </p>
 
         {/* Filters */}
@@ -32,7 +32,7 @@ export const FleetView: React.FC<{ trucks: TruckAsset[] }> = ({ trucks }) => {
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
             <input
               type="text"
-              placeholder="Cari ID Lambung, Model, atau Pengemudi..."
+              placeholder="Cari ID Lambung atau Model..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-1.5 bg-[#0b1120] border border-[#1e293b] rounded-xl text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-orange-500"
@@ -77,22 +77,9 @@ export const FleetView: React.FC<{ trucks: TruckAsset[] }> = ({ trucks }) => {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100 text-xs font-mono">
-              <div>
-                <div className="text-slate-500 text-[10px] uppercase font-bold">Ritase Hari Ini</div>
-                <div className="text-lg font-bold text-orange-600">{t.total_ritase_today} Trips</div>
-              </div>
-              <div>
-                <div className="text-slate-500 text-[10px] uppercase font-bold">Kapasitas</div>
-                <div className="text-lg font-bold text-[#0f172a]">{t.capacity_tons} Tons</div>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-mono">
-              <span className="text-slate-600 font-sans font-medium">Driver: <strong className="text-[#0f172a] font-mono">{t.driver_name}</strong></span>
-              <span className="flex items-center gap-1 text-emerald-700 font-bold">
-                <CheckCircle2 className="w-3.5 h-3.5" /> {t.compliance_score}%
-              </span>
+            <div className="pt-2 border-t border-slate-100 text-xs font-mono">
+              <div className="text-slate-500 text-[10px] uppercase font-bold">Ritase Hari Ini</div>
+              <div className="text-lg font-bold text-orange-600">{t.total_ritase_today} Trips</div>
             </div>
           </div>
         ))}

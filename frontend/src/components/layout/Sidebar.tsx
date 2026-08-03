@@ -32,8 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', label: 'Operations Hub', icon: LayoutDashboard },
     { id: 'map', label: 'Site Plan Map', icon: MapPin },
     { id: 'ledger', label: 'Reconciliation Ledger', icon: FileSpreadsheet },
-    { id: 'fleet', label: 'Fleet & Drivers', icon: Truck },
-    { id: 'telemetry', label: 'Solar Towers', icon: Radio },
+    { id: 'fleet', label: 'Fleet Registry', icon: Truck },
     { id: 'reports', label: 'Reports & Export', icon: FileText },
   ];
 

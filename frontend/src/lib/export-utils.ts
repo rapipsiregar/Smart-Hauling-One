@@ -56,15 +56,13 @@ export function exportToExcel(crossings: CrossingLog[], options: ExportOptions =
           <tr><td colspan="8"></td></tr>
 
           <!-- SECTION 2: DETAIL LOG LINTASAN AUDIT TRAIL -->
-          <tr class="section"><td colspan="8">2. DETAIL LOG LINTASAN AUDIT TRAIL</td></tr>
+          <tr class="section"><td colspan="6">2. DETAIL LOG LINTASAN AUDIT TRAIL</td></tr>
           <tr>
             <th>TX ID</th>
             <th>WAKTU</th>
             <th>ID LAMBUNG (OHT)</th>
             <th>KONTRAKTOR</th>
             <th>ARAH</th>
-            <th>STATUS CARGO</th>
-            <th>METODE INPUT</th>
             <th>STATUS VALIDASI</th>
           </tr>
           ${crossings
@@ -76,8 +74,6 @@ export function exportToExcel(crossings: CrossingLog[], options: ExportOptions =
               <td style="font-weight:bold; color:#0284c7;">${c.oht_id}</td>
               <td>${c.contractor}</td>
               <td>${c.direction}</td>
-              <td>${c.cargo_status}</td>
-              <td>Otomatis AI</td>
               <td style="font-weight:bold; color:${c.confidence >= 90 ? '#16a34a' : '#d97706'};">
                 ${c.confidence >= 90 ? 'Terverifikasi' : 'Perlu Review'}
               </td>
@@ -88,16 +84,13 @@ export function exportToExcel(crossings: CrossingLog[], options: ExportOptions =
           <tr><td colspan="8"></td></tr>
 
           <!-- SECTION 3: DETAIL INVENTARISASI ARMADA (FLEET) -->
-          <tr class="section"><td colspan="8">3. DETAIL INVENTARISASI ARMADA (FLEET)</td></tr>
+          <tr class="section"><td colspan="5">3. DETAIL INVENTARISASI ARMADA (FLEET)</td></tr>
           <tr>
             <th>ID LAMBUNG</th>
             <th>KONTRAKTOR</th>
             <th>MODEL TRUK</th>
-            <th>KAPASITAS</th>
             <th>STATUS</th>
             <th>RITASE HARI INI</th>
-            <th>DRIVER</th>
-            <th>SKOR KEPATUHAN</th>
           </tr>
           ${trucks
             .map(
@@ -106,11 +99,8 @@ export function exportToExcel(crossings: CrossingLog[], options: ExportOptions =
               <td style="font-weight:bold; color:#0284c7;">${t.oht_id}</td>
               <td>${t.contractor}</td>
               <td>${t.model}</td>
-              <td>${t.capacity_tons} Tons</td>
               <td style="font-weight:bold; color:${t.status === 'ACTIVE' ? '#16a34a' : '#d97706'};">${t.status}</td>
               <td style="font-weight:bold; color:#f97316;">${t.total_ritase_today} Trips</td>
-              <td>${t.driver_name}</td>
-              <td style="font-weight:bold;">${t.compliance_score}%</td>
             </tr>
           `
             )
@@ -200,8 +190,6 @@ export function exportToPDF(crossings: CrossingLog[], options: ExportOptions = {
               <th>ID LAMBUNG (OHT)</th>
               <th>KONTRAKTOR</th>
               <th>ARAH</th>
-              <th>CARGO</th>
-              <th>METODE INPUT</th>
               <th>STATUS VALIDASI</th>
             </tr>
           </thead>
@@ -215,8 +203,6 @@ export function exportToPDF(crossings: CrossingLog[], options: ExportOptions = {
                 <td style="font-family:monospace; font-weight:bold; color:#0284c7;">${c.oht_id}</td>
                 <td>${c.contractor}</td>
                 <td>${c.direction}</td>
-                <td>${c.cargo_status}</td>
-                <td>Otomatis AI</td>
                 <td style="font-weight:bold; color:${c.confidence >= 90 ? '#16a34a' : '#d97706'};">
                   ${c.confidence >= 90 ? 'Terverifikasi' : 'Perlu Review'}
                 </td>
@@ -234,11 +220,8 @@ export function exportToPDF(crossings: CrossingLog[], options: ExportOptions = {
               <th>ID LAMBUNG</th>
               <th>KONTRAKTOR</th>
               <th>MODEL TRUK</th>
-              <th>KAPASITAS</th>
               <th>STATUS</th>
               <th>RITASE HARI INI</th>
-              <th>DRIVER</th>
-              <th>SKOR KEPATUHAN</th>
             </tr>
           </thead>
           <tbody>
@@ -249,11 +232,8 @@ export function exportToPDF(crossings: CrossingLog[], options: ExportOptions = {
                 <td style="font-family:monospace; font-weight:bold; color:#0284c7;">${t.oht_id}</td>
                 <td>${t.contractor}</td>
                 <td>${t.model}</td>
-                <td>${t.capacity_tons} Tons</td>
                 <td style="font-weight:bold; color:${t.status === 'ACTIVE' ? '#16a34a' : '#d97706'};">${t.status}</td>
                 <td style="font-weight:bold; color:#f97316;">${t.total_ritase_today} Trips</td>
-                <td>${t.driver_name}</td>
-                <td style="font-weight:bold;">${t.compliance_score}%</td>
               </tr>
             `
               )

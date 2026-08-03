@@ -13,10 +13,10 @@ export interface User {
 }
 
 export const ROLE_PERMISSIONS: Record<UserRole, NavigationTab[]> = {
-  super_admin: ['dashboard', 'map', 'ledger', 'fleet', 'telemetry', 'reports'],
+  super_admin: ['dashboard', 'map', 'ledger', 'fleet', 'reports'],
   gate_operator: ['dashboard', 'map'],
   logistics_auditor: ['dashboard', 'ledger', 'reports'],
-  field_dispatcher: ['dashboard', 'fleet', 'telemetry'],
+  field_dispatcher: ['dashboard', 'fleet'],
 };
 
 export const DEMO_USERS: User[] = [
@@ -51,7 +51,7 @@ export const DEMO_USERS: User[] = [
     name: 'Dedi Kurniawan (Dispatcher)',
     email: 'dispatcher@smarthauling.id',
     role: 'field_dispatcher',
-    roleTitle: 'Solar Tower & Fleet Supervisor',
+    roleTitle: 'Fleet Supervisor',
     avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
   },
 ];
