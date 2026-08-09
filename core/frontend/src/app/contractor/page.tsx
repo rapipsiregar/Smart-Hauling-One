@@ -55,7 +55,7 @@ function ContractorCard({ c }: { c: ContractorData }) {
       {/* Utilization Bar */}
       <div>
         <div className="flex justify-between text-[10px] font-mono text-[var(--text-secondary)] mb-1.5">
-          <span>Utilisasi Armada</span>
+          <span>Truk Aktif Beroperasi</span>
           <span style={{ color: c.color }}>{utilizationPct}%</span>
         </div>
         <div className="w-full h-2 rounded-full bg-[var(--bg-elevated)] overflow-hidden">
@@ -70,10 +70,10 @@ function ContractorCard({ c }: { c: ContractorData }) {
       {isActive ? (
         <div className="grid grid-cols-4 gap-2 pt-2 border-t border-[var(--border)]">
           {[
-            { label: "Ritase",      value: c.totalRitase,          unit: "trip",  color: "#f59e0b" },
-            { label: "Cycle Time",  value: `${c.avgCycleMin} mnt`, unit: "",      color: "#22d3ee" },
-            { label: "OCR Akurasi", value: `${c.avgConf}%`,        unit: "",      color: "#10b981" },
-            { label: "SLA Comply",  value: `${c.slaCompliance}%`,  unit: "",      color: c.slaCompliance >= 95 ? "#10b981" : "#f87171" },
+            { label: "Total Ritase",  value: c.totalRitase,          unit: "trip",  color: "#f59e0b" },
+            { label: "Waktu Tempuh",  value: `${c.avgCycleMin} mnt`, unit: "",      color: "#22d3ee" },
+            { label: "Akurasi Kamera", value: `${c.avgConf}%`,        unit: "",      color: "#10b981" },
+            { label: "Target Waktu",  value: `${c.slaCompliance}%`,  unit: "",      color: c.slaCompliance >= 95 ? "#10b981" : "#f87171" },
           ].map(({ label, value, color }) => (
             <div key={label} className="text-center">
               <div className="text-lg font-bold font-mono" style={{ color }}>{value}</div>
@@ -111,20 +111,20 @@ export default function ContractorPage() {
           </div>
           <div>
             <h2 className="text-base font-bold text-[var(--text-primary)] font-mono uppercase tracking-wide">
-              Efisiensi & Kinerja Kontraktor
+              Kinerja & Perolehan Hasil Kontraktor
             </h2>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-              4 kontraktor hauling: TIA · BIC · PPA · CK — total 276 unit armada
+              Hasil Perjalanan Ritase & Ketepatan Waktu 4 Kontraktor Hauling (TIA, BIC, PPA, CK)
             </p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { icon: RotateCw,    label: "Total Ritase", value: totalRitase, unit: "trip",  color: "text-amber-400" },
-            { icon: Truck,       label: "Truk Aktif",   value: totalActive, unit: "unit",  color: "text-emerald-400" },
-            { icon: Timer,       label: "Fleet Master", value: totalMaster, unit: "unit",  color: "text-cyan-400" },
-            { icon: ShieldCheck, label: "Avg SLA",      value: `${avgSla}%`, unit: "",    color: "text-indigo-400" },
+            { icon: RotateCw,    label: "Total Ritase Selesai", value: totalRitase, unit: "perjalanan", color: "text-amber-400" },
+            { icon: Truck,       label: "Truk Aktif",           value: totalActive, unit: "unit",        color: "text-emerald-400" },
+            { icon: Timer,       label: "Total Truk Terdaftar", value: totalMaster, unit: "unit",        color: "text-cyan-400" },
+            { icon: ShieldCheck, label: "Pencapaian Target",    value: `${avgSla}%`, unit: "rata-rata",   color: "text-indigo-400" },
           ].map(({ icon: Icon, label, value, unit, color }) => (
             <div key={label} className="glass-panel border border-[var(--border)] rounded-xl p-3.5 flex items-center gap-3">
               <Icon className={`w-5 h-5 shrink-0 ${color}`} />

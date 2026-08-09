@@ -10,11 +10,11 @@ import { BottleneckAnalyticsWidget } from "@/components/analytics/bottleneck-ana
 type Tab = "all" | "fuel" | "fleet" | "audit" | "peak";
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: "all",   label: "Semua",         icon: BarChart3   },
-  { id: "fuel",  label: "Solar & Emisi", icon: Fuel        },
-  { id: "fleet", label: "Armada & OEM",  icon: Truck       },
-  { id: "audit", label: "Audit Log",     icon: ShieldAlert },
-  { id: "peak",  label: "Jam Puncak",    icon: Clock       },
+  { id: "all",   label: "Semua Analisis", icon: BarChart3   },
+  { id: "fuel",  label: "Penggunaan Solar", icon: Fuel      },
+  { id: "fleet", label: "Kondisi Truk",    icon: Truck       },
+  { id: "audit", label: "Pemeriksaan Manual", icon: ShieldAlert },
+  { id: "peak",  label: "Jam Puncak Antrean", icon: Clock    },
 ];
 
 export default function AnalyticsPage() {
@@ -30,10 +30,10 @@ export default function AnalyticsPage() {
           </div>
           <div>
             <h2 className="text-base font-bold text-[var(--text-primary)] font-mono uppercase tracking-wide">
-              Advanced Analytics Dashboard
+              Ringkasan Analisis Kinerja Operasional
             </h2>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-              4 Modul: Fuel & Green Mining · Fleet Age & OEM · OCR Audit Log · Heatmap Jam Puncak
+              Analisis Penggunaan Solar, Kondisi Truk, Catatan Pemeriksaan Manual, dan Jam Puncak Antrean
             </p>
           </div>
         </div>

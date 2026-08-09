@@ -38,10 +38,10 @@ export default function GateConsolePage() {
         <div>
           <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
             <Radio className="w-5 h-5 text-emerald-500 animate-pulse" />
-            Konsol Deteksi Gerbang Edge (Jetson Local Console)
+            Pemeriksaan Hasil Pembacaan Kamera Pos (Real-Time)
           </h2>
           <p className="text-xs text-[var(--text-secondary)]">
-            Konsol pemantauan gerbang pos lapangan dengan voting konsensus OCR frame-by-frame
+            Pantauan otomatis nomor lambung truk yang melintas di pos gerbang
           </p>
         </div>
 
@@ -139,26 +139,26 @@ export default function GateConsolePage() {
         <div className="glass-panel border border-[var(--border)] rounded-xl p-5 space-y-4">
           <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
             <Cpu className="w-4 h-4 text-amber-500" />
-            Voting Konsensus OCR Frame
+            Tingkat Akurasi Sampel Pembacaan Kamera
           </h3>
 
           <div className="space-y-2 font-mono text-xs">
             <div className="p-2.5 rounded border bg-emerald-500/10 border-emerald-500/30 text-emerald-400 flex justify-between">
-              <span>Frame #167 — DT-118</span>
-              <span className="font-bold">99.4% ✓</span>
+              <span>Gambar Tangkapan #1 — DT-118</span>
+              <span className="font-bold">99.4% Terbaca ✓</span>
             </div>
             <div className="p-2.5 rounded border bg-emerald-500/10 border-emerald-500/30 text-emerald-400 flex justify-between">
-              <span>Frame #175 — DT-118</span>
-              <span className="font-bold">98.2% ✓</span>
+              <span>Gambar Tangkapan #2 — DT-118</span>
+              <span className="font-bold">98.2% Terbaca ✓</span>
             </div>
             <div className="p-2.5 rounded border bg-rose-500/10 border-rose-500/30 text-rose-400 flex justify-between opacity-60">
-              <span>Frame #181 — DT-110</span>
-              <span className="font-bold">54.1% ✗</span>
+              <span>Gambar Tangkapan #3 — DT-110</span>
+              <span className="font-bold">54.1% Buram ✗</span>
             </div>
           </div>
 
           <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-400">
-            <strong>Hasil Voting:</strong> DT-118 menang 95% dari 18 frame sampling.
+            <strong>Hasil Kesimpulan:</strong> Nomor lambung <strong>DT-118</strong> terverifikasi cocok 95% dari 18 tangkapan gambar.
           </div>
         </div>
       </div>
