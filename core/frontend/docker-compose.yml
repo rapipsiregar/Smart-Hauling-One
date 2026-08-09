@@ -1,0 +1,11 @@
+services:
+  frontend:
+    build:
+      context: .
+      args:
+        # Baked in at build time (see Dockerfile) — point this at wherever the
+        # Python backend actually runs before building.
+        BACKEND_ORIGIN: ${BACKEND_ORIGIN:-http://127.0.0.1:8000}
+    ports:
+      - "3000:3000"
+    restart: unless-stopped

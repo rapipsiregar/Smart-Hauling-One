@@ -1,0 +1,47 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smart-gate-backend
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      - PORT=8000
+      # Where /live/start and /edge/live-session hand out WHIP/WHEP URLs. Point
+      # this at the relay's PUBLIC address in production -- the browser and the
+      # edge both resolve it, so a container-internal hostname will not do.
+      - MEDIA_RELAY_BASE_URL=${MEDIA_RELAY_BASE_URL:-http://localhost:8889}
+    volumes:
+      - ./data:/app/data
+      - ./ai-model:/app/ai-model
+    restart: unless-stopped
+
+  # --- Live raw CCTV viewing (docs/edge-system/SRS.md §8) ---------------------
+  # Behind a profile so batch-only deployments never start a relay they don't
+  # use:  docker compose --profile live-view up -d
+  media-relay:
+    image: bluenviron/mediamtx:latest
+    container_name: smart-gate-media-relay
+    profiles: ["live-view"]
+    ports:
+      - "8889:8889"        # WHIP ingest + WHEP playback (HTTP signalling)
+      - "8189:8189/udp"    # WebRTC media
+      - "9997:9997"        # control API (health check)
+    volumes:
+      - ./infra/mediamtx.yml:/mediamtx.yml:ro
+    restart: unless-stopped
+
+  coturn:
+    image: coturn/coturn:latest
+    container_name: smart-gate-coturn
+    profiles: ["live-view"]
+    # coturn needs a wide UDP relay range; host networking is the simplest
+    # correct setup for Compose, at the cost of port-mapping granularity.
+    # Acceptable for a 4-device fleet. Linux hosts only -- Docker Desktop for
+    # macOS/Windows does not support host networking properly.
+    network_mode: host
+    volumes:
+      - ./infra/turnserver.conf:/etc/coturn/turnserver.conf:ro
+    command: ["-c", "/etc/coturn/turnserver.conf"]
+    restart: unless-stopped

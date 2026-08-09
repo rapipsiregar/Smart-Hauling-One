@@ -1,0 +1,107 @@
+/* Design tokens mirrored verbatim from src/app/globals.css so the video's
+   recreated screens carry the product's real palette, not an approximation. */
+
+@import url('../fonts/fonts.css');
+
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Dark theme (default) */
+  --bg: #07090d;
+  --bg-card: rgba(19, 23, 34, 0.55);
+  --bg-elevated: rgba(28, 34, 52, 0.65);
+  --bg-input: rgba(21, 26, 40, 0.6);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --text-primary: #f8fafc;
+  --text-secondary: #a3aec2;
+  --text-dim: #6b7688;
+  --accent: #f59e0b;
+  --accent-hover: #d97706;
+  --card: rgba(19, 23, 34, 0.55);
+  --glass-blur: 18px;
+  --glass-highlight: rgba(255, 255, 255, 0.06);
+
+  /* Video-only additions */
+  --accent-rgb: 245, 158, 11;
+  --ok: #10b981;
+  --ok-rgb: 16, 185, 129;
+  --warn: #f59e0b;
+  --bad: #f43f5e;
+  --stage-glow: 0.16;
+}
+
+.light {
+  --bg: #eef1f6;
+  --bg-card: rgba(255, 255, 255, 0.62);
+  --bg-elevated: rgba(241, 245, 249, 0.7);
+  --bg-input: rgba(255, 255, 255, 0.7);
+  --border: rgba(15, 23, 42, 0.1);
+  --border-strong: rgba(15, 23, 42, 0.16);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-dim: #94a3b8;
+  --accent: #ea8a04;
+  --accent-hover: #c2740a;
+  --card: rgba(255, 255, 255, 0.62);
+  --glass-blur: 16px;
+  --glass-highlight: rgba(255, 255, 255, 0.55);
+  --accent-rgb: 234, 138, 4;
+  --ok: #059669;
+  --ok-rgb: 5, 150, 105;
+  --stage-glow: 0.1;
+}
+
+/* Card surfaces, straight from the app's .glass-card rules. */
+.glass {
+  position: relative;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  box-shadow:
+    0 8px 32px -12px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 0 var(--glass-highlight);
+  overflow: hidden;
+}
+
+.glass::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 45%;
+  background: linear-gradient(180deg, var(--glass-highlight), transparent);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* The amber-bordered identity card used for the voted hull ID. */
+.plate {
+  position: relative;
+  background: var(--bg-card);
+  border: 2px solid var(--accent);
+  border-radius: 14px;
+  backdrop-filter: blur(var(--glass-blur));
+  box-shadow:
+    0 0 26px -6px rgba(var(--accent-rgb), 0.32),
+    inset 0 1px 0 0 var(--glass-highlight);
+  overflow: hidden;
+}
+
+.mono { font-family: var(--font-mono); }
+.dim { color: var(--text-dim); }
+.sec { color: var(--text-secondary); }
+.acc { color: var(--accent); }
+.ok { color: var(--ok); }
+.bad { color: var(--bad); }
+
+/* Uppercase mono micro-labels are the app's dominant label treatment. */
+.label {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 500;
+}

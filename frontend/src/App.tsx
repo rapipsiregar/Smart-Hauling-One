@@ -4,10 +4,15 @@ import { Sidebar } from './components/layout/Sidebar';
 import { LoginView } from './components/views/LoginView';
 import { UnauthorizedView } from './components/views/UnauthorizedView';
 import { DashboardView } from './components/views/DashboardView';
+import { GateConsoleView } from './components/views/GateConsoleView';
 import { MapView } from './components/views/MapView';
 import { LedgerView } from './components/views/LedgerView';
 import { FleetView } from './components/views/FleetView';
 import { ReportsView } from './components/views/ReportsView';
+import { MaintenanceView } from './components/views/MaintenanceView';
+import { AnalyticsView } from './components/views/AnalyticsView';
+import { ContractorView } from './components/views/ContractorView';
+import { RitaseView } from './components/views/RitaseView';
 import { NavigationTab, KPISummary, CrossingLog } from './lib/types';
 import { mockKPIs, mockCrossings, mockTrucks, mockCycleTime } from './lib/api-client';
 import { User, getStoredUser, setStoredUser, clearStoredUser, hasPermission } from './lib/auth';
@@ -15,7 +20,7 @@ import { User, getStoredUser, setStoredUser, clearStoredUser, hasPermission } fr
 export function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(getStoredUser());
   const [activeTab, setActiveTab] = useState<NavigationTab>('dashboard');
-  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [darkMode, setDarkMode] = useState<boolean>(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
 
   const [kpi] = useState<KPISummary>(mockKPIs);
@@ -35,12 +40,20 @@ export function App() {
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
     setStoredUser(user);
-    setActiveTab('dashboard');
+    const defaultTab = user.role === 'gate_operator' ? 'gate_console' : user.role === 'field_technician' ? 'maintenance' : 'dashboard';
+    setActiveTab(defaultTab);
   };
 
   const handleLogout = () => {
     clearStoredUser();
     setCurrentUser(null);
+  };
+
+  const handleSwitchUser = (user: User) => {
+    setCurrentUser(user);
+    setStoredUser(user);
+    const defaultTab = user.role === 'gate_operator' ? 'gate_console' : user.role === 'field_technician' ? 'maintenance' : 'dashboard';
+    setActiveTab(defaultTab);
   };
 
   if (!currentUser) {
@@ -54,6 +67,7 @@ export function App() {
       <Header
         user={currentUser}
         onLogout={handleLogout}
+        onSwitchUser={handleSwitchUser}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         activeAlarmsCount={kpi.active_alarms_count}
@@ -83,10 +97,15 @@ export function App() {
                   onNavigate={(tab) => setActiveTab(tab)}
                 />
               )}
+              {activeTab === 'gate_console' && <GateConsoleView />}
               {activeTab === 'map' && <MapView />}
               {activeTab === 'ledger' && <LedgerView crossings={crossings} />}
               {activeTab === 'fleet' && <FleetView trucks={mockTrucks} />}
               {activeTab === 'reports' && <ReportsView />}
+              {activeTab === 'maintenance' && <MaintenanceView />}
+              {activeTab === 'analytics' && <AnalyticsView />}
+              {activeTab === 'contractor' && <ContractorView />}
+              {activeTab === 'ritase' && <RitaseView />}
             </>
           )}
         </main>
@@ -96,3 +115,4 @@ export function App() {
 }
 
 export default App;
+

@@ -1,0 +1,275 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Dark Theme Tokens (Default) — translucent for liquid glass */
+  --bg: #07090d;
+  --bg-card: rgba(19, 23, 34, 0.55);
+  --bg-elevated: rgba(28, 34, 52, 0.65);
+  --bg-input: rgba(21, 26, 40, 0.6);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --text-primary: #f8fafc;
+  --text-secondary: #a3aec2;
+  --text-dim: #6b7688;
+  --accent: #f59e0b;
+  --accent-hover: #d97706;
+  --card: rgba(19, 23, 34, 0.55);
+  --glass-blur: 18px;
+  --glass-highlight: rgba(255, 255, 255, 0.06);
+}
+
+.light {
+  /* Light Theme Tokens */
+  --bg: #eef1f6;
+  --bg-card: rgba(255, 255, 255, 0.62);
+  --bg-elevated: rgba(241, 245, 249, 0.7);
+  --bg-input: rgba(255, 255, 255, 0.7);
+  --border: rgba(15, 23, 42, 0.1);
+  --border-strong: rgba(15, 23, 42, 0.16);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-dim: #94a3b8;
+  --accent: #ea8a04;
+  --accent-hover: #c2740a;
+  --card: rgba(255, 255, 255, 0.62);
+  --glass-blur: 16px;
+  --glass-highlight: rgba(255, 255, 255, 0.55);
+}
+
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-bg-dark: var(--bg);
+  --color-card-dark: var(--card);
+}
+
+/* Fixed mining-pit backdrop, dark dominant + orange horizon glow */
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg);
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  height: 100%;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(1200px 700px at 72% 88%, rgba(245, 158, 11, 0.16), transparent 60%),
+    radial-gradient(900px 600px at 12% 4%, rgba(30, 41, 59, 0.35), transparent 62%),
+    url('/mine-bg.svg') center bottom / cover no-repeat;
+  pointer-events: none;
+}
+
+.light body::before,
+.light::before { display: none; }
+
+.light body::before {
+  background:
+    radial-gradient(1100px 650px at 72% 92%, rgba(234, 138, 4, 0.14), transparent 60%),
+    radial-gradient(900px 600px at 10% 0%, rgba(148, 163, 184, 0.28), transparent 60%),
+    linear-gradient(180deg, #eef1f6 0%, #e6ebf2 100%);
+  opacity: 1;
+}
+
+/* keep app content above the backdrop */
+body > * { position: relative; z-index: 1; }
+
+/* Custom Webkit Scrollbars */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+* { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+
+/* ===== Liquid Glass Cards ===== */
+.glass-card {
+  position: relative;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  box-shadow:
+    0 8px 32px -12px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 0 var(--glass-highlight);
+  overflow: hidden;
+}
+
+/* glossy top sheen */
+.glass-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 45%;
+  background: linear-gradient(180deg, var(--glass-highlight), transparent);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.glass-card-hover {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-card-hover:hover {
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow:
+    0 16px 40px -12px rgba(0, 0, 0, 0.6),
+    0 0 22px -6px rgba(245, 158, 11, 0.22),
+    inset 0 1px 0 0 var(--glass-highlight);
+  transform: translateY(-2px);
+}
+
+/* Surfaces that sit on glass (sidebar / header) */
+.glass-panel {
+  background-color: var(--bg-card);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  backdrop-filter: blur(22px) saturate(140%);
+  border-color: var(--border);
+}
+
+/* License Plate / Identity Card */
+.license-plate-card {
+  position: relative;
+  background: var(--bg-card);
+  border: 2px solid var(--accent);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  box-shadow:
+    0 0 26px -6px rgba(245, 158, 11, 0.32),
+    inset 0 1px 0 0 var(--glass-highlight);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* Mine Map Arena */
+.map-shell {
+  position: relative;
+  background: var(--bg-card);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  overflow: hidden;
+}
+.map-shell .map-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+/* Animations */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-slide-in-left { animation: slideInLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+
+/* ===== Browser print (Ctrl+P) ================================================
+   The shift report downloads as a generated PDF, so this block is only a safety
+   net for anyone hitting Ctrl+P: it drops the app chrome and unlocks the
+   scroll-locked flex shell so the page paginates onto white stock instead of
+   printing a clipped screenshot of the dark UI. */
+@media print {
+  @page { size: A4 portrait; margin: 12mm; }
+
+  /* Repaint tokens for paper, so it prints the same from either theme. */
+  :root, .light {
+    --bg: #ffffff;
+    --bg-card: #ffffff;
+    --bg-elevated: #ffffff;
+    --bg-input: #ffffff;
+    --border: #cbd5e1;
+    --border-strong: #94a3b8;
+    --text-primary: #0f172a;
+    --text-secondary: #1e293b;
+    --text-dim: #475569;
+    --card: #ffffff;
+    --glass-highlight: transparent;
+    --glass-blur: 0px;
+  }
+
+  /* Keep chart fills instead of letting the browser drop backgrounds. */
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+  body::before { display: none !important; }
+
+  /* Screen-only chrome: sidebar, top bar, export controls. */
+  [data-print="hide"] { display: none !important; }
+
+  /* Unlock the flex/overflow shell so content paginates instead of clipping. */
+  [data-print="shell"] {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  [data-print="main"] {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+  [data-print="sheet"] { max-width: none !important; }
+
+  .glass-card, .glass-panel {
+    background: #ffffff !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    overflow: visible !important;
+  }
+  .glass-card::before { display: none !important; }
+
+  /* Accent tones are tuned for dark glass; darken them for white stock. */
+  .text-emerald-400, .text-emerald-500 { color: #047857 !important; }
+  .text-amber-500, .text-amber-400 { color: #b45309 !important; }
+  .text-blue-500, .text-blue-400 { color: #1d4ed8 !important; }
+  .text-rose-400, .text-rose-500 { color: #be123c !important; }
+
+  /* Tailwind's lg: breakpoint does not apply to the print viewport. */
+  .print-cols-4 {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  .print-cols-2 {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  .print-avoid-break { break-inside: avoid !important; page-break-inside: avoid !important; }
+
+  a[href]::after { content: "" !important; }
+}

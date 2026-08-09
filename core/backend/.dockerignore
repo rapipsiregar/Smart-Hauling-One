@@ -1,0 +1,25 @@
+.git
+sam3/.git
+.venv
+.venv-nemotron
+data/
+ai-model/
+**/__pycache__
+*.egg-info
+.python-version
+.env
+*.pyc
+*.pyo
+*.pyd
+.db
+
+# Not needed for the API-server image: labs/ imports custom_model only,
+# never these two (see labs/05..07 for the CLI-only pipeline scripts that do).
+PADDLEOCR/
+nemotron-ocr-v2/
+
+docs/
+tests/
+README.md
+AGENTS.md
+tui.py

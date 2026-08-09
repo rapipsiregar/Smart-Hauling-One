@@ -1,210 +1,459 @@
-# OCR Hauling Truck
+# Integrated Smart Hauling System
 
-Pipeline for analyzing hauling-truck footage: download a YouTube playlist, extract frames, segment truck ID regions with [SAM 3](https://github.com/facebookresearch/sam3), and run OCR with [PaddleOCR-VL 1.6](https://github.com/PADDLEPADDLE/PADDLEOCR) or [NVIDIA Nemotron OCR v2](https://huggingface.co/nvidia/nemotron-ocr-v2).
+Membaca nomor lambung truk OHT dari kamera gerbang tambang secara otomatis, lalu
+menghitung ritase tanpa pencatatan manual. **Deteksi berjalan di tiap gerbang**;
+pusat mengumpulkan hasilnya dan menyusun laporan.
 
-## Prerequisites
+```
+  GERBANG A ─ Jetson ─┐
+  GERBANG B ─ Jetson ─┤      ┌──────────────────────────┐
+  GERBANG C ─ Jetson ─┼─────▶│  PUSAT                   │
+  GERBANG D ─ Jetson ─┘      │  kumpulkan + laporan     │
+       │                     │  master truk (276 unit)  │
+       │                     └──────────────────────────┘
+  konsol lokal                          │
+  tiap gerbang                   dashboard lintas-gerbang
+```
 
-- [uv](https://docs.astral.sh/uv/) (Python package manager)
-- Python 3.13+ (main project environment)
-- Python 3.12 (Nemotron OCR v2 — separate venv)
-- [yt-dlp](https://github.com/yt-dlp/yt-dlp) — playlist download (lab 01)
-- [ffmpeg](https://ffmpeg.org/) / ffprobe — frame extraction (lab 02)
-- CUDA-capable GPU recommended for SAM 3 and OCR inference
+Tiap gerbang berdiri sendiri: kamera → deteksi plat → OCR → voting konsensus →
+cocokkan ke replika master lokal → simpan → antre kirim ke pusat. **Kalau
+jaringan ke pusat mati, gerbang tetap mendeteksi, tetap mengenali truk, dan tetap
+menyimpan** — datanya menyusul saat sambungan pulih.
 
-## Setup
+---
+
+## Daftar isi
+
+| | |
+| :--- | :--- |
+| [Hasil pengujian nyata](#hasil-pengujian-nyata) | Angka dari 10 rekaman gerbang |
+| [Menjalankan](#menjalankan) | Satu perintah untuk demo, atau lewat Docker |
+| [Tampilan tiap halaman](#tampilan-tiap-halaman) | Tangkapan layar seluruh konsol |
+| [Cara kerjanya](#cara-kerjanya) | Alur, algoritma, dan angka penyetelan |
+| [Isi repositori](#isi-repositori) | Peta folder dan aturan duplikasi |
+| [Dokumen presentasi](#dokumen-presentasi) | Dua deck siap pakai |
+| [Pengujian](#pengujian) | Cara menjalankan suite |
+| [Kalau ada yang aneh](#kalau-ada-yang-aneh) | Empat kegagalan nyata dan tandanya |
+| [Yang belum selesai](#yang-belum-selesai) | Disebut apa adanya |
+
+---
+
+## Hasil pengujian nyata
+
+Sepuluh rekaman gerbang asli (kamera CAM 04, 27 Oktober 2023), dijalankan lewat
+tombol **Jalankan Uji** di konsol gerbang, mulai dari basis data kosong:
+
+| Yang diuji | Hasil |
+| :--- | :--- |
+| Rekaman diproses | 10 |
+| Nomor lambung terbaca benar | **10 / 10** |
+| Cocok persis ke master 276 unit | **10 / 10** |
+| Lintasan tercatat | **10** — satu rekaman = satu lintasan |
+| Ritase terbentuk | **5**, tanpa sisa |
+| Potongan plat tersimpan | **10 / 10** |
+| Terkirim ke pusat | **10 / 10** (HTTP 201) |
+
+Lama siklus diambil dari **jam yang tercetak di rekaman**, bukan waktu pemrosesan:
+
+| Nomor Lambung | Masuk | Keluar | Siklus |
+| :--- | :--- | :--- | :--- |
+| HD 2152 | 08:14:02 | 08:22:47 | 8m 45s |
+| HD 2221 | 09:03:15 | 09:11:50 | 8m 35s |
+| HD 2222 | 10:05:33 | 10:14:09 | 8m 36s |
+| HD 2241 | 11:02:21 | 11:10:58 | 8m 37s |
+| HD 2264 | 13:47:12 | 13:56:40 | 9m 28s |
+
+> **Belum ada klaim kecepatan.** Pengujian berjalan di GPU kelas desktop, bukan di
+> Jetson. Angka fps dari perangkat berbeda tidak bisa dipindahkan begitu saja,
+> jadi tidak ada janji throughput di dokumen mana pun sampai diukur di perangkat
+> yang sebenarnya.
+
+---
+
+## Menjalankan
+
+### Cara yang dipakai untuk demo — pusat + gerbang, dengan OCR sungguhan
+
+Ini yang Anda butuhkan kalau ingin **benar-benar menjalankan deteksi**: pusat di
+Docker, gerbang langsung di host supaya dapat GPU.
 
 ```bash
-git submodule update --init --recursive
-uv sync
+make demo-up        # nyalakan pusat + Gerbang A dan B
+make demo-status    # lihat apa yang jalan dan tiap konsol menunjuk ke mana
+make demo-restart   # setelah mengubah kode
+make demo-down      # matikan semuanya
 ```
 
-Submodules:
+| Layanan | Alamat |
+| :--- | :--- |
+| Dashboard pusat | http://localhost:3050 |
+| API pusat | http://localhost:8050/docs |
+| Gerbang A (inbound) | http://localhost:3150 |
+| Gerbang B (outbound) | http://localhost:3151 |
 
-| Path | Purpose |
-|------|---------|
-| `sam3/` | SAM 3 segmentation (editable workspace dependency) |
-| `PADDLEOCR/` | PaddleOCR upstream source |
-| `nemotron-ocr-v2/` | NVIDIA Nemotron OCR v2 source |
+Lebih banyak gerbang: `GATES="a b c d" make demo-up`. Tiap gerbang butuh kunci
+API sendiri — terbitkan dengan `make provision GATE=CAM-GATE-C`.
 
-### Nemotron OCR v2 (optional)
+> **Kenapa gerbangnya tidak di Docker?** Deteksi butuh CUDA. Kontainer tanpa
+> device passthrough akan diam-diam jatuh ke CPU yang tidak sanggup mengejar, dan
+> hasilnya terlihat seperti pipeline rusak padahal cuma kurang satu flag.
 
-Labs 05 and 07 use a separate Python 3.12 environment to avoid dependency conflicts with the main project:
+> **GPU harus muat.** Tiap gerbang memuat YOLO + PaddleOCR-VL, sekitar 1,7 GB.
+> Kalau ada proses lain yang memakan VRAM, gerbang akan OOM dan **semua truk
+> terbaca UNKNOWN tanpa pesan galat apa pun**. Periksa dengan `nvidia-smi`
+> sebelum menuduh OCR-nya yang salah.
+
+### Cara cepat — Docker
 
 ```bash
-uv venv .venv-nemotron --python 3.12
-uv pip install --python .venv-nemotron/bin/python torch torchvision \
-  --index-url https://download.pytorch.org/whl/cu126
-uv pip install --python .venv-nemotron/bin/python hatchling editables setuptools ninja
-CUDA_HOME=/usr/local/cuda-12.6 uv pip install --python .venv-nemotron/bin/python \
-  --no-build-isolation ./nemotron-ocr-v2/nemotron-ocr
+make up        # bangun + nyalakan keempat layanan, lalu impor master truk
+make urls      # tampilkan alamatnya
+make down      # matikan
 ```
 
-Lab 05 re-execs into `.venv-nemotron` automatically. Lab 07 runs Nemotron OCR in a subprocess from the main environment.
+| Layanan | Alamat |
+| :--- | :--- |
+| Dashboard pusat | http://localhost:3000 |
+| API pusat | http://localhost:8000/docs |
+| Konsol gerbang | http://localhost:3100 |
+| API gerbang | http://localhost:8100/docs |
 
-## Unified CLI
+### Keempat gerbang sekaligus
 
-You can use the unified `ocr-hauling-truck` CLI command to run any of the labs or pipeline commands:
+Untuk melihat konsol tiap gerbang berdampingan (hanya untuk pengembangan — di
+produksi tiap pasang berjalan di Jetson-nya sendiri):
 
 ```bash
-uv run ocr-hauling-truck <command> [options]
+docker compose -f docker-compose.yml -f docker-compose.gates.yml up -d
 ```
 
-### Available Commands
+| | Konsol | API |
+| :--- | :--- | :--- |
+| Gerbang A | http://localhost:3100 | :8100 |
+| Gerbang B | http://localhost:3101 | :8101 |
+| Gerbang C | http://localhost:3102 | :8102 |
+| Gerbang D | http://localhost:3103 | :8103 |
 
-| Command | Alias | Target Script | Purpose |
-|---------|-------|---------------|---------|
-| `01` | `download` | `labs/01-download-playlist.py` | Download YouTube playlist |
-| `01b` | `convert-mp4` | `labs/01b-convert-videos-to-mp4.py` | Convert downloaded videos to mp4 |
-| `02` | `extract` | `labs/02-extract-videos.py` | Extract frames from videos |
-| `03` | `segment` | `labs/03-extract-truck-id.py` | Segment truck IDs with SAM 3 |
-| `04` | `ocr-paddle` | `labs/04-ocr-truck-id-using-paddle-ocr-vl-1.6.py` | Run OCR with PaddleOCR-VL 1.6 |
-| `05` | `ocr-nemotron` | `labs/05-ocr-truck-id-using-nvidia-nemotron-ocr-2.py` | Run OCR with Nemotron OCR v2 |
-| `06` | `pipeline` | `labs/06-extract-video-using-sam3-and-ocr.py` | End-to-end video pipeline |
-| `07` | `pipeline-nemotron` | `labs/07-extract-video-using-sam3-and-ocr-using-nvidia-nemotron-ocr-v2.py` | End-to-end pipeline with Nemotron |
-| `08` | `detect-yolo26` | `labs/08-detect-truck-using-yolo26.py` | Detect trucks/vehicles with YOLO26n |
+Tiap gerbang punya basis datanya sendiri di `edge/backend/data/CAM-GATE-*/`.
+Itu disengaja: kalau berbagi satu basis data, lintasan yang terdeteksi di gerbang
+A akan muncul di riwayat gerbang B — justru kebalikan dari alasan konsol ini
+dipisah.
 
-For help with any command, run:
-```bash
-uv run ocr-hauling-truck <command> --help
-```
+### Tanpa Docker
 
-## Project layout
-
-| Path | Description |
-|------|-------------|
-| `labs/` | Numbered lab scripts (`01-`, `02-`, …) |
-| `data/01-playlist/` | Downloaded videos |
-| `data/01b-videos-converted-to-mp4/` | Converted MP4 videos |
-| `data/02-extracted-images-from-videos/` | Extracted JPEG frames |
-| `data/03-extract-truck-id/` | SAM 3 detections, YOLO labels, annotated frames |
-| `data/04-ocr-truck-id-using-paddle-ocr-vl-1.6/` | PaddleOCR-VL crops and results |
-| `data/05-ocr-truck-id-using-nvidia-nemotron-ocr-2/` | Nemotron OCR crops and results |
-| `data/06-extract-video-using-sam3-and-ocr-using-*/` | End-to-end video pipeline (lab 06) |
-| `data/07-extract-video-using-sam3-and-ocr-using-nvidia-nemotron-ocr-v2/` | Nemotron end-to-end shortcut (lab 07) |
-| `data/08-detect-truck-using-yolo26/` | YOLO26n annotated videos and per-video JSON summaries |
-| `sam3/` | SAM 3 git submodule |
-
-## Labs
-
-Run labs in order with `uv run`. Labs 03+ require a GPU and will download model weights on first run.
-
-### 01 — Download playlist
-
-Downloads the Truck Hauling 2026 YouTube playlist to `data/01-playlist/`. Uses `yt-dlp` with a download archive so reruns skip already-fetched videos.
+Dibutuhkan saat ingin memakai stack deteksi sungguhan, yang sengaja tidak
+dimasukkan ke image dev:
 
 ```bash
-uv run labs/01-download-playlist.py
+make build-ui  # sekali saja: pasang dependency & build kedua frontend
+make dev
+make dev-stop
 ```
 
-### 01b — Convert videos to MP4
+Perintah lain: `make test`, `make seed` (impor master), `make demo` (isi lintasan
+contoh), `make provision GATE=CAM-GATE-A` (terbitkan kunci API perangkat).
 
-Converts all WebM and MKV video files in `data/01-playlist/` to standard MP4 format (using libx264/AAC encoding in `ffmpeg`) under `data/01b-videos-converted-to-mp4/`.
+> **Port bentrok.** `make dev` memeriksa keempat port lebih dulu dan berhenti
+> kalau ada yang sudah terpakai. Ini disengaja: sebelumnya port 8000 dipakai
+> container proyek lain, dan UI diam-diam mem-proxy ke aplikasi asing lalu
+> menampilkan 404-nya seolah milik kita.
+>
+> Kalau perlu port lain, **bangun ulang UI dengan port yang sama**, karena
+> Next.js membakukan alamat backend saat `next build`, bukan saat `next start`:
+>
+> ```bash
+> CORE_API_PORT=8001 make build-ui
+> CORE_API_PORT=8001 make dev
+> ```
+
+> **GPU.** `pyproject.toml` menunjuk index CUDA PyTorch. Kalau venv terlanjur
+> memasang wheel CPU, deteksi tetap berjalan tapi jauh lebih lambat. Periksa
+> dengan `python -c "import torch; print(torch.cuda.is_available())"`.
+
+---
+
+## Tampilan tiap halaman
+
+Seluruh tangkapan layar di [`tangkapan-layar/`](tangkapan-layar/) diambil dari
+sistem yang berjalan dengan data hasil 10 rekaman nyata — bukan mockup.
+
+### Konsol Pusat
+
+| Halaman | Isinya |
+| :--- | :--- |
+| [Monitoring CCTV](tangkapan-layar/core-01-monitoring-cctv.jpg) | Dua layar gerbang berdampingan. Gambar mentah tanpa anotasi |
+| [Riwayat Pembacaan](tangkapan-layar/core-02-riwayat-pembacaan.jpg) | Posisi armada & ritase, daftar pembacaan, rincian + foto plat |
+| [Laporan Harian & Shift](tangkapan-layar/core-03-laporan-harian-shift.jpg) | Ritase per shift, sebaran per gerbang, ekspor Excel/PDF |
+| [Konfigurasi Sistem](tangkapan-layar/core-04-konfigurasi-sistem.jpg) | Registri kamera, arah gerbang, model yang dipakai |
+| [Perangkat Edge](tangkapan-layar/core-05-perangkat-edge.jpg) | Setelan inferensi dan kesehatan tiap perangkat |
+| [Tayangan Langsung](tangkapan-layar/core-06-tayangan-langsung.jpg) | Video mentah satu gerbang — **belum tersambung** |
+
+### Konsol Gerbang
+
+| Bagian | Isinya |
+| :--- | :--- |
+| [Status & Proses Deteksi](tangkapan-layar/edge-01-konsol-gerbang.jpg) | Empat penanda status, panel uji pembacaan |
+| [Lintasan Terbaru](tangkapan-layar/edge-02-lintasan-terbaru.jpg) | Riwayat milik gerbang itu sendiri |
+| [Voting & potongan plat](tangkapan-layar/edge-03-voting-dan-crop-plat.jpg) | Bukti di balik satu pembacaan |
+
+Empat penanda status di atas: **Kamera**, **Arah Gerbang**, **Kiriman ke Pusat**,
+**Menunggu Dikirim**. Arah gerbang datang dari pusat, bukan ditebak dari kode
+kamera — kode `CAM-GATE-A` tidak mengandung petunjuk apa pun soal arah, padahal
+arah itulah yang menentukan sebuah lintasan dihitung sebagai masuk atau keluar.
+Kalau pusat belum menyinkronkan, tertulis "Belum diketahui" alih-alih menebak.
+
+**Panel deteksi menampilkan prosesnya, bukan cuma hasilnya.** Selama rekaman
+diproses, tiap percobaan OCR muncul satu per satu — nomor gambar, apa yang
+terbaca, dan keyakinannya — termasuk percobaan yang gagal. Contoh nyata dari
+rekaman `2221 - Out`:
+
+| Gambar | Terbaca |
+| :--- | :--- |
+| #167 | 2221 |
+| #175 | **2018** ← salah baca |
+| #181 | tak terbaca |
+| **Konsensus** | **2221** ✓ |
+
+Percobaan gagal sengaja ikut ditampilkan: itu tetap tanda perangkat sedang
+bekerja, dan menyembunyikannya membuat rekaman yang platnya sulit terbaca
+terlihat seperti proses macet. Sebelum ini panel diam puluhan detik lalu tiba-tiba
+memunculkan jawaban — tidak bisa dibedakan dari hang, dan refleksnya menekan
+tombol dua kali.
+
+### Alur deteksi
+
+| Tahap | |
+| :--- | :--- |
+| [Gerbang masuk](tangkapan-layar/alur-01-gerbang-masuk.jpg) | HD 2152 dikenali, 31 pembacaan, langsung terkirim |
+| [Gerbang keluar](tangkapan-layar/alur-02-gerbang-keluar.jpg) | Truk yang sama keluar — satu ritase terbentuk |
+
+> **Mode Panduan.** Ikon buku di pojok kanan atas konsol pusat mengganti isi
+> setiap kartu menjadi penjelasan: kartu itu untuk apa, angkanya dari mana, dan
+> apa yang perlu diperhatikan. Berguna saat melatih operator baru.
+
+---
+
+## Cara kerjanya
+
+### Enam utas di dalam perangkat gerbang
+
+| Utas | Tugas |
+| :--- | :--- |
+| `CaptureThread` | Baca RTSP ke ring buffer dangkal (3 frame). Frame lama dibuang kalau inferensi tertinggal |
+| `InferenceLoop` | YOLO lalu OCR, berurutan per frame |
+| `DetectionWindow` | Mesin status yang menentukan batas satu truk |
+| `LocalFinalizer` | Voting, cocokkan ke replika master, simpan |
+| `OutboxSender` | Antrean kirim tahan mati listrik, satu baris pada satu waktu |
+| `MasterSync` + `Heartbeat` | Jaga replika master, laporkan kesehatan |
+
+### Angka penyetelan, dan asalnya
+
+| Setelan | Nilai | Dasar |
+| :--- | :--- | :--- |
+| `detect_window_sec` | 10 detik | Truk terlihat ~8 detik di rekaman; window harus lebih panjang |
+| `NO_DETECTION_GRACE_SEC` | 2,5 detik | **Diukur**: jeda terpanjang plat tidak terlihat 1,87 detik |
+| `POST_WINDOW_COOLDOWN_SEC` | 1 detik | Cegah ekor truk membuka jendela kedua |
+| `MAX_FUZZY_DISTANCE` | 1 | Pada jarak 2, kode 4 digit bertabrakan terus |
+
+Ambang jeda sebelumnya 1,5 detik dan **memecah satu truk jadi dua lintasan** —
+jendela kedua hanya menangkap logo CAT di kabin. Nilainya diukur ulang di
+kesepuluh rekaman, bukan ditebak.
+
+### Voting konsensus
+
+Tiap jendela mengumpulkan puluhan pembacaan, dikelompokkan dengan jarak edit
+maksimal 1. Bobot satu pembacaan = keyakinan deteksi × keyakinan OCR. Kelompok
+dengan bobot terbesar menang.
+
+Contoh nyata: `2152` menang **95%** dari 18 pembacaan, `CA7` (logo CAT) kalah
+**5%** dari 1 pembacaan. Tanpa voting, satu frame yang kebetulan menangkap logo
+bisa jadi jawaban akhir.
+
+### Pencocokan ke daftar armada
+
+Kamera hanya membaca 4 digit — awalan operator tidak dicat sebesar itu. Cocok
+persis dipakai; selisih 1 digit dikoreksi; **kalau dua unit sama dekatnya,
+sengaja tidak ditebak** dan disimpan sebagai tidak dikenali. Menebak berarti
+ritase tercatat pada truk yang salah.
+
+**Khusus gerbang keluar**: dicocokkan dulu ke truk yang sedang di dalam pit —
+truk yang keluar pasti truk yang tadi masuk. Himpunan itu biasanya beberapa unit,
+bukan 276. Kalau gagal, baru jatuh ke master penuh, supaya satu deteksi masuk
+yang terlewat tidak menghukum truk itu selamanya.
+
+### Mengulang pengujian dari nol
+
+**Konfigurasi Sistem → Hapus Hasil Deteksi** mengosongkan lintasan di pusat
+**dan** di tiap perangkat gerbang lewat satu tombol.
+
+Keduanya perlu karena tiap gerbang menyimpan basis datanya sendiri. Kalau hanya
+pusat yang dihapus, gerbang masih memegang bacaan lama dan pengujian berikutnya
+dimulai dari dua catatan yang tidak sama — justru kebingungan yang tombol ini
+ada untuk mencegahnya.
+
+Hasilnya dilaporkan **per gerbang, termasuk yang gagal**. Gerbang yang sedang
+tidak terjangkau ditandai merah dengan keterangan bahwa perangkat itu masih
+memegang datanya — bukan diam-diam dianggap berhasil. Satu gerbang mati tidak
+menghentikan yang lain.
+
+Yang **tidak** ikut terhapus: daftar armada 276 unit, registri kamera, dan kunci
+API perangkat. Kehilangan salah satunya membuat sistem terlihat rusak padahal
+hanya kehilangan pengaturannya.
+
+Alamat gerbang yang dijangkau diambil dari `DEV_GATE_RESET_URLS` di `.env`.
+Gerbang yang tidak terdaftar di sana **tidak akan tersentuh dan tidak muncul di
+laporan sama sekali** — itu batasan nyata dari pendekatan berbasis daftar ini.
+
+---
+
+## Isi repositori
+
+| Folder | Isi | Jalan di |
+| :--- | :--- | :--- |
+| `core/backend` | FastAPI: penampung lintasan, master truk, laporan, API perangkat | server |
+| `core/frontend` | Dashboard lintas-gerbang (Next.js) | server |
+| `edge/backend` | FastAPI lokal + thread deteksi | tiap Jetson |
+| `edge/frontend` | Konsol satu gerbang | tiap Jetson |
+| `tangkapan-layar/` | Bukti tampilan tiap halaman | — |
+
+`edge/` sengaja **tidak** mengimpor apa pun dari `core/` — harus bisa dipasang
+sendirian ke perangkat. Algoritma bersama (pencocokan dan voting) disalin ke
+`edge/backend/vendor/`, dan `edge/backend/tests/test_vendor_sync.py` memastikan
+salinannya identik byte demi byte.
+
+> Kalau tes itu gagal, **salin ulang dari `core/`** — jangan perbaiki salinan
+> edge sendiri-sendiri. Justru itu yang membuat truk yang sama dikenali berbeda
+> di gerbang dan di pusat, lalu rekonsiliasi ritase diam-diam berhenti cocok
+> dengan dirinya sendiri.
+
+---
+
+## Dokumen presentasi
+
+| Berkas | Untuk |
+| :--- | :--- |
+| [`Integrated-Smart-Hauling-System-Panduan-Halaman.pptx`](Integrated-Smart-Hauling-System-Panduan-Halaman.pptx) | Panduan pakai, halaman per halaman. Dua bagian: pusat dan gerbang |
+| [`Integrated-Smart-Hauling-System-Teknis.pptx`](Integrated-Smart-Hauling-System-Teknis.pptx) | Teknis penuh: sejarah arsitektur, alur, algoritma, pertimbangan perangkat |
+
+---
+
+## Pengujian
 
 ```bash
-uv run labs/01b-convert-videos-to-mp4.py
+make test            # kedua suite
 ```
 
-### 02 — Extract frames
+| Suite | Jumlah | Menjaga |
+| :--- | ---: | :--- |
+| `core/backend` | 174 | Kontrak API, bentuk respons, ritase, pencocokan, ingestion |
+| `edge/backend` | 105 | Jendela deteksi, antrean, API gerbang, sinkronisasi salinan |
 
-Extracts 8 evenly spaced frames from each video in `data/01-playlist/` and writes JPEGs to `data/02-extracted-images-from-videos/`. Existing frames are skipped.
+Termasuk tes yang memastikan salinan algoritma di gerbang identik byte demi byte
+dengan aslinya di pusat, dan tes yang memastikan seluruh modul perangkat
+benar-benar bisa diimpor — celah yang pernah membuat agen gerbang tidak bisa
+start sama sekali tanpa satu tes pun gagal.
+
+---
+
+## Kalau ada yang aneh
+
+Empat kegagalan yang pernah benar-benar terjadi, beserta tandanya. Ketiganya
+menyamar sebagai masalah lain, dan itulah alasan dicatat di sini.
+
+### Semua truk terbaca UNKNOWN
+
+Hampir selalu **GPU kehabisan memori**, bukan OCR yang salah.
 
 ```bash
-uv run labs/02-extract-videos.py
+nvidia-smi --query-compute-apps=pid,used_memory --format=csv
 ```
 
-Output naming: `{video_id}_frame01.jpg` … `{video_id}_frame08.jpg`.
+Tiap gerbang memuat YOLO + PaddleOCR-VL, sekitar **1,7 GB**. Kalau ada proses
+lain yang memakan VRAM, gerbang OOM dan menghasilkan nol pembacaan — yang lalu
+dicatat sebagai `unreadable` → `UNKNOWN`.
 
-### 03 — Segment truck IDs (SAM 3)
+> **Ini cacat yang belum diperbaiki.** Kegagalan perangkat keras saat ini
+> **tidak bisa dibedakan** dari "plat memang tidak terbaca": `last_error` tetap
+> `null` dan tidak ada peringatan di layar mana pun. Di lapangan, Jetson yang
+> kehabisan VRAM akan diam-diam melaporkan seluruh truk sebagai UNKNOWN tanpa
+> alarm apa pun. Sampai diperbaiki, `nvidia-smi` adalah satu-satunya cara tahu.
 
-Segments truck number regions in extracted frames using SAM 3 with a text prompt (default: `"truck number"`). Writes YOLO bbox/segmentation labels, per-frame JSON annotations, and annotated preview images to `data/03-extract-truck-id/`.
+### Dua konsol gerbang menampilkan perangkat yang sama
 
-```bash
-uv run labs/03-extract-truck-id.py
-uv run labs/03-extract-truck-id.py --limit 5          # test on first 5 frames
-uv run labs/03-extract-truck-id.py --force            # reprocess existing frames
-```
+Next.js membekukan aturan rewrite ke `routes-manifest.json` **saat build**, bukan
+saat start — jadi menyetel `EDGE_BACKEND_ORIGIN` sebelum `next start` tidak
+berpengaruh. Gerbang yang berbagi satu build akan semuanya menunjuk ke backend
+yang terakhir di-build.
 
-### 04 — OCR with PaddleOCR-VL 1.6
+`make demo-up` sudah menanganinya: tiap gerbang mendapat direktori build sendiri
+lewat `EDGE_NEXT_DIST`. Periksa dengan `make demo-status` — kolom terakhir
+menyebut perangkat mana yang sebenarnya dilayani tiap konsol.
 
-Crops each SAM 3 detection from lab 03 and runs [PaddleOCR-VL 1.6](https://github.com/PADDLEPADDLE/PADDLEOCR) text extraction. Writes crops, per-detection JSON results, `summary.json`, and `extracted-texts.txt` to `data/04-ocr-truck-id-using-paddle-ocr-vl-1.6/`.
+Di Jetson sungguhan hal ini tidak berlaku: satu perangkat, satu backend, selalu
+localhost.
 
-```bash
-uv run labs/04-ocr-truck-id-using-paddle-ocr-vl-1.6.py
-uv run labs/04-ocr-truck-id-using-paddle-ocr-vl-1.6.py --engine transformers --device cuda
-```
+### Port sudah terpakai padahal sudah dihentikan
 
-### 05 — OCR with NVIDIA Nemotron OCR v2
+`next start` bersarang tiga proses — `npx`, `sh`, `next-server` — dan
+`next-server` tidak cocok dengan pola yang mematikan dua lainnya. Ia bertahan
+memegang port, lalu terlihat seperti bentrok port sungguhan.
 
-Same workflow as lab 04, using Nemotron OCR v2 instead. Requires the `.venv-nemotron` setup above. Output goes to `data/05-ocr-truck-id-using-nvidia-nemotron-ocr-2/`.
+`make demo-down` menyapu berdasarkan port, bukan hanya PID tercatat.
 
-```bash
-uv run labs/05-ocr-truck-id-using-nvidia-nemotron-ocr-2.py
-uv run labs/05-ocr-truck-id-using-nvidia-nemotron-ocr-2.py --lang en --merge-level word
-```
+### Tombol reset tidak mengosongkan gerbang
 
-### 06 — End-to-end video pipeline
+Periksa `DEV_GATE_RESET_URLS` di `.env`. Gerbang yang tidak terdaftar di sana
+tidak akan tersentuh, dan karena tidak terdaftar ia juga tidak muncul sebagai
+kegagalan di laporan.
 
-Runs the full pipeline on source videos: extract frames → SAM 3 segmentation → OCR. Supports both OCR backends and can produce annotated output videos.
+---
 
-```bash
-# PaddleOCR-VL (default)
-uv run labs/06-extract-video-using-sam3-and-ocr.py
+## Catatan penerapan
 
-# Nemotron OCR v2
-uv run labs/06-extract-video-using-sam3-and-ocr.py --ocr-backend nvidia-nemotron-ocr-v2
+`docker-compose.yml` di sini **khusus pengembangan** — menyalakan keempat layanan
+di satu mesin. Di produksi tidak pernah begitu: pasangan `edge/*` berjalan di
+masing-masing dari 4 Jetson Orin Nano Super (ARM64, lewat
+`edge/backend/Dockerfile.jetson`), dan pasangan `core/*` di server.
 
-# Single video, limited frames
-uv run labs/06-extract-video-using-sam3-and-ocr.py --video-id _6IZuVvNNYo --frames-per-video 4
-```
+Image dev `edge-backend` juga tidak memuat `ultralytics`/`paddleocr`: dengan
+`SMART_GATE_RUN_AGENT=false`, API, replika master, dan pencocokan lokal tetap
+bisa diuji tanpa kamera, model, atau GPU.
 
-### 07 — End-to-end with Nemotron (shortcut)
+> Variabel `SMART_GATE_*`, nama container, dan `smart_gate.db` sengaja **tidak**
+> ikut diganti nama saat produk berganti nama. Itu identitas teknis; mengubahnya
+> mematikan deployment yang berjalan dan kunci API perangkat yang sudah
+> di-provision.
 
-Wrapper around lab 06 that defaults to Nemotron OCR v2 and runs OCR in a subprocess so the main `.venv` stays on Python 3.13. Output goes to `data/07-extract-video-using-sam3-and-ocr-using-nvidia-nemotron-ocr-v2/`.
+---
 
-```bash
-uv run labs/07-extract-video-using-sam3-and-ocr-using-nvidia-nemotron-ocr-v2.py
-uv run labs/07-extract-video-using-sam3-and-ocr-using-nvidia-nemotron-ocr-v2.py --video-id _6IZuVvNNYo
-```
+## Dokumentasi
 
-Accepts the same CLI flags as lab 06 (e.g. `--frames-per-video`, `--force`, `--no-output-video`).
+Proyek ini memakai metodologi **Chain of Truth** — lihat
+[`core/backend/AGENTS.md`](core/backend/AGENTS.md):
 
-### 08 — Detect trucks/vehicles (YOLO26n)
+* [`docs/PRD.md`](core/backend/docs/PRD.md) — narasi bisnis dari RFQ
+* [`docs/edge-system/`](core/backend/docs/edge-system/) — spesifikasi teknis perangkat gerbang
+* [`docs/data_model.md`](core/backend/docs/data_model.md) · [`docs/information_architecture.md`](core/backend/docs/information_architecture.md) · [`docs/design_system.md`](core/backend/docs/design_system.md)
+* [`docs/feature-list.md`](core/backend/docs/feature-list.md) — inventaris fitur
 
-Runs Ultralytics YOLO26n on videos from `data/01-playlist/`, keeping COCO vehicle classes (`bicycle`, `car`, `motorcycle`, `bus`, `train`, `truck`). Writes annotated MP4s and per-video JSON summaries to `data/08-detect-truck-using-yolo26/`.
+---
 
-```bash
-uv run labs/08-detect-truck-using-yolo26.py
-uv run labs/08-detect-truck-using-yolo26.py --video-id _6IZuVvNNYo
-uv run labs/08-detect-truck-using-yolo26.py --limit 1 --max-frames 60   # smoke test
-uv run labs/08-detect-truck-using-yolo26.py --force
-uv run labs/08-detect-truck-using-yolo26.py --confidence 0.4
-```
+## Yang belum selesai
 
-## Pipeline overview
-
-```
-YouTube playlist
-      │
-      ▼
-  01-download-playlist  →  data/01-playlist/
-      │
-      ▼
-  02-extract-videos     →  data/02-extracted-images-from-videos/
-      │
-      ▼
-  03-extract-truck-id   →  data/03-extract-truck-id/  (SAM 3)
-      │
-      ├──────────────────────────────┐
-      ▼                              ▼
-  04-paddle-ocr-vl-1.6          05-nemotron-ocr-v2
-      │                              │
-      └──────────┬───────────────────┘
-                 ▼
-  06/07 end-to-end video pipeline (frames + SAM 3 + OCR + optional annotated video)
-```
-
-## Development
-
-- Use `uv` for all Python commands (`uv add`, `uv sync`, `uv run`).
-- Lab scripts live in `labs/` with numeric prefixes; outputs go under `data/<lab-name>/`.
-- See [AGENTS.md](AGENTS.md) for agent/AI conventions.
+* **Rantai deteksi belum pernah berjalan dari kamera langsung** — baru dari
+  rekaman. Semua angka di dokumen ini berasal dari rekaman.
+* **Kecepatan belum diukur di Jetson.** Karena itu tidak ada klaim fps di mana
+  pun. Rinciannya di `core/backend/docs/edge-system/PRD.md` §8.
+* **Tayangan langsung WebRTC** (`WhipPusher._push`) sengaja belum
+  diimplementasikan sampai ada media relay sungguhan untuk mengujinya — menulis
+  negosiasi WebRTC tanpa lawan uji menghasilkan kode yang tampak benar dan tidak
+  pernah bekerja.
+* **Kegagalan GPU menyamar sebagai hasil deteksi normal.** OOM CUDA
+  menghasilkan nol pembacaan, dicatat sebagai `unreadable`/`UNKNOWN`, dan
+  `last_error` tetap `null` — tidak terbedakan dari plat yang memang tidak
+  terbaca. Perbaikannya: tangkap `torch.cuda.OutOfMemoryError` di jalur
+  inferensi, isi `last_error`, dan tandai lintasannya sebagai gagal-perangkat.
+* **Penyimpanan rekaman 7 hari** untuk sengketa sudah ada kodenya
+  (`agent/video_retention.py`) tapi belum dirangkai ke layanan gerbang.
+* **Pemisahan compose per-peran** untuk produksi ditunda sampai arsitekturnya
+  mengendap.

@@ -1,9 +1,9 @@
 [submodule "sam3"]
-	path = sam3
+	path = core/backend/sam3
 	url = https://github.com/facebookresearch/sam3
 [submodule "PADDLEOCR"]
-	path = PADDLEOCR
+	path = core/backend/PADDLEOCR
 	url = https://github.com/PADDLEPADDLE/PADDLEOCR
 [submodule "nemotron-ocr-v2"]
-	path = nemotron-ocr-v2
+	path = core/backend/nemotron-ocr-v2
 	url = https://huggingface.co/nvidia/nemotron-ocr-v2

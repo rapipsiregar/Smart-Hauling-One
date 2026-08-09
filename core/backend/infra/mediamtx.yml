@@ -1,0 +1,44 @@
+# MediaMTX configuration for Integrated Smart Hauling System live raw CCTV viewing.
+# docs/edge-system/SRS.md §8.1 -- WHIP ingest from edges, WHEP playback to browsers.
+#
+# Paths are created on demand: the backend issues URLs of the form
+#   /whip/{camera_code}/{session_id}   (edge pushes)
+#   /whep/{camera_code}/{session_id}   (browser plays)
+# so no per-gate path needs to be predeclared here.
+#
+# NOTE: MediaMTX's config schema changes between releases. If the container logs a
+# config-parse error on boot, check that release's own mediamtx.yml reference
+# rather than guessing at key names.
+
+logLevel: info
+logDestinations: [stdout]
+
+# --- WebRTC (WHIP ingest + WHEP playback) ------------------------------------
+webrtc: yes
+webrtcAddress: :8889
+webrtcEncryption: no          # TLS terminates at the reverse proxy in production
+webrtcAllowOrigin: '*'        # tighten to the dashboard origin before production
+
+# ICE servers advertised to both peers. The coturn container is what lets traffic
+# traverse the cellular NAT the 4 edge devices sit behind (SRS §11 risk).
+webrtcICEServers2:
+  - url: turn:coturn:3478
+    username: smartgate
+    password: CHANGE_ME_BEFORE_DEPLOYMENT
+
+# Set to the induk's public IP/hostname in production, or WebRTC will only ever
+# offer unroutable container-internal addresses.
+webrtcAdditionalHosts: []
+
+# --- Control API (health checks / session introspection) ---------------------
+api: yes
+apiAddress: :9997
+
+# --- Disable protocols this deployment does not use --------------------------
+rtsp: no
+rtmp: no
+hls: no
+srt: no
+
+paths:
+  all_others:

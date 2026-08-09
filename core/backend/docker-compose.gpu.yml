@@ -1,0 +1,13 @@
+# GPU override — requires a native Docker Engine with nvidia-container-toolkit
+# configured (Docker Desktop's Linux VM cannot pass through the host GPU).
+#
+# Usage: docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
+services:
+  backend:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

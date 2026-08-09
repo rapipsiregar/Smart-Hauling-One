@@ -1,9 +1,16 @@
 export type NavigationTab = 
   | 'dashboard'
+  | 'gate_console'
   | 'map'
   | 'ledger'
   | 'fleet'
-  | 'reports';
+  | 'ritase'
+  | 'reports'
+  | 'maintenance'
+  | 'analytics'
+  | 'contractor';
+
+
 
 export interface CrossingLog {
   id: string;
@@ -19,6 +26,13 @@ export interface CrossingLog {
   is_verified: boolean;
   notes?: string;
   cycle_time_minutes?: number;
+}
+
+export interface OCRVotingFrame {
+  frame_index: number;
+  read_text: string;
+  confidence: number;
+  is_winner: boolean;
 }
 
 export interface TruckAsset {
@@ -39,12 +53,35 @@ export interface TowerTelemetry {
   name: string;
   location: string;
   battery_soc: number; // %
-  pv_voltage: number;  // Volts
+  battery_voltage: number; // Volts
   temperature: number; // Celsius
+  vibration: number; // mm/s RMS
+  pv_voltage: number;  // Volts
   signal_dbm: number;
   mode: 'NORMAL_LTE' | 'MONSOON_UHF';
   status: 'ONLINE' | 'WARNING' | 'CRITICAL';
   battery_trend: number[];
+}
+
+export interface MaintenanceTower {
+  id: string;
+  name: string;
+  location: string;
+  battery_health_pct: number;
+  lens_clarity_pct: number;
+  vibration_rms: number;
+  days_to_failure: number;
+  low_voltage_alert: boolean;
+  voltage_history: { time: string; voltage: number; threshold: number }[];
+}
+
+export interface RegressionForecast {
+  tower_name: string;
+  metric: string;
+  slope_m: number;
+  intercept_c: number;
+  r2_score: number;
+  hours_to_limit: number;
 }
 
 export interface KPISummary {
@@ -78,3 +115,4 @@ export interface ChatMessage {
   data_table?: any[];
   chart_data?: any[];
 }
+

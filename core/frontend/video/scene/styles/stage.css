@@ -1,0 +1,132 @@
+/* Stage, layer stack and post effects.
+
+   No CSS transitions or keyframe animations anywhere in this project: every
+   animated property is written as an inline style by JS from absolute time.
+   A CSS transition would desync the instant a frame took longer to render. */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: #07090d;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+  letter-spacing: -0.01em;
+}
+
+#stage {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: var(--bg);
+  isolation: isolate;
+}
+
+/* --- layer stack, back to front ------------------------------------------ */
+
+#gl { position: absolute; inset: 0; z-index: 1; }
+
+/* Perspective container for every 3D UI panel. 1400px matches the reference's
+   fairly wide lens: panels read as tilted without looking fisheyed. */
+#world {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  perspective: 1400px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+#type { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+#fx { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+
+/* --- post ---------------------------------------------------------------- */
+
+/* Vignette: the reference crushes the corners hard, which is what keeps the
+   centred type legible over busy background cards. */
+#vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 78% 68% at 50% 50%,
+    transparent 38%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+}
+
+.light #vignette {
+  background: radial-gradient(
+    ellipse 80% 70% at 50% 50%,
+    transparent 42%,
+    rgba(100, 116, 139, 0.22) 100%
+  );
+}
+
+/* Fine grain stops the large flat gradients from banding in h264. */
+#grain {
+  position: absolute;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: var(--grain-src);
+  background-size: 180px 180px;
+}
+
+/* Full-frame flash used for the dark -> light act break. */
+#flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: #fff;
+  opacity: 0;
+}
+
+/* Letterbox-free black used to fade in and out at the very ends. */
+#fade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: #000;
+  opacity: 0;
+  z-index: 9;
+}
+
+/* --- shared primitives --------------------------------------------------- */
+
+.panel {
+  position: absolute;
+  transform-style: preserve-3d;
+  will-change: transform, opacity, filter;
+  backface-visibility: hidden;
+}
+
+/* Rim glow on tilted panels, the reference's signature edge treatment. */
+.rim {
+  box-shadow:
+    0 0 0 1px rgba(var(--accent-rgb), 0.18),
+    0 30px 90px -30px rgba(0, 0, 0, 0.9),
+    0 0 60px -10px rgba(var(--accent-rgb), 0.22);
+}
+
+.rim-ok {
+  box-shadow:
+    0 0 0 1px rgba(var(--ok-rgb), 0.22),
+    0 30px 90px -30px rgba(0, 0, 0, 0.9),
+    0 0 70px -12px rgba(var(--ok-rgb), 0.3);
+}
+
+.center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}

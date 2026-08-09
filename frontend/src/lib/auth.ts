@@ -1,6 +1,6 @@
 import { NavigationTab } from './types';
 
-export type UserRole = 'super_admin' | 'gate_operator' | 'logistics_auditor' | 'field_dispatcher';
+export type UserRole = 'super_admin' | 'gate_operator' | 'logistics_auditor' | 'field_technician';
 
 export interface User {
   id: string;
@@ -13,11 +13,13 @@ export interface User {
 }
 
 export const ROLE_PERMISSIONS: Record<UserRole, NavigationTab[]> = {
-  super_admin: ['dashboard', 'map', 'ledger', 'fleet', 'reports'],
-  gate_operator: ['dashboard', 'map'],
-  logistics_auditor: ['dashboard', 'ledger', 'reports'],
-  field_dispatcher: ['dashboard', 'fleet'],
+  super_admin: ['dashboard', 'gate_console', 'map', 'ledger', 'fleet', 'ritase', 'reports', 'maintenance', 'analytics', 'contractor'],
+  gate_operator: ['gate_console', 'dashboard', 'map'],
+  logistics_auditor: ['ledger', 'reports', 'dashboard', 'analytics', 'contractor', 'ritase'],
+  field_technician: ['maintenance', 'map', 'dashboard'],
 };
+
+
 
 export const DEMO_USERS: User[] = [
   {
@@ -25,7 +27,7 @@ export const DEMO_USERS: User[] = [
     name: 'Budi Santoso (Admin)',
     email: 'admin@smarthauling.id',
     role: 'super_admin',
-    roleTitle: 'Super Administrator',
+    roleTitle: 'Supervisor Pusat (Head Ops)',
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
   },
   {
@@ -33,7 +35,7 @@ export const DEMO_USERS: User[] = [
     name: 'Ahmad Rizal (Operator)',
     email: 'operator@smarthauling.id',
     role: 'gate_operator',
-    roleTitle: 'Gate 01 Operator',
+    roleTitle: 'Operator Pos Gerbang CK North',
     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
     contractor: 'PT Tunas Inti Abadi',
   },
@@ -48,10 +50,10 @@ export const DEMO_USERS: User[] = [
   },
   {
     id: 'usr-4',
-    name: 'Dedi Kurniawan (Dispatcher)',
-    email: 'dispatcher@smarthauling.id',
-    role: 'field_dispatcher',
-    roleTitle: 'Fleet Supervisor',
+    name: 'Dedi Kurniawan (Teknisi)',
+    email: 'technician@smarthauling.id',
+    role: 'field_technician',
+    roleTitle: 'Teknisi Edge & Telemetri Tower',
     avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
   },
 ];

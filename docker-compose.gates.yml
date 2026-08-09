@@ -1,0 +1,116 @@
+# All four gates at once, for checking each device's own dashboard.
+#
+#     docker compose -f docker-compose.yml -f docker-compose.gates.yml up -d
+#
+#     Gate A  UI http://localhost:3100   API http://localhost:8100
+#     Gate B  UI http://localhost:3101   API http://localhost:8101
+#     Gate C  UI http://localhost:3102   API http://localhost:8102
+#     Gate D  UI http://localhost:3103   API http://localhost:8103
+#
+# This exists ONLY because all four are pretending to share one machine. In
+# production there is no such file: each pair runs on its own Jetson at the gate,
+# reachable at that device's own address, and a technician opens the one in front
+# of them. The base compose file already describes that single pair.
+#
+# Each gate gets its OWN database and outbox directory. Sharing one would let a
+# crossing detected at gate A appear in gate B's history, which is precisely the
+# confusion these separate consoles exist to avoid.
+
+name: smart-gate
+
+services:
+  # Gate A is the pair already defined in docker-compose.yml; only its data
+  # directory is pinned here so it matches the others' layout.
+  edge-backend:
+    environment:
+      - SMART_GATE_CAMERA_CODE=CAM-GATE-A
+    volumes:
+      - ./edge/backend/data/CAM-GATE-A:/srv/data
+      - ./edge/backend/video-sources:/srv/video-sources:ro
+
+  edge-backend-b:
+    build:
+      context: ./edge/backend
+    container_name: sg-edge-backend-b
+    ports:
+      - "8101:8100"
+    environment:
+      - SMART_GATE_CAMERA_CODE=CAM-GATE-B
+      - SMART_GATE_INDUK_URL=http://core-backend:8000
+      - SMART_GATE_API_KEY=${EDGE_API_KEY_B:-}
+      - SMART_GATE_EDGE_DB=/srv/data/edge.db
+      - SMART_GATE_RUN_AGENT=${EDGE_RUN_AGENT:-false}
+    volumes:
+      - ./edge/backend/data/CAM-GATE-B:/srv/data
+      - ./edge/backend/video-sources:/srv/video-sources:ro
+    depends_on: [core-backend]
+    restart: unless-stopped
+
+  edge-frontend-b:
+    build:
+      context: ./edge/frontend
+      args:
+        EDGE_BACKEND_ORIGIN: http://edge-backend-b:8100
+    container_name: sg-edge-frontend-b
+    ports:
+      - "3101:3100"
+    depends_on: [edge-backend-b]
+    restart: unless-stopped
+
+  edge-backend-c:
+    build:
+      context: ./edge/backend
+    container_name: sg-edge-backend-c
+    ports:
+      - "8102:8100"
+    environment:
+      - SMART_GATE_CAMERA_CODE=CAM-GATE-C
+      - SMART_GATE_INDUK_URL=http://core-backend:8000
+      - SMART_GATE_API_KEY=${EDGE_API_KEY_C:-}
+      - SMART_GATE_EDGE_DB=/srv/data/edge.db
+      - SMART_GATE_RUN_AGENT=${EDGE_RUN_AGENT:-false}
+    volumes:
+      - ./edge/backend/data/CAM-GATE-C:/srv/data
+      - ./edge/backend/video-sources:/srv/video-sources:ro
+    depends_on: [core-backend]
+    restart: unless-stopped
+
+  edge-frontend-c:
+    build:
+      context: ./edge/frontend
+      args:
+        EDGE_BACKEND_ORIGIN: http://edge-backend-c:8100
+    container_name: sg-edge-frontend-c
+    ports:
+      - "3102:3100"
+    depends_on: [edge-backend-c]
+    restart: unless-stopped
+
+  edge-backend-d:
+    build:
+      context: ./edge/backend
+    container_name: sg-edge-backend-d
+    ports:
+      - "8103:8100"
+    environment:
+      - SMART_GATE_CAMERA_CODE=CAM-GATE-D
+      - SMART_GATE_INDUK_URL=http://core-backend:8000
+      - SMART_GATE_API_KEY=${EDGE_API_KEY_D:-}
+      - SMART_GATE_EDGE_DB=/srv/data/edge.db
+      - SMART_GATE_RUN_AGENT=${EDGE_RUN_AGENT:-false}
+    volumes:
+      - ./edge/backend/data/CAM-GATE-D:/srv/data
+      - ./edge/backend/video-sources:/srv/video-sources:ro
+    depends_on: [core-backend]
+    restart: unless-stopped
+
+  edge-frontend-d:
+    build:
+      context: ./edge/frontend
+      args:
+        EDGE_BACKEND_ORIGIN: http://edge-backend-d:8100
+    container_name: sg-edge-frontend-d
+    ports:
+      - "3103:3100"
+    depends_on: [edge-backend-d]
+    restart: unless-stopped

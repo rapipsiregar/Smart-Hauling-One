@@ -1,0 +1,9 @@
+{
+  "name": "smart-hauling-one",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix core/frontend run dev -- --webpack -p 3000",
+    "build": "npm --prefix core/frontend run build",
+    "start": "npm --prefix core/frontend run start"
+  }
+}

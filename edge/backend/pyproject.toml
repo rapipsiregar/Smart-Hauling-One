@@ -1,0 +1,59 @@
+[project]
+name = "smart-gate-edge-agent"
+version = "0.1.0"
+description = "Smart Gate edge agent: live hull-ID detection on a Jetson Orin Nano Super."
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.139",         # the gate's own API, which its local UI reads
+    "uvicorn>=0.51",
+    "opencv-python>=4.10,<5",
+    "numpy>=1.26",
+    "requests>=2.32",
+    "python-dotenv>=1.0",
+    "aiortc>=1.9",            # WHIP push for live view
+    "av>=12.0",               # aiortc's media backend; also used for segment writing
+]
+
+# Dockerfile.jetson installs this file alone, before the code is copied, so the
+# dependency layer caches across code changes. `py-modules = []` turns off
+# setuptools' auto-discovery: without it the build either fails on the flat
+# layout (app/, agent/, vendor/ are all top-level) or silently guesses. The code
+# reaches the image via COPY + PYTHONPATH, not via this install.
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = []
+
+[project.optional-dependencies]
+# Installed from NVIDIA's JetPack wheels on real hardware, not from PyPI. Kept
+# optional so the agent imports on a dev machine with no GPU stack.
+#
+# This is the default device install and it is deliberately the small one.
+# `paddleocr` without the doc-parser extra gives PP-OCRv6 recognition: the tiny
+# recogniser is 4.5 MB of weights and reads a hull panel in ~15 ms on CPU.
+inference = [
+    "ultralytics>=8.4",
+    "paddleocr>=3.6.0",
+    "paddlepaddle>=3.3",
+]
+
+# The heavy alternative, for a site whose plates defeat the small model.
+# PaddleOCR-VL is a 0.9B vision-language model: 1.8 GB downloaded on first use
+# and ~0.5 s per crop on a desktop GPU. Measured against the sample footage it
+# won one clip of fifteen -- a low-contrast, motion-blurred plate the tiny model
+# misread. That is a real difference, and it is also 400x the download over a
+# satellite link with no fallback, which is why it is opt-in per device
+# (SMART_GATE_OCR_BACKEND=paddleocr-vl) rather than what every gate ships with.
+inference-vl = [
+    "ultralytics>=8.4",
+    "paddleocr[doc-parser]>=3.6.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

@@ -1,9 +1,15 @@
-# Generated / downloaded pipeline data
+# Monorepo root. Rules are intentionally unanchored so each applies inside any of
+# the four subprojects (core/backend, core/frontend, edge/backend, edge/frontend)
+# without being repeated four times.
+
+# --- Generated / downloaded pipeline data ------------------------------------
 data/
 runs/
 models/
+sources/*.zip
+sources/*.pt
 
-# Python
+# --- Python -------------------------------------------------------------------
 __pycache__/
 *.py[cod]
 *$py.class
@@ -15,11 +21,24 @@ dist/
 .eggs/
 *.egg
 
-# uv / virtual environments
+# --- uv / virtual environments ------------------------------------------------
 .venv/
 .venv-*/
 
-# Testing / type checking
+# --- Node / Next.js -----------------------------------------------------------
+node_modules/
+.next/
+# Per-gate builds. Next bakes the backend origin into routes-manifest.json at
+# build time, so several gates sharing one checkout need one output each.
+.next-*/
+out/
+next-env.d.ts
+tsconfig.tsbuildinfo
+
+# --- Logs ---------------------------------------------------------------------
+*.log
+
+# --- Testing / type checking --------------------------------------------------
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
@@ -28,29 +47,63 @@ htmlcov/
 .tox/
 .nox/
 
-# Model / tool caches
+# --- Model weights / tool caches ----------------------------------------------
 .cache/
+ai-model/
 *.pt
 *.pth
 *.onnx
+*.engine
 *.safetensors
 
-# Environment / secrets
+# The one exception: the detector this system actually runs on. Without it
+# nothing detects anything, and at 5.2 MB in a private repo the usual reason for
+# keeping weights out -- size -- does not apply. Negating `ai-model/` needs the
+# directory un-ignored first; Git will not look inside an excluded directory.
+!core/backend/ai-model/
+core/backend/ai-model/*
+!core/backend/ai-model/truck-id-yolo26n-det-v2-numeric-filtered-20260730.pt
+
+# --- Environment / secrets ----------------------------------------------------
 .env
 .env.*
 !.env.example
 
-# Jupyter
+# Real relay credentials (the .example template is tracked)
+infra/turnserver.conf
+
+# --- Jupyter ------------------------------------------------------------------
 .ipynb_checkpoints/
 
-# IDE / editor
+# --- IDE / editor -------------------------------------------------------------
 .idea/
 .vscode/
 *.swp
 *.swo
 *~
+.claude/
 
-# OS
+# --- OS -----------------------------------------------------------------------
 .DS_Store
 Thumbs.db
-data/01-playlist/_6IZuVvNNYo.webm
+
+# --- Temporary artefacts ------------------------------------------------------
+screenshots/
+.review/
+%TEMP%/
+--full-page
+nul
+!.gitkeep
+
+# Local dev pidfiles
+.run/
+
+# LibreOffice lock files, created while a document is open
+.~lock.*#
+
+# Reference footage under docs/sample-references/ — ~106 MB of mp4 handed over for
+# evaluating the detector. Kept out of git deliberately: it is input to a
+# measurement, not source, and binaries this size are permanent once pushed.
+# The findings live in docs/sample-references/EVALUATION.md, which IS tracked.
+docs/sample-references/**/*.mp4
+docs/sample-references/**/*.log

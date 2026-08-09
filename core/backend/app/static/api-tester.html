@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integrated Smart Hauling System — API Reference & Interactive Tester</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --bg-panel: #1e293b;
+      --bg-input: #334155;
+      --bg-hover: #475569;
+      --border-color: #334155;
+      --border-subtle: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+
+      --accent-blue: #3b82f6;
+      --accent-blue-hover: #2563eb;
+      --accent-green: #10b981;
+      --accent-orange: #f59e0b;
+      --accent-red: #ef4444;
+      --accent-purple: #8b5cf6;
+      --accent-cyan: #06b6d4;
+
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Left Sidebar */
+    .sidebar {
+      width: 380px;
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .brand-header {
+      padding: 16px 20px;
+      background: rgba(15, 23, 42, 0.6);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-title i {
+      font-size: 22px;
+      color: var(--accent-blue);
+      background: rgba(59, 130, 246, 0.15);
+      padding: 8px;
+      border-radius: 8px;
+    }
+
+    .brand-title h1 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-title .version-badge {
+      font-size: 10px;
+      background: var(--bg-input);
+      color: var(--accent-cyan);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .env-picker {
+      padding: 12px 16px;
+      background: rgba(15, 23, 42, 0.3);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .env-picker label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .env-select {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .search-box {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      position: relative;
+    }
+
+    .search-box i {
+      position: absolute;
+      left: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 8px 12px 8px 36px;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent-blue);
+    }
+
+    .api-catalog {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+
+    .catalog-group {
+      margin-bottom: 16px;
+    }
+
+    .group-header {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      padding: 6px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .group-count {
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--text-muted);
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-size: 10px;
+    }
+
+    .api-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-bottom: 3px;
+      gap: 10px;
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
+    }
+
+    .api-item:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .api-item.active {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: var(--accent-blue);
+    }
+
+    .badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      min-width: 50px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .badge-get { background: rgba(16, 185, 129, 0.18); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-post { background: rgba(59, 130, 246, 0.18); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-put { background: rgba(245, 158, 11, 0.18); color: var(--accent-orange); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-delete { background: rgba(239, 68, 68, 0.18); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    .api-info {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .api-title {
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .api-path {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Right Main Panel */
+    .main-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--bg-dark);
+    }
+
+    /* Top Command & URL Bar */
+    .top-bar {
+      padding: 16px 24px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .method-badge-select {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 13px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .url-input-group {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .url-prefix {
+      padding: 0 12px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+      background: rgba(0, 0, 0, 0.2);
+      height: 100%;
+      display: flex;
+      align-items: center;
+      border-right: 1px solid var(--border-color);
+    }
+
+    .url-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #fff;
+      padding: 10px 14px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      outline: none;
+    }
+
+    .btn-send {
+      background: var(--accent-blue);
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.15s;
+    }
+
+    .btn-send:hover { background: var(--accent-blue-hover); }
+
+    /* Endpoint Specs & Documentation Banner */
+    .doc-banner {
+      background: rgba(30, 41, 59, 0.6);
+      border-bottom: 1px solid var(--border-color);
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    .doc-summary {
+      flex: 1;
+    }
+
+    .doc-summary h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .doc-summary p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .doc-notes {
+      font-size: 11px;
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--accent-cyan);
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(6, 182, 212, 0.2);
+      max-width: 320px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Workspace Body */
+    .workspace {
+      flex: 1;
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      overflow: hidden;
+    }
+
+    /* Request Config Section */
+    .request-section {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-dark);
+    }
+
+    .tab-bar {
+      background: var(--bg-panel);
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 24px;
+      gap: 4px;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .tab-btn:hover { color: var(--text-main); }
+
+    .tab-btn.active {
+      color: var(--accent-blue);
+      border-bottom-color: var(--accent-blue);
+    }
+
+    .tab-content {
+      flex: 1;
+      padding: 16px 24px;
+      overflow-y: auto;
+      background: var(--bg-dark);
+    }
+
+    .kv-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+
+    .kv-table th {
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      padding-bottom: 8px;
+    }
+
+    .kv-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+
+    .input-field {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      outline: none;
+      flex: 1;
+    }
+
+    .input-field:focus { border-color: var(--accent-blue); }
+
+    textarea.editor {
+      width: 100%;
+      height: 100%;
+      min-height: 120px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      color: #38bdf8;
+      padding: 14px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.5;
+      resize: none;
+      outline: none;
+    }
+
+    /* Response Inspection Section */
+    .response-section {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg-dark);
+    }
+
+    .response-bar {
+      background: var(--bg-panel);
+      padding: 10px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .response-metrics {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .status-tag {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .status-idle { background: var(--bg-input); color: var(--text-muted); }
+    .status-2xx { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-4xx { background: rgba(245, 158, 11, 0.2); color: var(--accent-orange); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .status-5xx { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    .action-btn {
+      background: var(--bg-input);
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+      padding: 5px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+
+    .action-btn:hover {
+      color: #fff;
+      background: var(--bg-hover);
+    }
+
+    .response-viewport {
+      flex: 1;
+      padding: 16px 24px;
+      overflow-y: auto;
+    }
+
+    pre.response-body {
+      background: var(--bg-panel);
+      color: #a7f3d0;
+      padding: 16px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-all;
+      border: 1px solid var(--border-color);
+      min-height: 100%;
+    }
+
+    /* Modal / Curl Tooltip */
+    .curl-box {
+      background: #090d16;
+      color: #7dd3fc;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      border: 1px solid var(--border-color);
+    }
+
+    /* Utility badges */
+    .auth-required {
+      color: var(--accent-orange);
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Left Sidebar Catalog -->
+  <div class="sidebar">
+    <div class="brand-header">
+      <div class="brand-title">
+        <i class="fa-solid fa-truck-fast"></i>
+        <div>
+          <h1>Smart Gate API</h1>
+          <div style="font-size: 11px; color: var(--text-muted);">Integrated Hauling System</div>
+        </div>
+      </div>
+      <span class="version-badge">v1.2.0</span>
+    </div>
+
+    <!-- Environment Picker -->
+    <div class="env-picker">
+      <label>Target Environment Server</label>
+      <select class="env-select" id="env-select" onchange="onEnvChange()">
+        <option value="http://localhost:8000">Central Core Backend (Port 8000)</option>
+        <option value="http://localhost:8100">Gate Edge Jetson Node (Port 8100)</option>
+      </select>
+    </div>
+
+    <!-- Filter / Search Box -->
+    <div class="search-box">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" class="search-input" id="search-input" placeholder="Search 59 API endpoints..." oninput="filterCatalog()">
+    </div>
+
+    <!-- API Collection List -->
+    <div class="api-catalog" id="api-catalog">
+      <!-- Injected by JavaScript -->
+    </div>
+  </div>
+
+  <!-- Right Main Panel -->
+  <div class="main-panel">
+
+    <!-- Top URL / Send Bar -->
+    <div class="top-bar">
+      <select class="method-badge-select" id="req-method">
+        <option value="GET">GET</option>
+        <option value="POST">POST</option>
+        <option value="PUT">PUT</option>
+        <option value="DELETE">DELETE</option>
+      </select>
+
+      <div class="url-input-group">
+        <span class="url-prefix" id="url-prefix">http://localhost:8000</span>
+        <input type="text" class="url-input" id="req-url" value="/api/fleet">
+      </div>
+
+      <button class="btn-send" id="btn-send">
+        <i class="fa-solid fa-paper-plane"></i> Send Request
+      </button>
+    </div>
+
+    <!-- Documentation & Endpoint Context Banner -->
+    <div class="doc-banner" id="doc-banner">
+      <div class="doc-summary">
+        <h2 id="doc-title"><i class="fa-solid fa-circle-info" style="color: var(--accent-blue);"></i> List Registered Fleet Roster</h2>
+        <p id="doc-desc">Returns the complete list of 276 registered hauling trucks along with current system performance KPIs.</p>
+      </div>
+      <div class="doc-notes" id="doc-notes">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span id="doc-notes-text">Public access endpoint -- no API key header required.</span>
+      </div>
+    </div>
+
+    <!-- Main Workspace Split -->
+    <div class="workspace">
+
+      <!-- Request Configurator Section -->
+      <div class="request-section">
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="switchReqTab('params')">Query Parameters</button>
+          <button class="tab-btn" onclick="switchReqTab('headers')">Headers</button>
+          <button class="tab-btn" onclick="switchReqTab('body')">JSON Body</button>
+          <button class="tab-btn" onclick="switchReqTab('file')">Multipart / Snapshot</button>
+          <button class="tab-btn" onclick="switchReqTab('curl')">cURL Command</button>
+        </div>
+
+        <!-- Query Params Tab -->
+        <div class="tab-content" id="tab-params">
+          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">URL Query Parameters:</div>
+          <div id="params-rows">
+            <div class="kv-row">
+              <input type="text" class="input-field" placeholder="Key (e.g. camera_code)" id="param-key-1">
+              <input type="text" class="input-field" placeholder="Value" id="param-val-1" oninput="updateUrlParams()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Headers Tab -->
+        <div class="tab-content" id="tab-headers" style="display: none;">
+          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">HTTP Request Headers:</div>
+          <div class="kv-row">
+            <input type="text" class="input-field" value="Content-Type" readonly>
+            <input type="text" class="input-field" value="application/json" id="header-content-type">
+          </div>
+          <div class="kv-row">
+            <input type="text" class="input-field" value="X-API-Key" readonly>
+            <input type="text" class="input-field" placeholder="Device API key (e.g. dev_key_here)" id="header-api-key">
+          </div>
+          <div class="kv-row">
+            <input type="text" class="input-field" value="Idempotency-Key" readonly>
+            <input type="text" class="input-field" placeholder="UUIDv4 (e.g. 550e8400-e29b-41d4-a716-446655440000)" id="header-idempotency">
+          </div>
+        </div>
+
+        <!-- JSON Body Tab -->
+        <div class="tab-content" id="tab-body" style="display: none;">
+          <textarea class="editor" id="req-body-json" placeholder='{\n  "hull_id": "HD 2152",\n  "status": "active"\n}'></textarea>
+        </div>
+
+        <!-- File Upload Tab -->
+        <div class="tab-content" id="tab-file" style="display: none;">
+          <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Upload Crossing Snapshot Crop JPEG (Required for <code>POST /api/edge/crossings</code>):</div>
+          <input type="file" id="file-input" class="input-field" accept="image/jpeg,image/png">
+        </div>
+
+        <!-- cURL Output Tab -->
+        <div class="tab-content" id="tab-curl" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 11px; color: var(--text-muted);">Generated cURL snippet:</span>
+            <button class="action-btn" onclick="copyCurl()"><i class="fa-regular fa-copy"></i> Copy cURL</button>
+          </div>
+          <div class="curl-box" id="curl-output">curl -X GET "http://localhost:8000/api/fleet"</div>
+        </div>
+      </div>
+
+      <!-- Response Viewer Section -->
+      <div class="response-section">
+        <div class="response-bar">
+          <div class="response-metrics">
+            <span style="font-weight: 600; color: var(--text-muted);">Response:</span>
+            <span class="status-tag status-idle" id="resp-status">STATUS: ---</span>
+            <span>Latency: <strong id="resp-time" style="color: #fff;">0 ms</strong></span>
+            <span>Size: <strong id="resp-size" style="color: #fff;">0 B</strong></span>
+          </div>
+
+          <div style="display: flex; gap: 8px;">
+            <button class="action-btn" onclick="copyResponseBody()"><i class="fa-regular fa-copy"></i> Copy Body</button>
+            <button class="action-btn" onclick="clearResponse()"><i class="fa-solid fa-eraser"></i> Clear</button>
+          </div>
+        </div>
+
+        <div class="response-viewport">
+          <pre class="response-body" id="resp-body">// Select an endpoint from the left catalog and click "Send Request" above to test.</pre>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Exhaustive 59 API Catalog Dataset
+    const catalog = [
+      {
+        category: "Central Core Dashboard",
+        items: [
+          {
+            name: "Get Full System Dataset",
+            method: "GET",
+            path: "/api/dataset",
+            desc: "Returns the complete aggregated dataset (crossings, fleet, KPIs) assembled by core build_dataset().",
+            notes: "Powers central dashboard state.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Get Performance KPIs",
+            method: "GET",
+            path: "/api/kpis",
+            desc: "Returns high-level fleet pass count metrics, average OCR confidence, and unique truck statistics.",
+            notes: "Calculated across SQLite video_results.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Get Pit Occupancy Map",
+            method: "GET",
+            path: "/api/map",
+            desc: "Returns active location of each truck (inside pit vs outside) based on latest gate crossing events.",
+            notes: "Used for live pit location map tile.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "List Registered Fleet",
+            method: "GET",
+            path: "/api/fleet",
+            desc: "Lists all 276 registered hauling units and operational KPI summary.",
+            notes: "Authoritative fleet registry query.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Get Reports Summary",
+            method: "GET",
+            path: "/api/reports",
+            desc: "Returns aggregated dataset formatted specifically for shift reporting screens.",
+            notes: "Includes passage time breakdowns.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Get Crossing Detail by ID",
+            method: "GET",
+            path: "/api/crossings/1",
+            desc: "Fetches specific vehicle passage record by integer ID.",
+            notes: "Returns 404 if crossing_id does not exist.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Update Crossing Hull ID",
+            method: "PUT",
+            path: "/api/crossings/1",
+            desc: "Reassigns matched hull_id and confidence for a specific crossing.",
+            body: JSON.stringify({ hull_id: "HD 2152", confidence: 95.0 }, null, 2),
+            notes: "Persists to SQLite video_results table and invalidates cache.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Preview Crossings Reset",
+            method: "GET",
+            path: "/api/crossings-reset-preview",
+            desc: "Previews count of crossings, detections, and runs that would be cleared by dev reset.",
+            notes: "Safe read-only preview.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Execute Full Dev Reset",
+            method: "POST",
+            path: "/api/crossings-reset",
+            desc: "Wipes recorded crossings and snapshot JPEGs while keeping truck master and camera settings intact.",
+            notes: "Development convenience tool.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Add Hauling Truck",
+            method: "POST",
+            path: "/api/fleet",
+            desc: "Adds a new truck unit to the central registered fleet database.",
+            body: JSON.stringify({ hull_id: "HD 3001", status: "active" }, null, 2),
+            notes: "Fails if hull_id already exists.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Update Registered Truck",
+            method: "PUT",
+            path: "/api/fleet/HD%202152",
+            desc: "Modifies status or hull code of an existing truck in the registry.",
+            body: JSON.stringify({ hull_id: "HD 2152", status: "maintenance" }, null, 2),
+            notes: "Invalidates dataset cache upon mutation.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Delete Truck from Registry",
+            method: "DELETE",
+            path: "/api/fleet/HD%203001",
+            desc: "Removes truck from registry and sets past associated passage results to UNKNOWN.",
+            notes: "Preserves historical passage records.",
+            env: "http://localhost:8000"
+          }
+        ]
+      },
+      {
+        category: "Edge Device Synchronization",
+        items: [
+          {
+            name: "Get Device Configuration",
+            method: "GET",
+            path: "/api/edge/config",
+            headers: { "X-API-Key": "dev_key_here" },
+            desc: "Returns authoritative configuration, lane direction, and FPS limits for authenticated gate device.",
+            notes: "Requires valid X-API-Key device header.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Post Device Heartbeat",
+            method: "POST",
+            path: "/api/edge/heartbeat",
+            headers: { "X-API-Key": "dev_key_here" },
+            body: JSON.stringify({ agent_version: "1.2.0", applied_config_version: 1, local_queue_depth: 0, status: "online" }, null, 2),
+            desc: "Posts device health metrics and checks if central config changed.",
+            notes: "Stamps device online timestamp.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Submit Gate Crossing Event",
+            method: "POST",
+            path: "/api/edge/crossings",
+            headers: { "X-API-Key": "dev_key_here", "Idempotency-Key": "550e8400-e29b-41d4-a716-446655440000" },
+            body: JSON.stringify({ camera_code: "CAM-IN-01", detected_at: new Date().toISOString(), window_sec: 6.0, hull_id: "HD 2152", confidence: 0.96, read_count: 14, votes: [{ text: "2152", count: 14, avg_ocr_conf: 0.96 }] }, null, 2),
+            desc: "Ingests detection window consensus event from Jetson outbox queue with idempotency protection.",
+            notes: "Enforces UUIDv4 Idempotency-Key header.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Download Master Roster Replica",
+            method: "GET",
+            path: "/api/edge/master?known_version=0",
+            headers: { "X-API-Key": "dev_key_here" },
+            desc: "Version-gated replication of truck master roster for local offline edge matching.",
+            notes: "Returns changed=false if CRC32 version matches.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Edge Live Session Long-Poll",
+            method: "GET",
+            path: "/api/edge/live-session?wait=5",
+            headers: { "X-API-Key": "dev_key_here" },
+            desc: "Long-poll channel for Jetson devices to receive live stream start commands.",
+            notes: "Holds connection up to wait seconds.",
+            env: "http://localhost:8000"
+          }
+        ]
+      },
+      {
+        category: "Camera Management",
+        items: [
+          {
+            name: "List Gate Cameras",
+            method: "GET",
+            path: "/api/cameras",
+            desc: "Lists all registered gate cameras enriched with online health status and config versions.",
+            notes: "Powers device health grid.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Get Camera Detail",
+            method: "GET",
+            path: "/api/cameras/CAM-IN-01",
+            desc: "Fetches configuration details for specific camera code.",
+            notes: "Returns 404 if camera is not found.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Register New Camera",
+            method: "POST",
+            path: "/api/cameras",
+            body: JSON.stringify({ camera_code: "CAM-OUT-02", name: "Gate Outbound 02", gate_location: "Pos 2", direction: "outbound", status: "active", rtsp_url: "rtsp://192.168.1.100/stream" }, null, 2),
+            desc: "Registers a new gate camera device in central database.",
+            notes: "Requires unique camera code and name.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Update Camera Registration",
+            method: "PUT",
+            path: "/api/cameras/CAM-IN-01",
+            body: JSON.stringify({ name: "Gate Inbound Main", direction: "inbound" }, null, 2),
+            desc: "Updates name, direction, or RTSP address of registered camera.",
+            notes: "Persists to cameras table.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Delete Camera Registration",
+            method: "DELETE",
+            path: "/api/cameras/CAM-OUT-02",
+            desc: "Removes camera registration from central database.",
+            notes: "Fails with 404 if camera code does not exist.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Get Device Edge Tunables",
+            method: "GET",
+            path: "/api/cameras/CAM-IN-01/edge-config",
+            desc: "Reads active YOLO/OCR FPS limits, window duration, and confidence thresholds for settings UI.",
+            notes: "Includes applied version metrics.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Update Device Edge Tunables",
+            method: "PUT",
+            path: "/api/cameras/CAM-IN-01/edge-config",
+            body: JSON.stringify({ yolo_fps: 15, ocr_fps: 8, detect_window_sec: 6, ocr_min_conf: 0.5, dedup_iou: 0.45 }, null, 2),
+            desc: "Updates device inference tunables and increments config_version by 1.",
+            notes: "Triggers sync flag on next device heartbeat.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Sync Camera Attributions",
+            method: "POST",
+            path: "/api/cameras-sync-attribution",
+            desc: "Re-tags legacy video_results records with camera_id based on folder attributions.",
+            notes: "Invalidates dataset cache.",
+            env: "http://localhost:8000"
+          }
+        ]
+      },
+      {
+        category: "WebRTC Live View",
+        items: [
+          {
+            name: "Start Live Stream Session",
+            method: "POST",
+            path: "/api/cameras/CAM-IN-01/live/start",
+            desc: "Opens or rejoins WHEP live video session for gate camera.",
+            notes: "Returns WebRTC session_id and whep_url.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Send Live Stream Heartbeat",
+            method: "POST",
+            path: "/api/cameras/CAM-IN-01/live/heartbeat",
+            body: JSON.stringify({ session_id: "sess_12345" }, null, 2),
+            desc: "Keep-alive heartbeat sent every ~10s by active frontend viewers.",
+            notes: "Extends session expiration timer.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Stop Live Stream Session",
+            method: "POST",
+            path: "/api/cameras/CAM-IN-01/live/stop",
+            body: JSON.stringify({ session_id: "sess_12345" }, null, 2),
+            desc: "Closes live WebRTC session.",
+            notes: "Idempotent operation.",
+            env: "http://localhost:8000"
+          }
+        ]
+      },
+      {
+        category: "Reference Analytics & Ritase",
+        items: [
+          {
+            name: "Get Reference Crossings",
+            method: "GET",
+            path: "/api/crossings",
+            desc: "Lists crossings formatted to match reference specification in camelCase keys.",
+            notes: "Supports camera filtering.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Get CCTV Detection Stream",
+            method: "GET",
+            path: "/api/cctv-detections",
+            desc: "Provides event stream of raw CCTV detection bounding box records.",
+            notes: "Formatted in camelCase keys.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Get Fleet Reference Registry",
+            method: "GET",
+            path: "/api/fleet-registry",
+            desc: "Lists registered fleet units and total passage statistics.",
+            notes: "Reference overview contract.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Get System Performance KPIs",
+            method: "GET",
+            path: "/api/performance-kpis",
+            desc: "System performance KPIs structured for frontend metric cards.",
+            notes: "Includes per-gate breakdown.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Get Daily Shift Report",
+            method: "GET",
+            path: "/api/shift-report",
+            desc: "Aggregates daily shift statistics and paired ritase counts.",
+            notes: "Used for shift report PDF export.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Get Ritase Reconciliation",
+            method: "GET",
+            path: "/api/ritase",
+            desc: "Computes complete round-trip haul cycles and flags unpaired gate entries.",
+            notes: "Pairs IN passage with OUT passage.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Post Sync Ritase Audit Log",
+            method: "POST",
+            path: "/api/sync-ritase",
+            body: JSON.stringify({ source: "manual_trigger" }, null, 2),
+            desc: "Records sync action log entry for external integration audit trails.",
+            notes: "Logs sync timestamp.",
+            env: "http://localhost:8000"
+          }
+        ]
+      },
+      {
+        category: "Analysis & Jobs",
+        items: [
+          {
+            name: "Get Job Status",
+            method: "GET",
+            path: "/api/status/job_123",
+            desc: "Fetches current status of a video analysis job.",
+            notes: "Returns 404 if job ID is invalid.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Get Job Status (Alias)",
+            method: "GET",
+            path: "/api/jobs/job_123",
+            desc: "Alias endpoint for /status/{job_id}.",
+            notes: "Direct alias of status query.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Get Job SSE Event Stream",
+            method: "GET",
+            path: "/api/jobs/job_123/stream",
+            desc: "SSE stream broadcasting live OCR progress during video processing.",
+            notes: "Pushes progress events.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "List Playlist Demo Videos",
+            method: "GET",
+            path: "/api/playlist-videos",
+            desc: "Lists pre-loaded playlist video files available for analysis.",
+            notes: "Discovers files in data directory.",
+            env: "http://localhost:8000"
+          },
+          {
+            name: "Analyze Existing Playlist Video",
+            method: "POST",
+            path: "/api/analyze-existing",
+            body: JSON.stringify({ name: "sample_hauling_gate_a.mp4" }, null, 2),
+            desc: "Triggers fresh OCR pipeline analysis on existing playlist video.",
+            notes: "Re-runs detection fresh.",
+            env: "http://localhost:8000"
+          }
+        ]
+      },
+      {
+        category: "Edge Local Gate Console (Port 8100)",
+        items: [
+          {
+            name: "Get Gate Local Status",
+            method: "GET",
+            path: "/api/status",
+            desc: "Local health, status, outbox depth, and tunables summary for gate technician UI.",
+            notes: "Served directly by local Jetson backend.",
+            env: "http://localhost:8100"
+          },
+          {
+            name: "Get Local Gate Crossings",
+            method: "GET",
+            path: "/api/crossings?limit=20",
+            desc: "Retrieves local gate detections directly from edge SQLite database.",
+            notes: "Ordered newest first.",
+            env: "http://localhost:8100"
+          },
+          {
+            name: "Get Crossing Snapshot JPEG",
+            method: "GET",
+            path: "/api/crossings/1/snapshot",
+            desc: "Serves JPEG snapshot crop corresponding to a local crossing.",
+            notes: "Returns 404 if snapshot was pruned.",
+            env: "http://localhost:8100"
+          },
+          {
+            name: "Reset Local Gate Storage",
+            method: "POST",
+            path: "/api/crossings-reset",
+            desc: "Clears local crossing records on the edge device.",
+            notes: "Scoped to local device storage.",
+            env: "http://localhost:8100"
+          },
+          {
+            name: "Get Local Inference Settings",
+            method: "GET",
+            path: "/api/settings",
+            desc: "Reads active inference tunables from running agent or local metadata.",
+            notes: "Returns effective device thresholds.",
+            env: "http://localhost:8100"
+          },
+          {
+            name: "Update Local Inference Settings",
+            method: "PUT",
+            path: "/api/settings",
+            body: JSON.stringify({ yolo_fps: 15, ocr_fps: 8, detect_window_sec: 6.0, ocr_min_conf: 0.5, dedup_iou: 0.45 }, null, 2),
+            desc: "Modifies local inference settings on device.",
+            notes: "Applies immediately to AgentRunner.",
+            env: "http://localhost:8100"
+          },
+          {
+            name: "List Test Video Sources",
+            method: "GET",
+            path: "/api/video-sources",
+            desc: "Lists local test video clip filenames on edge device.",
+            notes: "Supports direction filtering.",
+            env: "http://localhost:8100"
+          },
+          {
+            name: "Start Video Test Run",
+            method: "POST",
+            path: "/api/test-runs",
+            body: JSON.stringify({ clips: ["clip_01.mp4"] }, null, 2),
+            desc: "Starts simulation test run using recorded video clips.",
+            notes: "Returns 409 conflict if run is active.",
+            env: "http://localhost:8100"
+          },
+          {
+            name: "Get Active Test Run",
+            method: "GET",
+            path: "/api/test-runs/active",
+            desc: "Enables UI reconnection to active or recent test run.",
+            notes: "Survives browser reloads.",
+            env: "http://localhost:8100"
+          },
+          {
+            name: "Get Test Run SSE Stream",
+            method: "GET",
+            path: "/api/test-runs/run_123/stream",
+            desc: "SSE stream pushing real-time frame/vote progress during HUD test run.",
+            notes: "Pushes live OCR distributions.",
+            env: "http://localhost:8100"
+          },
+          {
+            name: "Get Camera Idle Frame",
+            method: "GET",
+            path: "/api/idle-frame",
+            desc: "Returns live camera JPEG frame or cached still frame when idle.",
+            notes: "Includes no-store headers.",
+            env: "http://localhost:8100"
+          },
+          {
+            name: "Get Local Master Status",
+            method: "GET",
+            path: "/api/master",
+            desc: "Inspects status and unit count of replicated local truck master database.",
+            notes: "Includes sample hull codes.",
+            env: "http://localhost:8100"
+          },
+          {
+            name: "Execute Offline Match Probe",
+            method: "POST",
+            path: "/api/match-probe",
+            body: JSON.stringify({ text: "2152" }, null, 2),
+            desc: "Field-diagnosis tool testing raw OCR text parsing against local master replica.",
+            notes: "Tests matching logic without network.",
+            env: "http://localhost:8100"
+          }
+        ]
+      }
+    ];
+
+    let currentItem = catalog[0].items[3]; // Default to List Registered Fleet
+
+    // Render Catalog
+    function renderCatalog(itemsToRender = catalog) {
+      const container = document.getElementById("api-catalog");
+      container.innerHTML = "";
+
+      itemsToRender.forEach(cat => {
+        if (cat.items.length === 0) return;
+
+        const group = document.createElement("div");
+        group.className = "catalog-group";
+
+        const header = document.createElement("div");
+        header.className = "group-header";
+        header.innerHTML = `<span>${cat.category}</span><span class="group-count">${cat.items.length}</span>`;
+        group.appendChild(header);
+
+        cat.items.forEach(item => {
+          const div = document.createElement("div");
+          div.className = `api-item ${item === currentItem ? 'active' : ''}`;
+          div.onclick = () => selectItem(item, div);
+          div.innerHTML = `
+            <span class="badge badge-${item.method.toLowerCase()}">${item.method}</span>
+            <div class="api-info">
+              <div class="api-title">${item.name}</div>
+              <div class="api-path">${item.path}</div>
+            </div>
+          `;
+          group.appendChild(div);
+        });
+
+        container.appendChild(group);
+      });
+    }
+
+    function selectItem(item, element) {
+      currentItem = item;
+      document.querySelectorAll(".api-item").forEach(el => el.classList.remove("active"));
+      if (element) element.classList.add("active");
+
+      // Update Method & Path
+      document.getElementById("req-method").value = item.method;
+
+      const envSelect = document.getElementById("env-select");
+      if (item.env && envSelect.value !== item.env) {
+        envSelect.value = item.env;
+        onEnvChange();
+      }
+
+      document.getElementById("req-url").value = item.path;
+      document.getElementById("req-body-json").value = item.body || "";
+
+      // Headers setup
+      if (item.headers) {
+        if (item.headers["X-API-Key"]) document.getElementById("header-api-key").value = item.headers["X-API-Key"];
+        if (item.headers["Idempotency-Key"]) document.getElementById("header-idempotency").value = item.headers["Idempotency-Key"];
+      } else {
+        document.getElementById("header-api-key").value = "";
+        document.getElementById("header-idempotency").value = "";
+      }
+
+      // Documentation Banner
+      document.getElementById("doc-title").innerHTML = `<i class="fa-solid fa-circle-info" style="color: var(--accent-blue);"></i> ${item.name}`;
+      document.getElementById("doc-desc").innerText = item.desc;
+      document.getElementById("doc-notes-text").innerText = item.notes;
+
+      updateCurl();
+    }
+
+    function onEnvChange() {
+      const prefix = document.getElementById("env-select").value;
+      document.getElementById("url-prefix").innerText = prefix;
+      updateCurl();
+    }
+
+    function switchReqTab(tabName) {
+      document.querySelectorAll(".request-section .tab-btn").forEach(btn => btn.classList.remove("active"));
+      event.target.classList.add("active");
+
+      document.getElementById("tab-params").style.display = tabName === "params" ? "block" : "none";
+      document.getElementById("tab-headers").style.display = tabName === "headers" ? "block" : "none";
+      document.getElementById("tab-body").style.display = tabName === "body" ? "block" : "none";
+      document.getElementById("tab-file").style.display = tabName === "file" ? "block" : "none";
+      document.getElementById("tab-curl").style.display = tabName === "curl" ? "block" : "none";
+
+      if (tabName === "curl") updateCurl();
+    }
+
+    function updateUrlParams() {
+      const val = document.getElementById("param-val-1").value;
+      let path = document.getElementById("req-url").value.split("?")[0];
+      if (val) {
+        document.getElementById("req-url").value = `${path}?camera_code=${encodeURIComponent(val)}`;
+      } else {
+        document.getElementById("req-url").value = path;
+      }
+      updateCurl();
+    }
+
+    function updateCurl() {
+      const env = document.getElementById("env-select").value;
+      const method = document.getElementById("req-method").value;
+      const path = document.getElementById("req-url").value;
+      const apiKey = document.getElementById("header-api-key").value;
+      const idempotency = document.getElementById("header-idempotency").value;
+      const body = document.getElementById("req-body-json").value;
+
+      let cmd = `curl -X ${method} "${env}${path}"`;
+      if (apiKey) cmd += ` \\\n  -H "X-API-Key: ${apiKey}"`;
+      if (idempotency) cmd += ` \\\n  -H "Idempotency-Key: ${idempotency}"`;
+      if (body && method !== "GET") {
+        cmd += ` \\\n  -H "Content-Type: application/json" \\\n  -d '${body.replace(/\n/g, "")}'`;
+      }
+
+      document.getElementById("curl-output").innerText = cmd;
+    }
+
+    function copyCurl() {
+      const text = document.getElementById("curl-output").innerText;
+      navigator.clipboard.writeText(text);
+      alert("cURL command copied to clipboard!");
+    }
+
+    function copyResponseBody() {
+      const text = document.getElementById("resp-body").innerText;
+      navigator.clipboard.writeText(text);
+      alert("Response body copied to clipboard!");
+    }
+
+    function clearResponse() {
+      document.getElementById("resp-status").innerText = "STATUS: ---";
+      document.getElementById("resp-status").className = "status-tag status-idle";
+      document.getElementById("resp-time").innerText = "0 ms";
+      document.getElementById("resp-size").innerText = "0 B";
+      document.getElementById("resp-body").innerText = "// Cleared. Ready for next request.";
+    }
+
+    function filterCatalog() {
+      const query = document.getElementById("search-input").value.toLowerCase();
+      if (!query) {
+        renderCatalog(catalog);
+        return;
+      }
+
+      const filtered = catalog.map(cat => ({
+        category: cat.category,
+        items: cat.items.filter(i =>
+          i.name.toLowerCase().includes(query) ||
+          i.path.toLowerCase().includes(query) ||
+          i.method.toLowerCase().includes(query) ||
+          i.desc.toLowerCase().includes(query)
+        )
+      }));
+
+      renderCatalog(filtered);
+    }
+
+    // Execute Request
+    document.getElementById("btn-send").onclick = async () => {
+      const env = document.getElementById("env-select").value;
+      const method = document.getElementById("req-method").value;
+      const path = document.getElementById("req-url").value;
+      const fullUrl = `${env}${path}`;
+
+      const apiKey = document.getElementById("header-api-key").value;
+      const idempotency = document.getElementById("header-idempotency").value;
+      const bodyJson = document.getElementById("req-body-json").value;
+      const fileInput = document.getElementById("file-input");
+
+      const headers = {};
+      if (apiKey) headers["X-API-Key"] = apiKey;
+      if (idempotency) headers["Idempotency-Key"] = idempotency;
+
+      const respStatus = document.getElementById("resp-status");
+      const respTime = document.getElementById("resp-time");
+      const respSize = document.getElementById("resp-size");
+      const respBody = document.getElementById("resp-body");
+
+      respBody.innerText = "Sending HTTP request to " + fullUrl + " ...";
+      const startTime = performance.now();
+
+      try {
+        let options = { method, headers };
+
+        if (fileInput.files.length > 0 && method === "POST") {
+          const formData = new FormData();
+          formData.append("payload", bodyJson);
+          formData.append("snapshot", fileInput.files[0]);
+          options.body = formData;
+        } else if (bodyJson && method !== "GET") {
+          headers["Content-Type"] = "application/json";
+          options.body = bodyJson;
+        }
+
+        const res = await fetch(fullUrl, options);
+        const endTime = performance.now();
+        const latency = Math.round(endTime - startTime);
+
+        respTime.innerText = `${latency} ms`;
+        respStatus.innerText = `STATUS: ${res.status} ${res.statusText}`;
+        respStatus.className = `status-tag status-${Math.floor(res.status/100)}xx`;
+
+        const contentType = res.headers.get("content-type") || "";
+        let textData = "";
+
+        if (contentType.includes("application/json")) {
+          const json = await res.json();
+          textData = JSON.stringify(json, null, 2);
+        } else {
+          textData = await res.text();
+        }
+
+        respSize.innerText = `${textData.length} B`;
+        respBody.innerText = textData;
+      } catch (err) {
+        respTime.innerText = "0 ms";
+        respSize.innerText = "0 B";
+        respStatus.innerText = "STATUS: ERROR";
+        respStatus.className = "status-tag status-5xx";
+        respBody.innerText = `Fetch Exception: ${err.message}\n\nTroubleshooting Notes:\n1. Verify target server is online (${env}).\n2. Check browser CORS settings or start server with CORS enabled.`;
+      }
+    };
+
+    // Initialize
+    renderCatalog();
+    selectItem(catalog[0].items[3]);
+  </script>
+</body>
+</html>

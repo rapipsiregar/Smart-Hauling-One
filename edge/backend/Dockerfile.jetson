@@ -1,0 +1,51 @@
+# ARM64 / JetPack image for the Integrated Smart Hauling System edge device.
+# Deliberately NOT derived from ./Dockerfile -- different platform, different
+# Python, different torch build (JetPack ships its own ARM64 wheels).
+#
+# Pick the l4t-ml tag matching the JetPack version on the actual devices:
+#   ssh the Jetson and run: cat /etc/nv_tegra_release
+#
+# Build from THIS directory, exactly like the dev image:
+#   docker build -f Dockerfile.jetson -t smart-gate-edge:jetson .
+FROM nvcr.io/nvidia/l4t-ml:r36.2.0-py3
+
+WORKDIR /opt/smart-gate
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ffmpeg libsm6 libxext6 \
+    && rm -rf /var/lib/apt/lists/*
+
+# The `inference` extra is what separates this from the dev image: on a real
+# device the detection threads actually run.
+#
+# `inference` is the small OCR stack (PP-OCRv6 recognition, 4.5 MB of weights).
+# Build with EDGE_INFERENCE_EXTRA=inference-vl for the PaddleOCR-VL variant, and
+# expect a 1.8 GB model download on the device's first detection -- over a link
+# that at this site is Starlink and nothing else. Nothing beyond detection and
+# recognition belongs in this image: no SAM3, no Nemotron, no document parsing.
+ARG EDGE_INFERENCE_EXTRA=inference
+COPY pyproject.toml ./
+RUN pip install --no-cache-dir ".[${EDGE_INFERENCE_EXTRA}]"
+
+# Bake the model into the image so a device never fetches weights at run time.
+# A gate that has to reach the internet before it can read its first truck is a
+# gate that does not work on the morning the link is down.
+ENV PADDLE_PDX_CACHE_HOME=/opt/smart-gate/.paddlex
+RUN python -c "from paddleocr import TextRecognition; TextRecognition(model_name='PP-OCRv6_tiny_rec')" \
+    || echo "edge: recogniser not pre-fetched; it will download on first use"
+
+# app/ is the local API and the gate's own storage; agent/ is the detection and
+# sync threads that app/services/agent_runner.py starts alongside it. Both ship:
+# a gate serves its own UI as well as detecting.
+COPY app ./app
+COPY agent ./agent
+# The shared matching and voting code -- copies of core/'s originals, byte
+# identity enforced by tests/test_vendor_sync.py. core/ is never present on a
+# device, which is what makes vendoring the thing that lets this image build.
+COPY vendor ./vendor
+
+# SMART_GATE_RUN_AGENT is left unset on purpose: it defaults to true, so a device
+# detects unless someone deliberately turns it off. The dev compose sets it false.
+ENV PYTHONUNBUFFERED=1 PYTHONPATH=/opt/smart-gate
+EXPOSE 8100
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8100"]

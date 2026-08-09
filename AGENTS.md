@@ -56,3 +56,10 @@ If `pyproject.toml` is missing, run `uv init` before adding packages or running 
 - `data/` — downloaded/generated data (gitignored as needed)
 
 Never edit files inside git submodules.
+
+## 6. Self-Correction & Context Reset (Dump Zone Rule)
+- **Dump Zone Awareness**: Jika agent mengalami disorientasi lokasi folder, kebingungan konteks repositori, atau menerima indikasi "dump zone" dari user:
+  - Agent harus **segera melakukan verifikasi ulang lokasi working directory aktif** (misalnya mengecek file `package.json`, `pyproject.toml`, atau nama repositori tempat file yang sedang dibuka).
+  - Agent wajib **melakukan reset pemahaman konteks (refresh state)** seolah-olah memulai percakapan baru (*new chat fresh state*), tanpa mengulangi asumsi dari percakapan atau repositori sebelumnya.
+  - Berikan respon yang lugas, tepat sasaran, dan langsung berfokus pada repositori serta file aktif yang sedang dikerjakan user.
+

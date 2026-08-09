@@ -1,0 +1,68 @@
+[project]
+name = "ocr-hauling-truck"
+version = "0.1.0"
+description = "Pipeline for analyzing hauling-truck footage: download playlist, extract frames, segment truck IDs with SAM 3, and run OCR (PaddleOCR or Nemotron v2)."
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "numpy>=1.26",
+    "opencv-python-headless>=4.10,<5",
+    "pillow>=12.3.0",
+    "torch>=2.12.1",
+    "torchvision>=0.27.1",
+    "timm>=1.0.17",
+    "tqdm",
+    "ftfy==6.1.1",
+    "regex",
+    "iopath>=0.1.10",
+    "huggingface_hub",
+    "typing_extensions",
+    "sam3",
+    "einops>=0.8.2",
+    "pycocotools>=2.0.11",
+    "psutil>=7.2.2",
+    "supervision>=0.29.1",
+    "paddleocr[doc-parser]>=3.6.0",
+    "transformers>=5.0.0",
+    "fastapi>=0.139.1",
+    "uvicorn>=0.51.0",
+    "python-multipart>=0.0.32",
+    "rapidfuzz>=3.14.5",
+    "websockets>=16.1",
+    "openpyxl>=3.1.5",
+    "ultralytics>=8.4.99",
+    "yt-dlp>=2026.6.9",
+    "paddlepaddle-gpu>=2.6.2",
+]
+
+[project.scripts]
+ocr-hauling-truck = "main:main"
+
+[tool.uv]
+package = true
+
+[tool.setuptools]
+py-modules = ["main"]
+
+[dependency-groups]
+dev = [
+    "playwright>=1.61.0",
+    "pytest>=9.1.1",
+]
+
+[tool.uv.sources]
+sam3 = { workspace = true }
+torch = { index = "pytorch" }
+torchvision = { index = "pytorch" }
+
+[[tool.uv.index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
+[tool.uv.workspace]
+members = ["sam3"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

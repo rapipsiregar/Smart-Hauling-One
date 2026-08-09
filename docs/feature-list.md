@@ -1292,3 +1292,12 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Single-Click Layout Reset**: Restores all dashboard widgets to default order and visibility preferences.
   - **Storage Deletion**: Clears cached grid configurations stored inside browser `localStorage`.
   - **Uptime Synchronization**: Automatically triggers page reloads to align DOM layout structures with default templates.
+
+### 2.45 Check Points Specification & Management UI
+* **Implementation Status**: `[DONE]`
+* **Description**: A comprehensive Check Points (CP) specification table and management integration updated with exact site location metadata (CP 01, CP 02, CP 03, CP 04).
+* **Key Capabilities**:
+  - **Centralized Location Registry (`checkpoints.ts`)**: Defines structured metadata for all Check Points including Check Point Code (CP 01 to CP 04), Geographical Region (Area Selatan vs Area Utara), Detailed Site Location (e.g. KGB - IUP TIA, KGU CK - BIB, PPA - BIB, Exc WS CK – IUP TIA), Associated Entities (KGB, PT. TIA, PT. CK, PT. BIB, PT. PPA), and Operational Status (Aktif vs Pending OB).
+  - **Rich Specification Table UI (`CheckpointsTable.tsx`)**: Renders a glassmorphic table with status indicators, region tags, entity pills, and operational remarks across system modules.
+  - **Integrated Console & Settings Selection**: Seamlessly updates the Edge Gate Console dropdowns, System Configuration page (`/settings`), Heatmap analytics, Audit override logs, and Shift Reports.
+
