@@ -77,7 +77,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   if (isLoading || !user) {
     return (
-      <div className="h-full flex items-center justify-center bg-[#0a0d14] text-amber-500 font-mono text-xs">
+      <div
+        className="h-full flex items-center justify-center text-amber-500 font-mono text-xs"
+        style={{ backgroundColor: "var(--bg)" }}
+      >
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
           Memuat Sesi Pengguna ISHS...
