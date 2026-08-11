@@ -155,7 +155,7 @@ export default function GateConsolePage() {
                 />
                 <div className="absolute top-1/3 left-1/3 w-48 h-24 border-2 border-emerald-500 bg-emerald-500/10 rounded flex flex-col justify-between p-2">
                   <div className="text-[10px] font-mono text-emerald-300 bg-black/80 px-1 rounded w-max">
-                    Deteksi: {latestCrossing.confidence != null ? `${(latestCrossing.confidence * 100).toFixed(1)}%` : "100%"}
+                    Deteksi: {latestCrossing.confidence != null ? `${(latestCrossing.confidence > 1 ? latestCrossing.confidence : latestCrossing.confidence * 100).toFixed(1)}%` : "100%"}
                   </div>
                   <div className="text-base font-mono font-bold text-emerald-300 text-center tracking-widest bg-black/80 rounded py-0.5">
                     {latestCrossing.hull_id}
@@ -165,7 +165,7 @@ export default function GateConsolePage() {
             ) : (
               <div className="flex flex-col items-center justify-center p-8 text-center text-[var(--text-secondary)] space-y-2 font-mono text-xs">
                 <AlertCircle className="w-8 h-8 text-amber-500/60" />
-                <p>Belum ada rekaman bukti tangkapan kamera dari backend.</p>
+                <p>Belum ada rekaman bukti tangkapan kamera dari server.</p>
                 <p className="text-[10px] text-[var(--text-dim)]">
                   Proses pembacaan otomatis akan menampilkan tangkapan kamera real-time saat truk melintas.
                 </p>
@@ -194,7 +194,7 @@ export default function GateConsolePage() {
                 <div className="flex justify-between text-[11px]">
                   <span>Akurasi:</span>
                   <span className="font-bold">
-                    {latestCrossing.confidence != null ? `${(latestCrossing.confidence * 100).toFixed(1)}%` : "100%"}
+                    {latestCrossing.confidence != null ? `${(latestCrossing.confidence > 1 ? latestCrossing.confidence : latestCrossing.confidence * 100).toFixed(1)}%` : "100%"}
                   </span>
                 </div>
               </div>

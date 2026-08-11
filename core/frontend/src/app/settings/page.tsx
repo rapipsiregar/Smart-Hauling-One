@@ -21,7 +21,7 @@ export default function SettingsPage() {
   }, []);
 
   const handleReset = () => {
-    if (!confirm("Hapus preferensi tampilan lokal (tema, kondisi sidebar)? Data backend tidak tersentuh.")) return;
+    if (!confirm("Hapus preferensi tampilan lokal (tema, kondisi sidebar)? Data server tidak tersentuh.")) return;
     try {
       const keep = localStorage.getItem("sg_theme");
       localStorage.clear();

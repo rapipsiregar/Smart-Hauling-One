@@ -52,7 +52,7 @@ export default function MaintenancePage() {
             Kesehatan Peralatan & Kamera Pos Gerbang
           </h2>
           <p className="text-xs text-[var(--text-secondary)]">
-            Pemantauan status koneksi jaringan, resolusi, dan kesehatan kamera pos dari backend
+            Pemantauan status koneksi jaringan, resolusi, dan kesehatan kamera pos dari server
           </p>
         </div>
 
@@ -119,7 +119,7 @@ export default function MaintenancePage() {
           ))
         ) : (
           <div className="col-span-full p-8 text-center text-xs text-[var(--text-secondary)] font-mono border border-dashed border-[var(--border)] rounded-lg">
-            Belum ada kamera pos terdaftar di backend database.
+            Belum ada kamera pos terdaftar di database server.
           </div>
         )}
       </div>

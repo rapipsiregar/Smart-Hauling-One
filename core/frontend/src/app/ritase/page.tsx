@@ -88,7 +88,7 @@ export default function RitasePage() {
       ) : (
         <GlassCard>
           <p className="text-sm text-[var(--text-secondary)] py-6 text-center font-mono">
-            Belum ada data ritase yang terekam dari backend. Silakan pastikan server backend menyala dan terdapat aktivitas pembacaan kamera.
+            Belum ada data ritase yang terekam di sistem. Silakan pastikan server menyala dan terdapat aktivitas pembacaan kamera.
           </p>
         </GlassCard>
       )}

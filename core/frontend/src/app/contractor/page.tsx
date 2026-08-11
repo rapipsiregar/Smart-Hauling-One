@@ -83,7 +83,7 @@ export default function ContractorPage() {
               Kinerja & Perolehan Hasil Kontraktor
             </h2>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-              Pemantauan ritase aktif dan unit armada per kontraktor hauling (TIA, BIC, PPA, CK) dari backend
+              Pemantauan ritase aktif dan unit armada per kontraktor hauling (TIA, BIC, PPA, CK) dari server
             </p>
           </div>
         </div>

@@ -31,7 +31,7 @@ export default function DeviceSettingsPage() {
       .catch((err) => {
         if (!cancelled) {
           setCameras([]);
-          setError("Gagal memuat daftar perangkat dari backend.");
+          setError("Gagal memuat daftar perangkat dari server.");
         }
       });
     return () => { cancelled = true; };
