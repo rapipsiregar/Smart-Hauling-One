@@ -90,7 +90,7 @@ function CctvPlaceholder({ feed }: { feed: GateFeed | undefined }) {
         CCTV belum tersambung
       </p>
       <p className="font-mono text-[10px] text-white/50 break-all">
-        {feed?.rtspUrl || "Alamat RTSP belum diisi di Konfigurasi Sistem"}
+        {feed?.rtspUrl || "Alamat kamera belum diisi di Konfigurasi Sistem"}
       </p>
       <p className="text-[10px] text-white/40 max-w-xs">
         Alamat kamera sudah terdaftar, tetapi belum ada aliran langsung yang masuk ke

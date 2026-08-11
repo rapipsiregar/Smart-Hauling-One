@@ -20,10 +20,10 @@ function BackendStatusPill() {
   return (
     <div
       className="flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-medium text-amber-500"
-      title="The backend is unreachable — live figures are unavailable and pages show empty data until it reconnects."
+      title="Server pusat tidak terjangkau — data live belum tersedia sampai koneksi terhubung kembali."
     >
       <WifiOff className="w-3.5 h-3.5 shrink-0" />
-      <span className="hidden sm:inline">Data unavailable</span>
+      <span className="hidden sm:inline">Koneksi Server Terputus</span>
     </div>
   );
 }
