@@ -1310,4 +1310,13 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Single Camera Stream Layout**: Streamlined gate console and CCTV wall views to display 1 focused live camera stream.
   - **Feature Streamlining**: Removed tonnage/weight metrics, vehicle age distribution, and asset maintenance/sensor health tabs to simplify operator workflows.
 
+### 3.46 Backend API Port 8000 Schema Alignment & Integration
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 8.4)
+* **Description**: Audited and aligned all UI components with the exact backend API contract on Port 8000 (`http://localhost:8000/api`), removing any UI metrics or fields unsupported by the backend server.
+* **Key Capabilities**:
+  - **Strict API Schema Binding**: Mapped UI models directly to `/api/kpis`, `/api/fleet`, `/api/crossings`, `/api/map`, and `/api/cameras`.
+  - **Non-Backend Metric Removal**: Removed unsupported UI fields (`active_alarms_count`, `sla_compliance_rate`, `traffic_trend_diff`, `cargo_status`, `driver_name`, `compliance_score`, `notes`, `mockStagnantAlerts`, `idlingWasteLiters`).
+  - **Live Backend REST Integration**: Integrated direct fetching from Port 8000 API endpoints with graceful mock fallbacks.
+
+
 
