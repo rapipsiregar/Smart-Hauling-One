@@ -35,7 +35,7 @@ from app.services import cameras as cam
 from app.services.dataset import invalidate_cache
 
 # Matches the model name the reference tests expect in the runs table.
-DEMO_MODEL = "pak-shomad-v1.pt"
+DEMO_MODEL = "smart-hauling-ai-v2.pt"
 DEMO_PREFIX = "demo-"
 
 def _fleet_sample(n: int = 7) -> list[str]:

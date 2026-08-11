@@ -40,7 +40,7 @@ WEB_RESULTS_DIR = DATA_DIR / "web-results"
 # --- Model -------------------------------------------------------------------
 
 AI_MODEL_DIR = ROOT / "ai-model"
-PREFERRED_MODEL_NAME = "pak-shomad-v2.pt"
+PREFERRED_MODEL_NAME = "smart-hauling-ai-v2.pt"
 
 
 def resolve_model_path() -> Path:
