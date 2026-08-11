@@ -160,7 +160,7 @@ export default function LoginPage() {
             </div>
 
             <div
-              className="p-3.5 rounded-xl text-[11px] font-mono space-y-1"
+              className="p-3.5 rounded-xl text-[11px] font-mono"
               style={{
                 backgroundColor: "var(--bg-elevated)",
                 border: "1px solid var(--border)",
@@ -171,9 +171,6 @@ export default function LoginPage() {
                 <span>Hak Akses Peran:</span>
                 <span className="text-amber-400 font-bold uppercase">{selectedProfile.roleTitle}</span>
               </div>
-              <p className="text-[10px]" style={{ color: "var(--text-dim)" }}>
-                Target Halaman: <span className="text-emerald-400">{selectedProfile.defaultLanding}</span>
-              </p>
             </div>
 
             <button
