@@ -79,7 +79,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return (
       <div
         className="h-full flex items-center justify-center font-mono text-xs"
-        style={{ backgroundColor: "var(--bg)", color: "var(--accent)" }}
+        style={{ backgroundColor: "var(--bg)", color: "var(--text-primary)" }}
       >
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full animate-ping" style={{ backgroundColor: "var(--accent)" }} />
