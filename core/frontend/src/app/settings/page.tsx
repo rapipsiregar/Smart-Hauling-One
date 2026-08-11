@@ -9,7 +9,7 @@ import { GuideSwap } from "@/components/ui/guide-note";
 import { ResetCrossings } from "@/components/settings/reset-crossings";
 import { CameraRegistry } from "@/components/settings/camera-registry";
 import { CheckpointsTable } from "@/components/checkpoints/checkpoints-table";
-import { DEMO_SHIFT_REPORT } from "@/lib/shift-report";
+import { EMPTY_SHIFT_REPORT } from "@/lib/shift-report";
 import { Cpu, Trash2, Laptop } from "lucide-react";
 
 export default function SettingsPage() {
@@ -17,7 +17,7 @@ export default function SettingsPage() {
   const [resetMsg, setResetMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    api.getShiftReport().then(setReport).catch(() => setReport(DEMO_SHIFT_REPORT));
+    api.getShiftReport().then(setReport).catch(() => setReport(EMPTY_SHIFT_REPORT));
   }, []);
 
   const handleReset = () => {
@@ -44,18 +44,18 @@ export default function SettingsPage() {
       {/* Camera registry — per-gate scalable camera management */}
       <CameraRegistry />
 
-      {/* Edge devices — one Jetson per registered camera */}
+      {/* Edge devices — one PC per registered camera */}
       <GlassCard className="p-5">
-        <GuideSwap title="Perangkat Edge" note="Tiap kamera gate dipasangkan dengan satu mini-PC di lokasi yang menjalankan deteksi truk. Ringkasan ini menunjukkan berapa perangkat yang sedang terhubung. Pengaturan rincinya ada di halaman Perangkat Edge.">
+        <GuideSwap title="Perangkat Pos Gerbang" note="Tiap kamera gate dipasangkan dengan satu perangkat di lokasi yang menjalankan deteksi truk. Ringkasan ini menunjukkan berapa perangkat yang sedang terhubung. Pengaturan rincinya ada di halaman Perangkat Pos.">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
-              <SectionTitle icon={<Cpu className="w-4 h-4" />} title="Perangkat Edge" subtitle="Pengaturan inferensi dan kesehatan tiap perangkat gate" />
+              <SectionTitle icon={<Cpu className="w-4 h-4" />} title="Perangkat Pos Gerbang" subtitle="Pengaturan pemrosesan dan kondisi tiap perangkat pos" />
             </div>
             <Link
               href="/settings/devices"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-slate-950 font-semibold text-xs rounded-lg hover:bg-amber-400 transition-colors shrink-0"
             >
-              <Cpu className="w-3.5 h-3.5" /> Buka Perangkat Edge
+              <Cpu className="w-3.5 h-3.5" /> Buka Perangkat Pos
             </Link>
           </div>
         </GuideSwap>
@@ -63,8 +63,8 @@ export default function SettingsPage() {
 
       {/* Inference engine info (real run metadata) */}
       <GlassCard className="p-5">
-        <GuideSwap title="Mesin Inferensi" note="Menampilkan model AI yang dipakai dan kapan pemrosesan terakhir dijalankan. Dipakai untuk memastikan angka di halaman lain berasal dari pemrosesan yang mana.">
-          <SectionTitle icon={<Cpu className="w-4 h-4" />} title="Mesin Inferensi" subtitle="Model aktif dan run pemrosesan terakhir" />
+        <GuideSwap title="Sistem Pemrosesan Otomatis" note="Menampilkan model cerdas yang dipakai dan kapan pemrosesan terakhir dijalankan.">
+          <SectionTitle icon={<Cpu className="w-4 h-4" />} title="Sistem Pemrosesan Otomatis" subtitle="Model aktif dan pemrosesan terakhir" />
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <InfoTile label="Model" value={report?.model ?? "—"} mono />
             <InfoTile label="Tanggal Run" value={report?.date ?? "—"} mono />

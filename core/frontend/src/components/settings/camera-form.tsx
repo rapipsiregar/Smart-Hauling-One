@@ -74,24 +74,24 @@ export function CameraForm({ initial, editing, onSubmit, onCancel }: CameraFormP
           <Select value={form.status ?? "offline"} onChange={(v) => set("status", v)}
             options={["online", "offline", "maintenance"]} />
         </Field>
-        <Field label="RTSP URL" full>
+        <Field label="Alamat Kamera (URL Stream)" full>
           <Input value={form.rtsp_url ?? ""} onChange={(v) => set("rtsp_url", v)}
             placeholder="rtsp://10.0.0.5:554/stream1" mono />
         </Field>
-        <Field label="IP / Host">
+        <Field label="Alamat IP Kamera">
           <Input value={form.ip_host ?? ""} onChange={(v) => set("ip_host", v)} placeholder="10.0.0.5" mono />
         </Field>
         <Field label="Username">
           <Input value={form.username ?? ""} onChange={(v) => set("username", v)} placeholder="operator" />
         </Field>
-        <Field label="Resolution">
+        <Field label="Resolusi Gambar">
           <Input value={form.resolution ?? ""} onChange={(v) => set("resolution", v)} placeholder="1920x1080" mono />
         </Field>
-        <Field label="FPS">
+        <Field label="Kecepatan Deteksi (FPS)">
           <Input value={form.fps == null ? "" : String(form.fps)} type="number"
             onChange={(v) => set("fps", v === "" ? null : Number(v))} placeholder="25" mono />
         </Field>
-        <Field label="Install Date">
+        <Field label="Tanggal Pemasangan">
           <Input value={form.install_date ?? ""} type="date" onChange={(v) => set("install_date", v)} />
         </Field>
         <Field label="Notes" full>

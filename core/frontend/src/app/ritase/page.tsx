@@ -10,59 +10,6 @@ import { PitOccupancy, PitTruck, RitaseReport, TruckRitase } from "@/lib/types";
 import { GlassCard } from "@/components/ui/glass-card";
 import { ConfChip } from "@/components/ui/conf-chip";
 import { GuideSwap } from "@/components/ui/guide-note";
-import { FleetAnalyticsWidget } from "@/components/analytics/fleet-analytics";
-
-/**
- * Ritase, and who is in the pit right now.
- *
- * One ritase is one round trip: a hull read at an IN gate puts that truck inside
- * the mining area, and the same hull read at an OUT gate closes the cycle. The
- * two halves are shown together on purpose — the trucks listed as inside are
- * exactly the open cycles, so this page answers "how much have we hauled" and
- * "what is still out there" from the same data rather than from two reports that
- * can drift apart.
- *
- * Trucks the master does not list appear here, flagged. They really crossed, so
- * leaving them out would under-report haulage; but they are never presented as
- * fleet units, because the roster is the operator's to maintain.
- */
-const DEMO_RITASE_FALLBACK: RitaseReport = {
-  totalRitase: 428,
-  unregisteredRitase: 0,
-  unregisteredHulls: [],
-  totalCrossings: 856,
-  pairingBasis: "chronological",
-  hasCrossingTimes: true,
-  unpairedCount: 4,
-  perHull: [
-    { hullId: "DT-118", registered: true, ritase: 14, inCount: 14, outCount: 14, unpaired: 0, reads: 112, bestConf: 0.994, avgCycleSeconds: 2580 },
-    { hullId: "DT-204", registered: true, ritase: 13, inCount: 13, outCount: 13, unpaired: 0, reads: 104, bestConf: 0.982, avgCycleSeconds: 2640 },
-    { hullId: "DT-089", registered: true, ritase: 12, inCount: 12, outCount: 12, unpaired: 0, reads: 96, bestConf: 0.954, avgCycleSeconds: 2700 },
-    { hullId: "DT-312", registered: true, ritase: 12, inCount: 12, outCount: 12, unpaired: 0, reads: 96, bestConf: 0.971, avgCycleSeconds: 2520 },
-    { hullId: "HD2152", registered: true, ritase: 11, inCount: 11, outCount: 11, unpaired: 0, reads: 88, bestConf: 0.988, avgCycleSeconds: 2610 },
-  ],
-  perGate: [
-    { gate: "CP 01 (Area Selatan – KGB - IUP TIA)", inbound: 218, outbound: 0, undirected: 0 },
-    { gate: "CP 02 (Area Utara – KGU CK - BIB)", inbound: 0, outbound: 210, undirected: 0 },
-    { gate: "CP 03 (Area Utara – PPA - BIB)", inbound: 214, outbound: 0, undirected: 0 },
-    { gate: "CP 04 (Area Selatan – Exc WS CK – IUP TIA)", inbound: 0, outbound: 214, undirected: 0 },
-  ],
-  unpaired: [],
-};
-
-const DEMO_PIT_FALLBACK: PitOccupancy = {
-  insideCount: 8,
-  unregisteredInside: 0,
-  outsideCount: 26,
-  inside: [
-    { hullId: "DT-118", registered: true, lastGate: "CP 01 (KGB - IUP TIA)", lastCameraCode: "CAM-01", lastDirection: "inbound", lastCrossedAt: "16:42:15", confidence: 0.994 },
-    { hullId: "DT-089", registered: true, lastGate: "CP 01 (KGB - IUP TIA)", lastCameraCode: "CAM-01", lastDirection: "inbound", lastCrossedAt: "16:40:30", confidence: 0.882 },
-    { hullId: "DT-401", registered: true, lastGate: "CP 03 (PPA - BIB)", lastCameraCode: "CAM-03", lastDirection: "inbound", lastCrossedAt: "16:38:10", confidence: 0.978 },
-    { hullId: "DT-502", registered: true, lastGate: "CP 03 (PPA - BIB)", lastCameraCode: "CAM-03", lastDirection: "inbound", lastCrossedAt: "16:35:44", confidence: 0.972 },
-    { hullId: "HD2152", registered: true, lastGate: "CP 01 (KGB - IUP TIA)", lastCameraCode: "CAM-01", lastDirection: "inbound", lastCrossedAt: "16:33:20", confidence: 0.988 },
-  ],
-  outside: [],
-};
 
 export default function RitasePage() {
   const [ritase, setRitase] = useState<RitaseReport | null>(null);
@@ -80,10 +27,10 @@ export default function RitasePage() {
           setOffline(false);
         })
         .catch((err) => {
-          console.warn("Data ritase tidak tersedia (menggunakan fallback demo):", err);
+          console.warn("Data ritase dari backend gagal dimuat:", err);
           setOffline(true);
-          setRitase(DEMO_RITASE_FALLBACK);
-          setPit(DEMO_PIT_FALLBACK);
+          setRitase(null);
+          setPit(null);
         })
         .finally(() => setLoading(false)),
     [],
@@ -122,7 +69,12 @@ export default function RitasePage() {
         </button>
       </div>
 
-      <FleetAnalyticsWidget />
+      {offline && (
+        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-3 text-xs text-amber-400 font-mono">
+          <ServerCrash className="w-5 h-5 shrink-0" />
+          <span>Gagal terhubung ke API backend (port 8000). Menggunakan status data ril dari sistem.</span>
+        </div>
+      )}
 
       {ritase && pit ? (
         <>
@@ -133,7 +85,13 @@ export default function RitasePage() {
           </div>
           <GatePanel ritase={ritase} />
         </>
-      ) : null}
+      ) : (
+        <GlassCard>
+          <p className="text-sm text-[var(--text-secondary)] py-6 text-center font-mono">
+            Belum ada data ritase yang terekam dari backend. Silakan pastikan server backend menyala dan terdapat aktivitas pembacaan kamera.
+          </p>
+        </GlassCard>
+      )}
     </div>
   );
 }

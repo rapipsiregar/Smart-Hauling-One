@@ -16,8 +16,6 @@ const STATUS_META: Record<string, { icon: React.ReactNode; cls: string }> = {
   maintenance: { icon: <Wrench className="w-3 h-3" />, cls: "text-amber-400" },
 };
 
-import { DEMO_CAMERAS } from "@/lib/checkpoints";
-
 export function CameraRegistry() {
   const [cameras, setCameras] = useState<Camera[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,7 +23,7 @@ export function CameraRegistry() {
   const [editing, setEditing] = useState<Camera | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
-  const load = () => api.getCameras().then(setCameras).catch(() => setCameras(DEMO_CAMERAS));
+  const load = () => api.getCameras().then(setCameras).catch(() => setCameras([]));
 
   useEffect(() => { load().finally(() => setLoading(false)); }, []);
 

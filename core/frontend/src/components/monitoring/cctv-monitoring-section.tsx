@@ -19,8 +19,6 @@ import { Loader } from "lucide-react";
  * It also used to host the OCR Inspection HUD and start detection runs. Both
  * moved to the gate devices, where the pipeline actually runs.
  */
-import { DEMO_CAMERAS } from "@/lib/checkpoints";
-
 export function CctvMonitoringSection() {
   const [cameras, setCameras] = useState<Camera[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,9 +32,9 @@ export function CctvMonitoringSection() {
           setCameras(cams);
           setError(null);
         })
-        .catch(() => {
-          setCameras(DEMO_CAMERAS);
-          setError(null);
+        .catch((err) => {
+          setCameras([]);
+          setError("Gagal terhubung ke API backend kamera. Pastikan backend di port 8000 menyala.");
         }),
     []
   );

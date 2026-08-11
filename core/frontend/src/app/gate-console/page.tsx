@@ -1,34 +1,51 @@
 "use client";
 
-import React, { useState } from "react";
-import { Camera, CheckCircle2, RefreshCw, Radio, HardDrive, Cpu, Activity } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Camera, CheckCircle2, RefreshCw, Radio, HardDrive, Cpu, Activity, AlertCircle } from "lucide-react";
 import { CheckpointsTable } from "@/components/checkpoints/checkpoints-table";
+import { api } from "@/lib/api-client";
+import { Camera as CameraType, Crossing } from "@/lib/types";
 
 export default function GateConsolePage() {
-  const [selectedGate, setSelectedGate] = useState("CP 01 - KGB - IUP TIA");
+  const [cameras, setCameras] = useState<CameraType[]>([]);
+  const [selectedCameraCode, setSelectedCameraCode] = useState<string>("");
+  const [crossings, setCrossings] = useState<Crossing[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [simulatedLogs, setSimulatedLogs] = useState([
-    { id: "CRX-9942", timestamp: "16:42:15", oht_id: "DT-118", confidence: 99.4, direction: "INBOUND", cargo: "LOADED", status: "Synced" },
-    { id: "CRX-9941", timestamp: "16:38:04", oht_id: "DT-204", confidence: 97.8, direction: "OUTBOUND", cargo: "EMPTY", status: "Synced" },
-    { id: "CRX-9940", timestamp: "16:31:50", oht_id: "DT-089", confidence: 88.2, direction: "INBOUND", cargo: "LOADED", status: "Pending" },
-  ]);
+  const [loading, setLoading] = useState(true);
 
+  const loadData = async () => {
+    try {
+      const [camList, dashData] = await Promise.all([
+        api.getCameras().catch(() => []),
+        api.getDashboardData().catch(() => ({ crossings: [], fleet: [], kpis: { total_videos: 0, identified: 0, unique_trucks: 0, total_reads: 0, avg_confidence: 0, unknown: 0 } })),
+      ]);
+      setCameras(camList);
+      if (camList.length > 0 && !selectedCameraCode) {
+        setSelectedCameraCode(camList[0].camera_code);
+      }
+      setCrossings(dashData.crossings || []);
+    } catch {
+      setCameras([]);
+      setCrossings([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const triggerDetection = () => {
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const activeCamera = cameras.find((c) => c.camera_code === selectedCameraCode) || cameras[0];
+  const latestCrossing = crossings[0] || null;
+
+  const triggerDetection = async () => {
     setIsProcessing(true);
-    setTimeout(() => {
+    try {
+      await loadData();
+    } finally {
       setIsProcessing(false);
-      const newLog = {
-        id: `CRX-${Math.floor(1000 + Math.random() * 9000)}`,
-        timestamp: new Date().toLocaleTimeString(),
-        oht_id: "DT-2152",
-        confidence: 99.1,
-        direction: "INBOUND",
-        cargo: "LOADED",
-        status: "Synced",
-      };
-      setSimulatedLogs([newLog, ...simulatedLogs]);
-    }, 1000);
+    }
   };
 
   return (
@@ -47,23 +64,28 @@ export default function GateConsolePage() {
 
         <div className="flex items-center gap-3">
           <select
-            value={selectedGate}
-            onChange={(e) => setSelectedGate(e.target.value)}
+            value={selectedCameraCode}
+            onChange={(e) => setSelectedCameraCode(e.target.value)}
             className="bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-primary)] text-xs rounded-lg px-3 py-2 font-medium"
           >
-            <option value="CP 01 - KGB - IUP TIA">CP 01 – Area Selatan (KGB - IUP TIA)</option>
-            <option value="CP 02 - KGU CK - BIB">CP 02 – Area Utara (KGU CK - BIB)</option>
-            <option value="CP 03 - PPA - BIB">CP 03 – Area Utara (PPA - BIB)</option>
-            <option value="CP 04 - Exc WS CK – IUP TIA">CP 04 – Area Selatan (Exc WS CK – IUP TIA)</option>
+            {cameras.length > 0 ? (
+              cameras.map((c) => (
+                <option key={c.camera_code} value={c.camera_code}>
+                  {c.camera_code} – {c.name} ({c.gate_location || "POS"})
+                </option>
+              ))
+            ) : (
+              <option value="">Tidak ada kamera terdaftar</option>
+            )}
           </select>
 
           <button
             onClick={triggerDetection}
             disabled={isProcessing}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs px-4 py-2 rounded-lg transition"
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs px-4 py-2 rounded-lg transition disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isProcessing ? "animate-spin" : ""}`} />
-            {isProcessing ? "Memproses..." : "Uji Deteksi Manual"}
+            {isProcessing ? "Memuat..." : "Refresh Hasil"}
           </button>
         </div>
       </div>
@@ -72,9 +94,10 @@ export default function GateConsolePage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="glass-panel border border-[var(--border)] p-4 rounded-xl flex items-center justify-between">
           <div>
-            <div className="text-[11px] text-[var(--text-secondary)] font-mono">Kamera RTSP</div>
+            <div className="text-[11px] text-[var(--text-secondary)] font-mono">Status Kamera Pos</div>
             <div className="text-xs font-semibold text-emerald-500 mt-1 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" /> Live 30 FPS
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />{" "}
+              {activeCamera ? `Status: ${activeCamera.status.toUpperCase()}` : "Offline"}
             </div>
           </div>
           <Camera className="w-6 h-6 text-emerald-500/80" />
@@ -83,83 +106,109 @@ export default function GateConsolePage() {
         <div className="glass-panel border border-[var(--border)] p-4 rounded-xl flex items-center justify-between">
           <div>
             <div className="text-[11px] text-[var(--text-secondary)] font-mono">Arah Gerbang</div>
-            <div className="text-xs font-semibold text-amber-500 mt-1">INBOUND (Masuk Pit)</div>
+            <div className="text-xs font-semibold text-amber-500 mt-1 uppercase">
+              {activeCamera?.direction || "INBOUND"}
+            </div>
           </div>
           <Activity className="w-6 h-6 text-amber-500/80" />
         </div>
 
         <div className="glass-panel border border-[var(--border)] p-4 rounded-xl flex items-center justify-between">
           <div>
-            <div className="text-[11px] text-[var(--text-secondary)] font-mono">Status Sync</div>
-            <div className="text-xs font-semibold text-emerald-500 mt-1">Terkirim (HTTP 201)</div>
+            <div className="text-[11px] text-[var(--text-secondary)] font-mono">Pengiriman Data</div>
+            <div className="text-xs font-semibold text-emerald-500 mt-1">Tersambung ke Server Pusat</div>
           </div>
           <CheckCircle2 className="w-6 h-6 text-emerald-500/80" />
         </div>
 
         <div className="glass-panel border border-[var(--border)] p-4 rounded-xl flex items-center justify-between">
           <div>
-            <div className="text-[11px] text-[var(--text-secondary)] font-mono">Outbox Pending</div>
-            <div className="text-xs font-semibold text-[var(--text-primary)] mt-1">0 Pending</div>
+            <div className="text-[11px] text-[var(--text-secondary)] font-mono">Total Pembacaan</div>
+            <div className="text-xs font-semibold text-[var(--text-primary)] mt-1">
+              {crossings.length} Terdeteksi
+            </div>
           </div>
           <HardDrive className="w-6 h-6 text-[var(--text-dim)]" />
         </div>
       </div>
 
-      {/* Camera Stream & Frame Voting */}
+      {/* Camera Stream & Frame Verification Panel */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 glass-panel border border-[var(--border)] rounded-xl p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
               <Camera className="w-4 h-4 text-emerald-500" />
-              Stream Kamera Live — CAM 01 Entrance ({selectedGate})
+              Stream / Bukti Kamera Pos — {activeCamera ? `${activeCamera.camera_code} (${activeCamera.name})` : "Kamera Pos"}
             </h3>
             <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-              192.168.1.104
+              Kamera Aktif
             </span>
           </div>
 
-          <div className="relative aspect-video bg-black rounded-lg overflow-hidden border border-[var(--border)] flex items-center justify-center">
-            <img
-              src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=1200&q=80"
-              alt="Live Truck Stream"
-              className="w-full h-full object-cover opacity-80"
-            />
-
-            <div className="absolute top-1/3 left-1/3 w-48 h-24 border-2 border-emerald-500 bg-emerald-500/10 rounded flex flex-col justify-between p-2 animate-pulse">
-              <div className="text-[10px] font-mono text-emerald-300 bg-black/80 px-1 rounded w-max">
-                AI ROI: 99.4%
+          <div className="relative aspect-video bg-black/90 rounded-lg overflow-hidden border border-[var(--border)] flex items-center justify-center">
+            {latestCrossing && latestCrossing.snapshot ? (
+              <>
+                <img
+                  src={latestCrossing.snapshot}
+                  alt="Live Truck Stream"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-1/3 left-1/3 w-48 h-24 border-2 border-emerald-500 bg-emerald-500/10 rounded flex flex-col justify-between p-2">
+                  <div className="text-[10px] font-mono text-emerald-300 bg-black/80 px-1 rounded w-max">
+                    Deteksi: {latestCrossing.confidence != null ? `${(latestCrossing.confidence * 100).toFixed(1)}%` : "100%"}
+                  </div>
+                  <div className="text-base font-mono font-bold text-emerald-300 text-center tracking-widest bg-black/80 rounded py-0.5">
+                    {latestCrossing.hull_id}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center p-8 text-center text-[var(--text-secondary)] space-y-2 font-mono text-xs">
+                <AlertCircle className="w-8 h-8 text-amber-500/60" />
+                <p>Belum ada rekaman bukti tangkapan kamera dari backend.</p>
+                <p className="text-[10px] text-[var(--text-dim)]">
+                  Proses pembacaan otomatis akan menampilkan tangkapan kamera real-time saat truk melintas.
+                </p>
               </div>
-              <div className="text-base font-mono font-bold text-emerald-300 text-center tracking-widest bg-black/80 rounded py-0.5">
-                DT-118
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
         <div className="glass-panel border border-[var(--border)] rounded-xl p-5 space-y-4">
           <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
             <Cpu className="w-4 h-4 text-amber-500" />
-            Tingkat Akurasi Sampel Pembacaan Kamera
+            Detail Pembacaan Terakhir
           </h3>
 
-          <div className="space-y-2 font-mono text-xs">
-            <div className="p-2.5 rounded border bg-emerald-500/10 border-emerald-500/30 text-emerald-400 flex justify-between">
-              <span>Gambar Tangkapan #1 — DT-118</span>
-              <span className="font-bold">99.4% Terbaca ✓</span>
-            </div>
-            <div className="p-2.5 rounded border bg-emerald-500/10 border-emerald-500/30 text-emerald-400 flex justify-between">
-              <span>Gambar Tangkapan #2 — DT-118</span>
-              <span className="font-bold">98.2% Terbaca ✓</span>
-            </div>
-            <div className="p-2.5 rounded border bg-rose-500/10 border-rose-500/30 text-rose-400 flex justify-between opacity-60">
-              <span>Gambar Tangkapan #3 — DT-110</span>
-              <span className="font-bold">54.1% Buram ✗</span>
-            </div>
-          </div>
+          {latestCrossing ? (
+            <div className="space-y-3 font-mono text-xs">
+              <div className="p-3 rounded border bg-emerald-500/10 border-emerald-500/30 text-emerald-400 space-y-1">
+                <div className="flex justify-between">
+                  <span>Nomor Lambung:</span>
+                  <span className="font-bold">{latestCrossing.hull_id}</span>
+                </div>
+                <div className="flex justify-between text-[11px]">
+                  <span>Arah:</span>
+                  <span>{latestCrossing.direction}</span>
+                </div>
+                <div className="flex justify-between text-[11px]">
+                  <span>Akurasi:</span>
+                  <span className="font-bold">
+                    {latestCrossing.confidence != null ? `${(latestCrossing.confidence * 100).toFixed(1)}%` : "100%"}
+                  </span>
+                </div>
+              </div>
 
-          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-400">
-            <strong>Hasil Kesimpulan:</strong> Nomor lambung <strong>DT-118</strong> terverifikasi cocok 95% dari 18 tangkapan gambar.
-          </div>
+              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-400">
+                <strong>Status Terverifikasi:</strong> Kendaraan <strong>{latestCrossing.hull_id}</strong> tercatat di gate {latestCrossing.lane || activeCamera?.camera_code}.
+              </div>
+            </div>
+          ) : (
+            <div className="p-6 text-center text-xs text-[var(--text-secondary)] font-mono space-y-1 border border-dashed border-[var(--border)] rounded-lg">
+              <p>Belum ada data sampel.</p>
+              <p className="text-[10px] text-[var(--text-dim)]">Tercatat secara otomatis saat ada pembacaan kamera.</p>
+            </div>
+          )}
         </div>
       </div>
 

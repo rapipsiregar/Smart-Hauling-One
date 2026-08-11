@@ -37,11 +37,11 @@ export function DetectionInspector({ detection }: DetectionInspectorProps) {
         </div>
         {d.isConsistent ? (
           <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400">
-            <CheckCircle2 className="w-3.5 h-3.5" /> Consistent
+            <CheckCircle2 className="w-3.5 h-3.5" /> Hasil Sesuai
           </span>
         ) : (
           <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-400">
-            <AlertTriangle className="w-3.5 h-3.5" /> Divergent
+            <AlertTriangle className="w-3.5 h-3.5" /> Perhatian
           </span>
         )}
       </div>
@@ -49,21 +49,21 @@ export function DetectionInspector({ detection }: DetectionInspectorProps) {
       {/* Voted identity plate */}
       <div className="license-plate-card p-4 text-center">
         <p className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-dim)] mb-1">
-          Voted Hull ID
+          Nomor Lambung Terverifikasi
         </p>
         <p className="font-mono font-bold text-3xl text-amber-500 tracking-tight">
-          {d.ocrText || "UNIDENTIFIED"}
+          {d.ocrText || "BELUM TERBACA"}
         </p>
         <p className="text-[11px] font-mono text-[var(--text-secondary)] mt-1">
-          {d.confidence.toFixed(1)}% vote confidence
+          {d.confidence.toFixed(1)}% Kejelasan Pembacaan
         </p>
       </div>
 
       {/* Metric grid */}
       <div className="grid grid-cols-3 gap-2 text-center">
-        <Metric label="Frames" value={d.framesProcessed} />
-        <Metric label="Jumlah pembacaan" value={d.ocrReadCount} />
-        <Metric label="Det. conf" value={`${d.detectionConfidence.toFixed(0)}%`} />
+        <Metric label="Jumlah Gambar" value={d.framesProcessed} />
+        <Metric label="Pembacaan Berhasil" value={d.ocrReadCount} />
+        <Metric label="Akurasi Posisi" value={`${d.detectionConfidence.toFixed(0)}%`} />
       </div>
 
       {/* The evidence, inline. It used to sit on a separate crossing page; a

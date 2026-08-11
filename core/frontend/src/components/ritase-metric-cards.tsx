@@ -16,7 +16,7 @@ const ACCENTS: Record<string, string> = {
 
 const CARDS = [
   {
-    href: "/ledger",
+    href: "/cctv-history",
     icon: <Layers className="w-5 h-5" />,
     label: "Lintasan Gate",
     unit: "lintasan",
@@ -27,7 +27,7 @@ const CARDS = [
       "Setiap lintasan truk yang terbaca di gate. Satu lintasan bukan satu ritase — satu ritase terdiri dari lintasan masuk dan keluar.",
   },
   {
-    href: "/fleet",
+    href: "/ritase",
     icon: <Truck className="w-5 h-5" />,
     label: "Nomor Lambung Terbaca",
     unit: "unit",
@@ -37,7 +37,7 @@ const CARDS = [
     guide: "Berapa banyak nomor lambung berbeda yang berhasil dikenali sistem.",
   },
   {
-    href: "/crossing",
+    href: "/gate-console",
     icon: <AlertTriangle className="w-5 h-5" />,
     label: "Gagal Terbaca",
     unit: "perlu ditinjau",
@@ -64,14 +64,14 @@ export function RitaseMetricCards({ currentHref }: { currentHref?: string }) {
       .getPerformanceKpis()
       .then(setKpis)
       .catch((err) => {
-        console.warn("KPI fallback active (backend offline):", err);
+        console.warn("Gagal memuat KPI dari backend:", err);
         setKpis({
-          totalPassages: 856,
-          identified: 852,
-          unknown: 4,
-          uniqueTrucks: 34,
-          totalReads: 3420,
-          avgConfidence: 0.964,
+          totalPassages: 0,
+          identified: 0,
+          unknown: 0,
+          uniqueTrucks: 0,
+          totalReads: 0,
+          avgConfidence: 0,
           perGate: [],
         });
       });

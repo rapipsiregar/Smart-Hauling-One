@@ -1,23 +1,45 @@
 "use client";
 
-import React, { useState } from "react";
-import { Wrench, Battery, Cpu, Activity, AlertTriangle, CheckCircle2, RefreshCw } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Wrench, Camera as CameraIcon, Activity, CheckCircle2, RefreshCw } from "lucide-react";
+import { api } from "@/lib/api-client";
+import { Camera } from "@/lib/types";
+
+interface ActionLog {
+  id: string;
+  gate: string;
+  type: string;
+  status: string;
+  date: string;
+}
 
 export default function MaintenancePage() {
-  const [interventions, setInterventions] = useState([
-    { id: "MNT-101", gate: "Gate 01", type: "Cuci Lensa Optik", status: "Selesai", date: "16:40:00" },
-    { id: "MNT-102", gate: "Gate 02", type: "Redam Skid Hidrolik", status: "Dalam Proses", date: "16:41:30" },
-  ]);
+  const [cameras, setCameras] = useState<Camera[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [interventions, setInterventions] = useState<ActionLog[]>([]);
+
+  const loadData = async () => {
+    try {
+      const list = await api.getCameras().catch(() => []);
+      setCameras(list);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const handleAction = (type: string, gate: string) => {
-    const newMnt = {
+    const newMnt: ActionLog = {
       id: `MNT-${Math.floor(100 + Math.random() * 900)}`,
       gate,
       type,
-      status: "Dikirim ke Field Node",
+      status: "Terkirim ke Server Pos",
       date: new Date().toLocaleTimeString(),
     };
-    setInterventions([newMnt, ...interventions]);
+    setInterventions((prev) => [newMnt, ...prev]);
   };
 
   return (
@@ -27,98 +49,118 @@ export default function MaintenancePage() {
         <div>
           <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
             <Wrench className="w-5 h-5 text-amber-500" />
-            Kesehatan Alat, Sensor, dan Kamera Pos
+            Kesehatan Peralatan & Kamera Pos Gerbang
           </h2>
           <p className="text-xs text-[var(--text-secondary)]">
-            Pemantauan Kondisi Baterai, Kejernihan Lensa Kamera, dan Getaran Peralatan Pos
+            Pemantauan status koneksi jaringan, resolusi, dan kesehatan kamera pos dari backend
           </p>
         </div>
 
-        <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
-          4 Pos Kamera Aktif
-        </span>
+        <button
+          onClick={loadData}
+          disabled={loading}
+          className="flex items-center gap-2 bg-[var(--bg-elevated)] hover:bg-[var(--border)] text-[var(--text-primary)] border border-[var(--border)] font-medium text-xs px-4 py-2 rounded-lg transition"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+          Refresh Status
+        </button>
       </div>
 
-      {/* Sensor Towers Grid */}
+      {/* Sensor Towers Grid (Real Cameras) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { name: "Pos CP 01 (KGB - IUP TIA)", battery: "98%", soh: "96.4%", clarity: "94%", rms: "0.04g", status: "Optimal" },
-          { name: "Pos CP 02 (KGU CK - BIB)", battery: "92%", soh: "94.1%", clarity: "88%", rms: "0.08g", status: "Optimal" },
-          { name: "Pos CP 03 (PPA - BIB)", battery: "84%", soh: "89.2%", clarity: "76%", rms: "Perlu Perhatian" },
-          { name: "Pos CP 04 (Exc WS CK - TIA)", battery: "78%", soh: "87.0%", clarity: "81%", rms: "0.11g", status: "Optimal" },
-        ].map((t) => (
-          <div key={t.name} className="glass-panel border border-[var(--border)] p-4 rounded-xl space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-[var(--text-primary)] truncate">{t.name}</span>
-              <span className={`text-[10px] font-mono px-2 py-0.5 rounded shrink-0 ml-1 ${t.status === 'Optimal' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
-                {t.status}
-              </span>
-            </div>
+        {cameras.length > 0 ? (
+          cameras.map((c) => (
+            <div key={c.camera_code} className="glass-panel border border-[var(--border)] p-4 rounded-xl space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-[var(--text-primary)] truncate">
+                  {c.camera_code} ({c.name})
+                </span>
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded shrink-0 ml-1 uppercase font-bold ${
+                  c.status === "online"
+                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                    : c.status === "maintenance"
+                    ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                    : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                }`}>
+                  {c.status}
+                </span>
+              </div>
 
-            <div className="space-y-1 text-xs font-mono">
-              <div className="flex justify-between text-[var(--text-secondary)]">
-                <span>Kapasitas Baterai:</span>
-                <span className="text-emerald-400 font-bold">{t.battery}</span>
+              <div className="space-y-1 text-xs font-mono">
+                <div className="flex justify-between text-[var(--text-secondary)]">
+                  <span>Lokasi:</span>
+                  <span className="text-[var(--text-primary)]">{c.gate_location || "POS"}</span>
+                </div>
+                <div className="flex justify-between text-[var(--text-secondary)]">
+                  <span>Arah:</span>
+                  <span className="text-amber-400 uppercase font-bold">{c.direction}</span>
+                </div>
+                <div className="flex justify-between text-[var(--text-secondary)]">
+                  <span>Koneksi:</span>
+                  <span className="text-emerald-400 font-bold truncate max-w-[120px]">{c.rtsp_url || c.ip_host || "Normal"}</span>
+                </div>
               </div>
-              <div className="flex justify-between text-[var(--text-secondary)]">
-                <span>Kejernihan Lensa:</span>
-                <span className="text-amber-400 font-bold">{t.clarity}</span>
-              </div>
-              <div className="flex justify-between text-[var(--text-secondary)]">
-                <span>Getaran Peralatan:</span>
-                <span className="text-[var(--text-primary)]">{t.rms}</span>
-              </div>
-            </div>
 
-            <div className="pt-2 border-t border-[var(--border)] flex gap-2">
-              <button
-                onClick={() => handleAction("Pembersihan Lensa Kamera", t.name)}
-                className="flex-1 py-1.5 text-[10px] font-mono font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded border border-amber-500/20 cursor-pointer"
-              >
-                Bersihkan Lensa
-              </button>
-              <button
-                onClick={() => handleAction("Pemeriksaan Getaran Pos", t.name)}
-                className="flex-1 py-1.5 text-[10px] font-mono font-semibold bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded border border-blue-500/20 cursor-pointer"
-              >
-                Cek Getaran
-              </button>
+              <div className="pt-2 border-t border-[var(--border)] flex gap-2">
+                <button
+                  onClick={() => handleAction("Pemeriksaan Koneksi", c.name)}
+                  className="flex-1 py-1.5 text-[10px] font-mono font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded border border-amber-500/20 cursor-pointer"
+                >
+                  Cek Koneksi
+                </button>
+                <button
+                  onClick={() => handleAction("Kalibrasi Posisi Kamera", c.name)}
+                  className="flex-1 py-1.5 text-[10px] font-mono font-semibold bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded border border-blue-500/20 cursor-pointer"
+                >
+                  Kalibrasi
+                </button>
+              </div>
             </div>
+          ))
+        ) : (
+          <div className="col-span-full p-8 text-center text-xs text-[var(--text-secondary)] font-mono border border-dashed border-[var(--border)] rounded-lg">
+            Belum ada kamera pos terdaftar di backend database.
           </div>
-        ))}
+        )}
       </div>
 
       {/* Interventions Log */}
       <div className="glass-panel border border-[var(--border)] rounded-xl p-5 space-y-4">
-        <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2 font-mono">
           <Activity className="w-4 h-4 text-emerald-500" />
-          Riwayat Pemeliharaan & Tindakan Lapangan
+          Riwayat Tindakan Lapangan & Pemeriksaan Kamera
         </h3>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs font-mono">
-            <thead>
-              <tr className="border-b border-[var(--border)] text-[var(--text-secondary)]">
-                <th className="pb-2">Kode Tindakan</th>
-                <th className="pb-2">Lokasi Pos</th>
-                <th className="pb-2">Jenis Pemeliharaan</th>
-                <th className="pb-2">Waktu Permintaan</th>
-                <th className="pb-2">Status Pemeliharaan</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--border)]">
-              {interventions.map((item) => (
-                <tr key={item.id} className="text-[var(--text-primary)]">
-                  <td className="py-2.5 font-bold text-amber-400">{item.id}</td>
-                  <td className="py-2.5">{item.gate}</td>
-                  <td className="py-2.5">{item.type}</td>
-                  <td className="py-2.5 text-[var(--text-secondary)]">{item.date}</td>
-                  <td className="py-2.5 text-emerald-400">{item.status}</td>
+        {interventions.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs font-mono">
+              <thead>
+                <tr className="border-b border-[var(--border)] text-[var(--text-secondary)]">
+                  <th className="pb-2">Kode Tindakan</th>
+                  <th className="pb-2">Lokasi Pos</th>
+                  <th className="pb-2">Jenis Pemeriksaan</th>
+                  <th className="pb-2">Waktu Permintaan</th>
+                  <th className="pb-2">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-[var(--border)]">
+                {interventions.map((item) => (
+                  <tr key={item.id} className="text-[var(--text-primary)]">
+                    <td className="py-2.5 font-bold text-amber-400">{item.id}</td>
+                    <td className="py-2.5">{item.gate}</td>
+                    <td className="py-2.5">{item.type}</td>
+                    <td className="py-2.5 text-[var(--text-secondary)]">{item.date}</td>
+                    <td className="py-2.5 text-emerald-400">{item.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="p-6 text-center text-xs text-[var(--text-secondary)] font-mono border border-dashed border-[var(--border)] rounded-lg">
+            Belum ada riwayat permintaan tindakan lapangan hari ini.
+          </div>
+        )}
       </div>
     </div>
   );

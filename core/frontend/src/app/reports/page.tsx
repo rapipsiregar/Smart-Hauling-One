@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api-client";
 import { ShiftReport } from "@/lib/types";
-import { EMPTY_SHIFT_REPORT, DEMO_SHIFT_REPORT, normalizeShiftReport } from "@/lib/shift-report";
+import { EMPTY_SHIFT_REPORT, normalizeShiftReport } from "@/lib/shift-report";
 import { ShiftReportModule } from "@/components/reports/shift-report-module";
 import { RitaseMetricCards } from "@/components/ritase-metric-cards";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -13,7 +13,7 @@ import { Loader, ClipboardList, ServerCrash } from "lucide-react";
 type Health = "ok" | "stale" | "offline";
 
 export default function ReportsPage() {
-  const [report, setReport] = useState<ShiftReport>(DEMO_SHIFT_REPORT);
+  const [report, setReport] = useState<ShiftReport>(EMPTY_SHIFT_REPORT);
   const [health, setHealth] = useState<Health>("ok");
   const [loading, setLoading] = useState(true);
 
@@ -25,9 +25,9 @@ export default function ReportsPage() {
         setHealth(current ? "ok" : "stale");
       })
       .catch((err) => {
-        console.warn("Laporan shift offline fallback active:", err);
-        setReport(DEMO_SHIFT_REPORT);
-        setHealth("ok");
+        console.warn("Data laporan shift backend gagal dimuat:", err);
+        setReport(EMPTY_SHIFT_REPORT);
+        setHealth("offline");
       })
       .finally(() => setLoading(false));
   }, []);

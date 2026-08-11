@@ -8,7 +8,6 @@ import { GuideSwap } from "@/components/ui/guide-note";
 import { DetectionList } from "@/components/monitoring/detection-list";
 import { DetectionInspector } from "@/components/monitoring/detection-inspector";
 import { PitAndRitase } from "@/components/monitoring/pit-and-ritase";
-import { AuditOverrideLogWidget } from "@/components/analytics/audit-override-log";
 import { Cctv, Loader } from "lucide-react";
 
 /**
@@ -80,7 +79,6 @@ export default function CctvHistoryPage() {
 
   return (
     <div className="space-y-5">
-      <AuditOverrideLogWidget />
       {/* 1 — where the fleet is, and the ritase behind it */}
       <PitAndRitase />
 

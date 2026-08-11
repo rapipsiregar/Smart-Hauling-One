@@ -8,7 +8,6 @@ import { Camera } from "@/lib/types";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GuideSwap } from "@/components/ui/guide-note";
 import { DeviceCard } from "@/components/devices/device-card";
-import { DEMO_CAMERAS } from "@/lib/checkpoints";
 
 /** One heartbeat interval — a pending save resolves within one tick. */
 const REFRESH_MS = 30_000;
@@ -31,8 +30,8 @@ export default function DeviceSettingsPage() {
       .then((list) => { if (!cancelled) { setCameras(list); setError(null); } })
       .catch((err) => {
         if (!cancelled) {
-          setCameras(DEMO_CAMERAS);
-          setError(null);
+          setCameras([]);
+          setError("Gagal memuat daftar perangkat dari backend.");
         }
       });
     return () => { cancelled = true; };
@@ -47,7 +46,7 @@ export default function DeviceSettingsPage() {
     <div className="space-y-5 w-full">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-amber-500 font-mono text-xs font-bold tracking-widest uppercase">
-          <Cpu className="w-4 h-4" /> Perangkat Edge
+          <Cpu className="w-4 h-4" /> Perangkat Pos Gerbang
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -67,13 +66,13 @@ export default function DeviceSettingsPage() {
 
       <GlassCard className="p-5">
         <GuideSwap
-          title="Perangkat Edge"
-          note="Tiap gate punya satu kamera dan satu mini-PC (Jetson) yang menjalankan deteksi langsung di lokasi. Halaman ini tempat mengatur perangkat itu dari pusat: seberapa sering gambar diperiksa, seberapa yakin AI harus sebelum sebuah pembacaan dihitung, dan berapa lama satu truk diamati. Perubahan tidak langsung berlaku — ia menunggu perangkat menghubungi pusat, jadi wajar kalau statusnya sempat 'menunggu perangkat'. Perangkat yang tidak mengirim kabar selama 90 detik otomatis ditandai offline."
+          title="Perangkat Pos Gerbang"
+          note="Tiap pos gerbang dilengkapi satu kamera dan perangkat pemrosesan di lokasi yang menjalankan deteksi kendaraan otomatis. Halaman ini tempat mengatur kecepatan pembacaan, kejelasan gambar, dan durasi pengamatan."
         >
-          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Pengaturan Inferensi per Gate</h2>
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Pengaturan Pemrosesan Kamera Pos</h2>
           <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
-            Satu gate = satu kamera = satu perangkat edge. Perubahan disimpan di server seketika,
-            lalu diterapkan perangkat pada detak berikutnya — sampai perangkat mengonfirmasi,
+            Satu pos = satu kamera = satu perangkat pos. Perubahan disimpan di server seketika,
+            lalu diterapkan perangkat pada detak koneksi berikutnya — sampai perangkat mengonfirmasi,
             kartunya bertanda <span className="text-amber-400 font-semibold">menunggu perangkat</span>.
           </p>
         </GuideSwap>
