@@ -44,7 +44,7 @@ export function FuelSection() {
         konsumsi rata-rata unit (~70 L/jam). Data per-shift (Pagi + Malam).
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         <div className="p-3.5 rounded-xl bg-[#060d1e] border border-[#1e293b] space-y-1">
           <div className="text-xs text-slate-400 flex items-center gap-1.5">
             <Flame className="w-3.5 h-3.5 text-amber-400" /> Total Konsumsi Solar
@@ -60,13 +60,6 @@ export function FuelSection() {
             {avgLitersPerTrip} L/Trip
           </div>
           <div className="text-[10px] text-slate-500 font-mono">Target SLA: &lt; 18.0 L/Trip</div>
-        </div>
-        <div className="p-3.5 rounded-xl bg-rose-950/30 border border-rose-500/20 space-y-1">
-          <div className="text-xs text-rose-300 flex items-center gap-1.5">
-            <AlertTriangle className="w-3.5 h-3.5 text-rose-400" /> BBM Terbuang (Idling)
-          </div>
-          <div className="text-2xl font-bold font-mono text-rose-400">{f.idlingWasteLiters} L</div>
-          <div className="text-[10px] text-rose-400/70 font-mono">{f.idlingWastePct}% dari total – antrean gerbang</div>
         </div>
       </div>
 

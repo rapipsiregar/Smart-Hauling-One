@@ -45,7 +45,7 @@ export function exportToExcel(crossings: CrossingLog[], options: ExportOptions =
             <td colspan="2">Total Ritase Hari Ini</td>
             <td colspan="2" class="kpi-val">${kpi.total_ritase_today}</td>
             <td>Trips</td>
-            <td colspan="3">+${kpi.traffic_trend_diff}% vs Kemarin</td>
+            <td colspan="3">Lintasan Aktif Hari Ini</td>
           </tr>
           <tr>
             <td colspan="2">Truk Aktif di Koridor</td>

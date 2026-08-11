@@ -198,7 +198,6 @@ export function GateConsoleView() {
                 <th className="p-3">Waktu</th>
                 <th className="p-3">OHT Hull ID</th>
                 <th className="p-3">Arah</th>
-                <th className="p-3">Muatan</th>
                 <th className="p-3">Akurasi Deteksi</th>
                 <th className="p-3">Kontraktor</th>
                 <th className="p-3">Status Sync</th>
@@ -217,7 +216,6 @@ export function GateConsoleView() {
                       {log.direction}
                     </span>
                   </td>
-                  <td className="p-3">{log.cargo_status || 'LOADED'}</td>
                   <td className="p-3 font-bold text-emerald-300">{log.confidence}%</td>
                   <td className="p-3">{log.contractor}</td>
                   <td className="p-3">

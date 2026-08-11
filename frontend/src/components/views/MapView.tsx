@@ -138,10 +138,6 @@ export const MapView: React.FC = () => {
                 <span>Status Data:</span>
                 <span className="font-bold text-emerald-600">Valid & Terkunci</span>
               </div>
-              <div className="flex justify-between text-slate-600">
-                <span>Pengemudi:</span>
-                <span className="font-bold text-[#0f172a]">{currentDetail.driver}</span>
-              </div>
             </div>
           </div>
 

@@ -9,7 +9,6 @@ interface HeaderProps {
   onSwitchUser?: (u: User) => void;
   darkMode: boolean;
   setDarkMode: (val: boolean) => void;
-  activeAlarmsCount: number;
   onToggleSidebar?: () => void;
 }
 

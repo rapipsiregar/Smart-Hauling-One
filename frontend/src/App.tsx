@@ -69,7 +69,6 @@ export function App() {
         onSwitchUser={handleSwitchUser}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
-        activeAlarmsCount={kpi.active_alarms_count}
         onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
 

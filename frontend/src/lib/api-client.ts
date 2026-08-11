@@ -1,15 +1,12 @@
-import { CrossingLog, TruckAsset, TowerTelemetry, KPISummary, CycleTimePoint, OCRVotingFrame, MaintenanceTower, RegressionForecast } from './types';
+import { CrossingLog, TruckAsset, KPISummary, CycleTimePoint, OCRVotingFrame } from './types';
 
 // Real-time API Client with mock fallbacks for optimal UI responsiveness
-const API_BASE = '/api';
+const API_BASE = 'http://localhost:8000/api';
 
 export const mockKPIs: KPISummary = {
   total_ritase_today: 428,
   active_trucks: 34,
   avg_ocr_accuracy: 98.6,
-  sla_compliance_rate: 96.5,
-  active_alarms_count: 2,
-  traffic_trend_diff: 14.2,
 };
 
 export const mockCrossings: CrossingLog[] = [
@@ -19,7 +16,6 @@ export const mockCrossings: CrossingLog[] = [
     oht_id: 'DT-118',
     confidence: 99.4,
     direction: 'INBOUND',
-    cargo_status: 'LOADED',
     contractor: 'PT Tunas Inti Abadi',
     gate_name: 'Gate 01 - Pit North',
     crop_image_url: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=400&q=80',
@@ -32,7 +28,6 @@ export const mockCrossings: CrossingLog[] = [
     oht_id: 'DT-204',
     confidence: 97.8,
     direction: 'OUTBOUND',
-    cargo_status: 'EMPTY',
     contractor: 'PT Borneo Indah Cemerlang',
     gate_name: 'Gate 02 - Port Main',
     crop_image_url: 'https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&w=400&q=80',
@@ -45,12 +40,10 @@ export const mockCrossings: CrossingLog[] = [
     oht_id: 'DT-089',
     confidence: 88.2,
     direction: 'INBOUND',
-    cargo_status: 'LOADED',
     contractor: 'PT Tunas Inti Abadi',
     gate_name: 'Gate 01 - Pit North',
     crop_image_url: 'https://images.unsplash.com/photo-1586191582056-a73c1d9326e3?auto=format&fit=crop&w=400&q=80',
     is_verified: false,
-    notes: 'Pembacaan AI butuh verifikasi manual (Conf < 90%)',
     cycle_time_minutes: 54,
   },
   {
@@ -59,7 +52,6 @@ export const mockCrossings: CrossingLog[] = [
     oht_id: 'DT-312',
     confidence: 98.9,
     direction: 'OUTBOUND',
-    cargo_status: 'EMPTY',
     contractor: 'PT Borneo Indah Cemerlang',
     gate_name: 'Gate 01 - Pit North',
     is_verified: true,
@@ -71,7 +63,6 @@ export const mockCrossings: CrossingLog[] = [
     oht_id: 'DT-105',
     confidence: 99.1,
     direction: 'INBOUND',
-    cargo_status: 'LOADED',
     contractor: 'PT Tunas Inti Abadi',
     gate_name: 'Gate 02 - Port Main',
     is_verified: true,
@@ -87,60 +78,11 @@ export const mockVotingFrames: OCRVotingFrame[] = [
 ];
 
 export const mockTrucks: TruckAsset[] = [
-  { id: 'T-1', oht_id: 'DT-118', contractor: 'PT Tunas Inti Abadi', model: 'CAT 777E', capacity_tons: 98, status: 'ACTIVE', total_ritase_today: 14, last_crossing_time: '16:42:15', driver_name: 'Budi Santoso', compliance_score: 99 },
-  { id: 'T-2', oht_id: 'DT-204', contractor: 'PT Borneo Indah Cemerlang', model: 'Komatsu HD785', capacity_tons: 91, status: 'ACTIVE', total_ritase_today: 12, last_crossing_time: '16:38:04', driver_name: 'Ahmad Rizal', compliance_score: 97 },
-  { id: 'T-3', oht_id: 'DT-089', contractor: 'PT Tunas Inti Abadi', model: 'CAT 777D', capacity_tons: 95, status: 'MAINTENANCE', total_ritase_today: 8, last_crossing_time: '16:31:50', driver_name: 'Dedi Kurniawan', compliance_score: 91 },
-  { id: 'T-4', oht_id: 'DT-312', contractor: 'PT Borneo Indah Cemerlang', model: 'Volvo FMX 480', capacity_tons: 45, status: 'ACTIVE', total_ritase_today: 16, last_crossing_time: '16:25:12', driver_name: 'Eko Prasetyo', compliance_score: 98 },
-  { id: 'T-5', oht_id: 'DT-105', contractor: 'PT Tunas Inti Abadi', model: 'CAT 777E', capacity_tons: 98, status: 'ACTIVE', total_ritase_today: 13, last_crossing_time: '16:19:44', driver_name: 'Rudi Hartono', compliance_score: 100 },
-];
-
-export const mockTowers: TowerTelemetry[] = [
-  { tower_id: 'TOW-01', name: 'Mobile Solar Tower Alpha (Pit Gate)', location: 'Pit North Checkpoint 1', battery_soc: 92, battery_voltage: 25.8, pv_voltage: 48.2, temperature: 34.5, vibration: 1.2, signal_dbm: -64, mode: 'NORMAL_LTE', status: 'ONLINE', battery_trend: [80, 85, 90, 94, 92, 92] },
-  { tower_id: 'TOW-02', name: 'Mobile Solar Tower Bravo (Port Gate)', location: 'Port Stockpile Access', battery_soc: 44, battery_voltage: 23.4, pv_voltage: 24.1, temperature: 41.2, vibration: 4.8, signal_dbm: -82, mode: 'MONSOON_UHF', status: 'WARNING', battery_trend: [72, 60, 50, 46, 44, 44] },
-];
-
-export const mockMaintenanceTowers: MaintenanceTower[] = [
-  {
-    id: 'm-1',
-    name: 'Tower Alpha - Pit North',
-    location: 'Pit Gate 01',
-    battery_health_pct: 94,
-    lens_clarity_pct: 98,
-    vibration_rms: 1.2,
-    days_to_failure: 142,
-    low_voltage_alert: false,
-    voltage_history: [
-      { time: '00:00', voltage: 25.8, threshold: 24.0 },
-      { time: '04:00', voltage: 25.4, threshold: 24.0 },
-      { time: '08:00', voltage: 26.2, threshold: 24.0 },
-      { time: '12:00', voltage: 27.1, threshold: 24.0 },
-      { time: '16:00', voltage: 26.5, threshold: 24.0 },
-      { time: '20:00', voltage: 25.9, threshold: 24.0 },
-    ],
-  },
-  {
-    id: 'm-2',
-    name: 'Tower Bravo - Port Access',
-    location: 'Port Gate 02',
-    battery_health_pct: 58,
-    lens_clarity_pct: 72,
-    vibration_rms: 4.8,
-    days_to_failure: 12,
-    low_voltage_alert: true,
-    voltage_history: [
-      { time: '00:00', voltage: 24.2, threshold: 24.0 },
-      { time: '04:00', voltage: 23.8, threshold: 24.0 },
-      { time: '08:00', voltage: 24.5, threshold: 24.0 },
-      { time: '12:00', voltage: 25.1, threshold: 24.0 },
-      { time: '16:00', voltage: 23.9, threshold: 24.0 },
-      { time: '20:00', voltage: 23.4, threshold: 24.0 },
-    ],
-  },
-];
-
-export const mockRegressionForecasts: RegressionForecast[] = [
-  { tower_name: 'Tower Alpha', metric: 'Skid Vibration', slope_m: 0.04, intercept_c: 1.1, r2_score: 0.96, hours_to_limit: 184 },
-  { tower_name: 'Tower Bravo', metric: 'CPU Junction Temp', slope_m: 0.18, intercept_c: 38.2, r2_score: 0.94, hours_to_limit: 36 },
+  { id: 'T-1', oht_id: 'DT-118', contractor: 'PT Tunas Inti Abadi', model: 'CAT 777E', status: 'ACTIVE', total_ritase_today: 14, last_crossing_time: '16:42:15' },
+  { id: 'T-2', oht_id: 'DT-204', contractor: 'PT Borneo Indah Cemerlang', model: 'Komatsu HD785', status: 'ACTIVE', total_ritase_today: 12, last_crossing_time: '16:38:04' },
+  { id: 'T-3', oht_id: 'DT-089', contractor: 'PT Tunas Inti Abadi', model: 'CAT 777D', status: 'MAINTENANCE', total_ritase_today: 8, last_crossing_time: '16:31:50' },
+  { id: 'T-4', oht_id: 'DT-312', contractor: 'PT Borneo Indah Cemerlang', model: 'Volvo FMX 480', status: 'ACTIVE', total_ritase_today: 16, last_crossing_time: '16:25:12' },
+  { id: 'T-5', oht_id: 'DT-105', contractor: 'PT Tunas Inti Abadi', model: 'CAT 777E', status: 'ACTIVE', total_ritase_today: 13, last_crossing_time: '16:19:44' },
 ];
 
 export const mockCycleTime: CycleTimePoint[] = [
@@ -163,8 +105,15 @@ export function toggleLiveMode(enabled: boolean): void {
 export async function fetchKPISummary(): Promise<KPISummary> {
   if (isLiveModeEnabled()) {
     try {
-      const res = await fetch(`${API_BASE}/system/health`);
-      if (res.ok) return await res.json();
+      const res = await fetch(`${API_BASE}/kpis`);
+      if (res.ok) {
+        const data = await res.json();
+        return {
+          total_ritase_today: data.total_videos || data.total_passages || 0,
+          active_trucks: data.unique_trucks || 0,
+          avg_ocr_accuracy: data.avg_confidence || 0,
+        };
+      }
     } catch (e) {
       // Fallback gracefully
     }
@@ -175,8 +124,23 @@ export async function fetchKPISummary(): Promise<KPISummary> {
 export async function fetchCrossings(): Promise<CrossingLog[]> {
   if (isLiveModeEnabled()) {
     try {
-      const res = await fetch(`${API_BASE}/crossings`);
-      if (res.ok) return await res.json();
+      const res = await fetch(`${API_BASE}/dataset`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.crossings)) {
+          return data.crossings.map((c: any) => ({
+            id: `CRX-${c.id}`,
+            timestamp: c.crossed_at || '12:00:00',
+            oht_id: c.hull_id || 'UNKNOWN',
+            confidence: c.confidence || 0,
+            direction: (c.direction || 'INBOUND').toUpperCase(),
+            contractor: 'PT Tunas Inti Abadi',
+            gate_name: c.lane || 'Gate 01',
+            crop_image_url: c.snapshot ? `/${c.snapshot}` : undefined,
+            is_verified: c.known || false,
+          }));
+        }
+      }
     } catch (e) {
       // Fallback gracefully
     }

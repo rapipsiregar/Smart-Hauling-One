@@ -27,12 +27,12 @@ export const KPISummaries: React.FC<KPISummariesProps> = ({
             </div>
           </div>
           <div className="flex items-baseline space-x-2">
-            <span className="text-4xl font-extrabold text-[#0f172a] font-mono">428</span>
+            <span className="text-4xl font-extrabold text-[#0f172a] font-mono">{kpi.total_ritase_today}</span>
             <span className="text-sm font-bold text-slate-500 font-mono">Trips</span>
           </div>
         </div>
         <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-mono">
-          <span className="text-emerald-600 font-extrabold text-sm">+14.2% vs kemarin</span>
+          <span className="text-emerald-600 font-extrabold text-sm">Lintasan Aktif Hari Ini</span>
           <span className="text-slate-400 group-hover:text-blue-600 flex items-center gap-1 font-extrabold">
             Lihat Laporan <ExternalLink className="w-3.5 h-3.5" />
           </span>
@@ -53,7 +53,7 @@ export const KPISummaries: React.FC<KPISummariesProps> = ({
             </div>
           </div>
           <div className="flex items-baseline space-x-2">
-            <span className="text-4xl font-extrabold text-[#0f172a] font-mono">34</span>
+            <span className="text-4xl font-extrabold text-[#0f172a] font-mono">{kpi.active_trucks}</span>
             <span className="text-sm font-bold text-slate-500 font-mono">Units</span>
           </div>
         </div>

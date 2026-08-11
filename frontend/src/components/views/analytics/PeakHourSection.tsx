@@ -22,49 +22,10 @@ export function PeakHourSection() {
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-amber-400" />
           <h3 className="text-sm font-bold text-white font-mono uppercase tracking-wider">
-            Heatmap Jam Puncak Kemacetan Gerbang & Stagnant Alert
+            Heatmap Jam Puncak Kemacetan Gerbang
           </h3>
         </div>
-        <span className="text-xs font-mono px-2.5 py-1 rounded border font-bold text-rose-400 bg-rose-500/10 border-rose-500/30">
-          {mockStagnantAlerts.length} Stagnant Alert
-        </span>
       </div>
-
-      {mockStagnantAlerts.length > 0 && (
-        <div className="mb-4 space-y-2">
-          {mockStagnantAlerts.map((a) => (
-            <div
-              key={a.truckId}
-              className={`flex items-center gap-3 p-3 rounded-xl border text-xs font-mono ${
-                a.status === 'CRITICAL'
-                  ? 'bg-rose-950/40 border-rose-500/40'
-                  : 'bg-amber-950/40 border-amber-500/40'
-              }`}
-            >
-              <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${a.status === 'CRITICAL' ? 'text-rose-400 animate-pulse' : 'text-amber-400'}`} />
-              <div className="flex-1">
-                <span className={`font-bold ${a.status === 'CRITICAL' ? 'text-rose-300' : 'text-amber-300'}`}>
-                  Unit {a.truckId}
-                </span>{' '}
-                <span className="text-slate-400">
-                  masuk {a.entryGate} pukul {a.entryTime} WITA — belum keluar selama{' '}
-                </span>
-                <span className={`font-bold ${a.status === 'CRITICAL' ? 'text-rose-400' : 'text-amber-400'}`}>
-                  {a.elapsedMinutes} menit
-                </span>
-                <span className="text-slate-500"> · {a.contractor}</span>
-              </div>
-              <span className={`px-2 py-0.5 rounded text-[9px] font-bold border uppercase ${
-                a.status === 'CRITICAL'
-                  ? 'text-rose-400 bg-rose-500/10 border-rose-500/30'
-                  : 'text-amber-400 bg-amber-500/10 border-amber-500/30'
-              }`}>
-                {a.status}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
 
       <div className="overflow-x-auto">
         <div className="min-w-[480px]">
