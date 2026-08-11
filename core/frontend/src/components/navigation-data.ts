@@ -134,7 +134,7 @@ export const HEADINGS: Record<string, string> = {
   "/ritase": "Status Ritase & Posisi Truk",
   "/cctv-history": "Riwayat Pembacaan Kamera Pos",
   "/reports": "Laporan Ritase Harian & Shift",
-  "/analytics": "Analisis Kinerja Operasional & Bahan Bakar",
+  "/analytics": "Analisis Kinerja Operasional & Deteksi Pos",
   "/contractor": "Kinerja & Perolehan Hasil Kontraktor",
   "/settings": "Pengaturan Pos Check Point & Kamera",
   "/settings/devices": "Pengaturan Kamera Per Pos Gerbang",
