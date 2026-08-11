@@ -17,11 +17,11 @@ export function FuelAnalyticsWidget() {
           </p>
         </div>
         <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded border border-emerald-500/20">
-          Rasio 14.2 Ton / Liter
+          Target &lt; 18.0 L / Trip
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
         <div className="p-3.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] space-y-1">
           <div className="text-[var(--text-secondary)] flex items-center gap-1.5">
             <Flame className="w-3.5 h-3.5 text-amber-500" /> Total Konsumsi Solar
@@ -32,18 +32,10 @@ export function FuelAnalyticsWidget() {
 
         <div className="p-3.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] space-y-1">
           <div className="text-[var(--text-secondary)] flex items-center gap-1.5">
-            <Leaf className="w-3.5 h-3.5 text-emerald-400" /> Rasio Efisiensi Ton/Liter
+            <Leaf className="w-3.5 h-3.5 text-emerald-400" /> Rata-rata Konsumsi per Trip
           </div>
-          <div className="text-lg font-bold text-emerald-400">14.24 Ton / L</div>
-          <div className="text-[10px] text-[var(--text-dim)]">Target SLA Operasional: &gt;13.5 Ton/L</div>
-        </div>
-
-        <div className="p-3.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] space-y-1">
-          <div className="text-[var(--text-secondary)] flex items-center gap-1.5">
-            <AlertCircle className="w-3.5 h-3.5 text-rose-400" /> Estimasi Idling Waste
-          </div>
-          <div className="text-lg font-bold text-rose-400">420 Liter (1.4%)</div>
-          <div className="text-[10px] text-[var(--text-dim)]">BBM terbuang saat antrean gerbang</div>
+          <div className="text-lg font-bold text-emerald-400">14.5 L / Trip</div>
+          <div className="text-[10px] text-[var(--text-dim)]">Target SLA Operasional: &lt;18.0 L/Trip</div>
         </div>
       </div>
     </div>
