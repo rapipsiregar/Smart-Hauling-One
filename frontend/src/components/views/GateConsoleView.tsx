@@ -38,7 +38,7 @@ export function GateConsoleView() {
             Konsol Deteksi Gerbang (Edge Gate Console)
           </h2>
           <p className="text-xs text-slate-400">
-            Pemantauan langsung 1 gerbang pos lapangan dengan voting konsensus OCR frame-by-frame
+            Pemantauan langsung 1 gerbang pos lapangan dengan voting konsensus frame-by-frame
           </p>
         </div>
 
@@ -60,7 +60,7 @@ export function GateConsoleView() {
             className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm px-4 py-2 rounded-lg transition"
           >
             <RefreshCw className={`w-4 h-4 ${isProcessing ? 'animate-spin' : ''}`} />
-            {isProcessing ? 'Memproses OCR...' : 'Simulasi Uji Deteksi'}
+            {isProcessing ? 'Memproses Deteksi...' : 'Simulasi Uji Deteksi'}
           </button>
         </div>
       </div>
@@ -123,21 +123,20 @@ export function GateConsoleView() {
               className="w-full h-full object-cover opacity-80"
             />
 
-            {/* OCR Bounding Box Simulation */}
+            {/* AI Bounding Box Simulation */}
             <div className="absolute top-1/3 left-1/3 w-48 h-24 border-2 border-emerald-400 bg-emerald-500/10 rounded backdrop-blur-[1px] flex flex-col justify-between p-2 animate-pulse">
               <div className="text-[10px] font-mono text-emerald-300 bg-emerald-950/80 px-1 rounded w-max">
-                SAM3 ROI: 99.4%
+                AI ROI: 99.4%
               </div>
               <div className="text-lg font-mono font-bold text-emerald-300 text-center tracking-widest bg-slate-950/80 rounded py-0.5">
                 DT-118
               </div>
             </div>
 
-            {/* RTSP Overlay Info */}
+            {/* Live Overlay Info */}
             <div className="absolute bottom-3 left-3 bg-slate-950/80 backdrop-blur border border-slate-800 px-3 py-1.5 rounded text-xs font-mono text-slate-300 flex items-center gap-4">
-              <span>FPS: 30.2</span>
-              <span>BITRATE: 4.2 Mbps</span>
-              <span>CODEC: H.264</span>
+              <span>STREAM LIVE</span>
+              <span>1080p</span>
             </div>
           </div>
         </div>
@@ -146,7 +145,7 @@ export function GateConsoleView() {
         <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 space-y-4">
           <h3 className="text-md font-semibold text-slate-200 flex items-center gap-2">
             <Cpu className="w-4 h-4 text-blue-400" />
-            Voting Konsensus OCR Frame
+            Voting Konsensus Deteksi Frame
           </h3>
 
           <p className="text-xs text-slate-400">
@@ -200,7 +199,7 @@ export function GateConsoleView() {
                 <th className="p-3">OHT Hull ID</th>
                 <th className="p-3">Arah</th>
                 <th className="p-3">Muatan</th>
-                <th className="p-3">Akurasi OCR</th>
+                <th className="p-3">Akurasi Deteksi</th>
                 <th className="p-3">Kontraktor</th>
                 <th className="p-3">Status Sync</th>
               </tr>

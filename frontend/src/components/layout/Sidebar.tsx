@@ -45,12 +45,6 @@ const MENU_GROUPS: MenuGroup[] = [
       { id: 'analytics', label: 'Advanced Analytics',     icon: TrendingUp },
     ],
   },
-  {
-    category: 'Edge & Maintenance',
-    items: [
-      { id: 'maintenance', label: 'Asset Maintenance',    icon: Wrench },
-    ],
-  },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({

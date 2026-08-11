@@ -24,7 +24,7 @@ export interface TunableField {
 export const TUNABLES: TunableField[] = [
   {
     key: "yolo_fps",
-    label: "YOLO FPS",
+    label: "FPS Deteksi",
     hint: "Laju deteksi truk per detik",
     min: 1, max: 30, step: 1, precision: 0,
     typical: "18–25",

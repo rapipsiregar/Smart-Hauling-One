@@ -51,8 +51,8 @@ export interface ShiftReport {
 }
 
 export const DEMO_SHIFT_REPORT: ShiftReport = {
-  date: new Date().toISOString().slice(0, 10),
-  model: 'nemotron-ocr-v2 (SAM3)',
+  date: '11 Agustus 2026',
+  model: 'Model Deteksi Otomatis v2',
   totalRitase: 428,
   unregisteredRitase: 0,
   unregisteredHulls: [],

@@ -43,7 +43,7 @@ export function AuditOverrideLogWidget() {
         <div>
           <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-amber-500" />
-            Histori Audit Koreksi Manual OCR (Manual Override Audit Log)
+            Histori Audit Koreksi Manual (Manual Override Audit Log)
           </h3>
           <p className="text-xs text-[var(--text-secondary)]">
             Rekam jejak audit saat hasil pembacaan AI di bawah 90% dan memerlukan intervensi manual pengguna
@@ -61,7 +61,7 @@ export function AuditOverrideLogWidget() {
               <th className="pb-2">ID Audit</th>
               <th className="pb-2">Waktu</th>
               <th className="pb-2">Gerbang</th>
-              <th className="pb-2">Hasil Raw AI OCR</th>
+              <th className="pb-2">Hasil Raw AI</th>
               <th className="pb-2">Hasil Koreksi</th>
               <th className="pb-2">Auditor Pengubah</th>
               <th className="pb-2">Alasan Override</th>

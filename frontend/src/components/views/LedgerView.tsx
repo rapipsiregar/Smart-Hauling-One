@@ -106,7 +106,7 @@ export const LedgerView: React.FC<{ crossings: CrossingLog[] }> = ({ crossings }
               <img src={selectedCrop.crop_image_url} alt="Crop Bukti" className="w-full h-48 object-cover rounded-xl border border-slate-200" />
             )}
             <div className="text-xs text-slate-700 space-y-1 font-mono">
-              <p>Keyakinan OCR: <span className="text-emerald-600 font-bold">{selectedCrop.confidence}%</span></p>
+              <p>Keyakinan Deteksi: <span className="text-emerald-600 font-bold">{selectedCrop.confidence}%</span></p>
               <p>Gerbang: <span className="text-slate-600">{selectedCrop.gate_name}</span></p>
               <p>Arah: <span className="text-cyan-700 font-bold">{selectedCrop.direction}</span></p>
             </div>

@@ -77,7 +77,7 @@ export const Header: React.FC<HeaderProps> = ({
               ? 'bg-emerald-950/60 border-emerald-500/50 text-emerald-300'
               : 'bg-blue-950/60 border-blue-500/50 text-blue-300'
           }`}
-          title="Toggle between Mock Demo Mode and Live FastAPI Backend API"
+          title="Toggle antara Mode Demo dan Backend Live"
         >
           {isLiveMode ? <ToggleRight className="w-4 h-4 text-emerald-400" /> : <ToggleLeft className="w-4 h-4 text-blue-400" />}
           <span>{isLiveMode ? 'LIVE BACKEND' : 'DEMO MODE'}</span>

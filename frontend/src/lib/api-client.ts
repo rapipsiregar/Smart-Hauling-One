@@ -50,7 +50,7 @@ export const mockCrossings: CrossingLog[] = [
     gate_name: 'Gate 01 - Pit North',
     crop_image_url: 'https://images.unsplash.com/photo-1586191582056-a73c1d9326e3?auto=format&fit=crop&w=400&q=80',
     is_verified: false,
-    notes: 'Pembacaan OCR butuh verifikasi manual (Conf < 90%)',
+    notes: 'Pembacaan AI butuh verifikasi manual (Conf < 90%)',
     cycle_time_minutes: 54,
   },
   {
@@ -222,7 +222,7 @@ export const mockOEMBreakdown: OEMBreakdown[] = [
   { brand: 'Scania / Lainnya', model: 'P410 / Water Truck', count: 16, avgConf: 95.1, color: '#8b5cf6' },
 ];
 
-// ─── Analytics: Manual OCR Override Audit Log ─────────────────────────────────
+// ─── Analytics: Manual Override Audit Log ─────────────────────────────────
 export interface AuditOverrideLog {
   id: string;
   timestamp: string;

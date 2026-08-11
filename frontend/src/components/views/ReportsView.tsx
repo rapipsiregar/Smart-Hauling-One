@@ -149,7 +149,7 @@ export const ReportsView: React.FC = () => {
         <KpiCard value={report.totalRitase} label="Ritase Selesai" sub="trip pulang-pergi" color="text-amber-500" />
         <KpiCard value={report.totalCrossings} label="Total Lintasan" sub="gate crossing events" color="text-cyan-600" />
         <KpiCard value={report.uniqueTrucks} label="Armada Unik" sub="nomor lambung terbaca" color="text-emerald-600" />
-        <KpiCard value={accConf} label="Akurasi OCR" sub="rata-rata confidence" color={report.avgConfidence >= 0.95 ? 'text-emerald-600' : 'text-rose-500'} />
+        <KpiCard value={accConf} label="Akurasi Deteksi" sub="rata-rata confidence" color={report.avgConfidence >= 0.95 ? 'text-emerald-600' : 'text-rose-500'} />
       </div>
 
       {/* ── Per Gate Breakdown ───────────────────────────────────────────── */}

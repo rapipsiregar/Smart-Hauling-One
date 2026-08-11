@@ -43,7 +43,7 @@ export async function downloadShiftReportXlsx(
   kpiSheet.mergeCells('A1:B1');
   kpiSheet.addRow(['Tanggal', report.date]);
   kpiSheet.addRow(['Shift',   shiftLabel]);
-  kpiSheet.addRow(['Model OCR', report.model]);
+  kpiSheet.addRow(['Model Deteksi', report.model]);
   kpiSheet.addRow([]);
 
   const kpiHeaders = kpiSheet.addRow(['Metrik', 'Nilai']);
@@ -55,7 +55,7 @@ export async function downloadShiftReportXlsx(
     ['Armada Unik Terbaca',        report.uniqueTrucks],
     ['Lintasan Teridentifikasi',   report.identified],
     ['Lintasan Gagal Dibaca',      report.unknown],
-    ['Akurasi OCR Rata-rata',      `${(report.avgConfidence * 100).toFixed(1)}%`],
+    ['Akurasi Deteksi Rata-rata',  `${(report.avgConfidence * 100).toFixed(1)}%`],
     ['Lintasan Belum Berpasangan', report.unpairedCount],
     ['Total Frame Dibaca',         report.totalReads],
   ];

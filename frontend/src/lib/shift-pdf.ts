@@ -23,7 +23,7 @@ export async function downloadShiftReportPdf(
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.text(`Laporan Ritase Harian  ·  ${report.date}  ·  ${shiftLabel}`, W / 2, 17, { align: 'center' });
-  doc.text(`Model OCR: ${report.model}`, W / 2, 23, { align: 'center' });
+  doc.text(`Model Deteksi: ${report.model}`, W / 2, 23, { align: 'center' });
 
   let y = 34;
 
@@ -32,7 +32,7 @@ export async function downloadShiftReportPdf(
     ['Total Ritase', String(report.totalRitase)],
     ['Total Lintasan', String(report.totalCrossings)],
     ['Armada Unik', String(report.uniqueTrucks)],
-    ['Akurasi OCR', `${(report.avgConfidence * 100).toFixed(1)}%`],
+    ['Akurasi Deteksi', `${(report.avgConfidence * 100).toFixed(1)}%`],
     ['Teridentifikasi', String(report.identified)],
     ['Gagal Terbaca', String(report.unknown)],
   ];

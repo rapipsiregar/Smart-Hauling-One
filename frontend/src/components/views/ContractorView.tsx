@@ -62,7 +62,7 @@ function ContractorCard({ c }: { c: ContractorEfficiency }) {
         <div className="grid grid-cols-4 gap-2 pt-2 border-t border-[#1e293b]">
           <StatCell label="Ritase" value={c.totalRitase} unit="trip" color="text-amber-400" />
           <StatCell label="Cycle Time" value={c.avgCycleMin} unit="menit" color="text-cyan-400" />
-          <StatCell label="OCR Akurasi" value={`${c.avgConf}%`} color="text-emerald-400" />
+          <StatCell label="Akurasi Deteksi" value={`${c.avgConf}%`} color="text-emerald-400" />
           <StatCell label="SLA Comply" value={`${c.slaCompliance}%`} color={c.slaCompliance >= 95 ? 'text-emerald-400' : 'text-rose-400'} />
         </div>
       ) : (

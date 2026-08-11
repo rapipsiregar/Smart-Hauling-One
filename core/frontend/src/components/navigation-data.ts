@@ -29,7 +29,7 @@ export const DEMO_PROFILES: UserProfile[] = [
   { id: "usr-1", name: "Budi Santoso", email: "admin@ishs.co.id", role: "super_admin", roleTitle: "Supervisor Pusat", avatarText: "BS", defaultLanding: "/" },
   { id: "usr-2", name: "Ahmad Rizal", email: "operator@ishs.co.id", role: "gate_operator", roleTitle: "Operator Gerbang", avatarText: "AR", defaultLanding: "/gate-console" },
   { id: "usr-3", name: "Siti Rahma", email: "auditor@ishs.co.id", role: "logistics_auditor", roleTitle: "Logistics Auditor", avatarText: "SR", defaultLanding: "/ritase" },
-  { id: "usr-4", name: "Dedi Kurniawan", email: "technician@ishs.co.id", role: "field_technician", roleTitle: "Teknisi Telemetri", avatarText: "DK", defaultLanding: "/maintenance" },
+  { id: "usr-4", name: "Dedi Kurniawan", email: "technician@ishs.co.id", role: "field_technician", roleTitle: "Teknisi Telemetri", avatarText: "DK", defaultLanding: "/" },
 ];
 
 export interface NavItem {
@@ -107,15 +107,6 @@ export const NAV_ITEMS: NavItem[] = [
     roles: ["super_admin", "logistics_auditor"],
   },
   {
-    key: "maintenance",
-    label: "Kesehatan Alat & Sensor",
-    href: "/maintenance",
-    icon: Wrench,
-    match: (p) => p.startsWith("/maintenance"),
-    section: "Pengaturan Sistem",
-    roles: ["super_admin", "field_technician"],
-  },
-  {
     key: "settings",
     label: "Pengaturan Pos & Kamera",
     href: "/settings",
@@ -145,7 +136,6 @@ export const HEADINGS: Record<string, string> = {
   "/reports": "Laporan Ritase Harian & Shift",
   "/analytics": "Analisis Kinerja Operasional & Bahan Bakar",
   "/contractor": "Kinerja & Perolehan Hasil Kontraktor",
-  "/maintenance": "Kesehatan Alat, Sensor, dan Kamera Pos",
   "/settings": "Pengaturan Pos Check Point & Kamera",
   "/settings/devices": "Pengaturan Kamera Per Pos Gerbang",
   "/live": "Tayangan Langsung Kamera Pos",

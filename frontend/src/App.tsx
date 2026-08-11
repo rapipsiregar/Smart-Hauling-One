@@ -9,7 +9,6 @@ import { MapView } from './components/views/MapView';
 import { LedgerView } from './components/views/LedgerView';
 import { FleetView } from './components/views/FleetView';
 import { ReportsView } from './components/views/ReportsView';
-import { MaintenanceView } from './components/views/MaintenanceView';
 import { AnalyticsView } from './components/views/AnalyticsView';
 import { ContractorView } from './components/views/ContractorView';
 import { RitaseView } from './components/views/RitaseView';
@@ -40,7 +39,7 @@ export function App() {
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
     setStoredUser(user);
-    const defaultTab = user.role === 'gate_operator' ? 'gate_console' : user.role === 'field_technician' ? 'maintenance' : 'dashboard';
+    const defaultTab = user.role === 'gate_operator' ? 'gate_console' : 'dashboard';
     setActiveTab(defaultTab);
   };
 
@@ -52,7 +51,7 @@ export function App() {
   const handleSwitchUser = (user: User) => {
     setCurrentUser(user);
     setStoredUser(user);
-    const defaultTab = user.role === 'gate_operator' ? 'gate_console' : user.role === 'field_technician' ? 'maintenance' : 'dashboard';
+    const defaultTab = user.role === 'gate_operator' ? 'gate_console' : 'dashboard';
     setActiveTab(defaultTab);
   };
 
@@ -102,7 +101,6 @@ export function App() {
               {activeTab === 'ledger' && <LedgerView crossings={crossings} />}
               {activeTab === 'fleet' && <FleetView trucks={mockTrucks} />}
               {activeTab === 'reports' && <ReportsView />}
-              {activeTab === 'maintenance' && <MaintenanceView />}
               {activeTab === 'analytics' && <AnalyticsView />}
               {activeTab === 'contractor' && <ContractorView />}
               {activeTab === 'ritase' && <RitaseView />}

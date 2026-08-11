@@ -46,7 +46,7 @@ export default function LoginPage() {
             </div>
 
             <p className="text-xs text-slate-400 leading-relaxed pt-2">
-              Sistem Pengendalian Otomatisasi Ritase Tambang, Deteksi Kamera AI OCR & Telemetri Edge Node.
+              Sistem Pengendalian Otomatisasi Ritase Tambang, Deteksi Kamera AI Otomatis & Telemetri Edge Node.
             </p>
           </div>
 

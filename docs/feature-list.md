@@ -1301,3 +1301,13 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Rich Specification Table UI (`CheckpointsTable.tsx`)**: Renders a glassmorphic table with status indicators, region tags, entity pills, and operational remarks across system modules.
   - **Integrated Console & Settings Selection**: Seamlessly updates the Edge Gate Console dropdowns, System Configuration page (`/settings`), Heatmap analytics, Audit override logs, and Shift Reports.
 
+### 3.45 UI Simplification & Technical Term Generalization Refactoring
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 8.1 - 8.3)
+* **Description**: Refactored the Smart Hauling web application UI to enforce user-facing terminology generalization, eliminate redundant metrics (tonnage, vehicle age categories, equipment health), and streamline camera feeds to a single view stream.
+* **Key Capabilities**:
+  - **Git Branch Isolation (`rafif`)**: Isolated all refactoring commits on the `rafif` branch.
+  - **Terminology Generalization**: Replaced technical jargon (`OCR`, `YOLO`, `SAM3`, `SQLITE`, `POSTGRESQL`, `NODEJS`) with user-friendly business terms (`Deteksi Otomatis`, `AI`, `DB`, `App Server`, `Kamera Live`).
+  - **Single Camera Stream Layout**: Streamlined gate console and CCTV wall views to display 1 focused live camera stream.
+  - **Feature Streamlining**: Removed tonnage/weight metrics, vehicle age distribution, and asset maintenance/sensor health tabs to simplify operator workflows.
+
+

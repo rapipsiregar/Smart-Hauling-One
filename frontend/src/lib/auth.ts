@@ -13,10 +13,10 @@ export interface User {
 }
 
 export const ROLE_PERMISSIONS: Record<UserRole, NavigationTab[]> = {
-  super_admin: ['dashboard', 'gate_console', 'map', 'ledger', 'fleet', 'ritase', 'reports', 'maintenance', 'analytics', 'contractor'],
+  super_admin: ['dashboard', 'gate_console', 'map', 'ledger', 'fleet', 'ritase', 'reports', 'analytics', 'contractor'],
   gate_operator: ['gate_console', 'dashboard', 'map'],
   logistics_auditor: ['ledger', 'reports', 'dashboard', 'analytics', 'contractor', 'ritase'],
-  field_technician: ['maintenance', 'map', 'dashboard'],
+  field_technician: ['map', 'dashboard'],
 };
 
 

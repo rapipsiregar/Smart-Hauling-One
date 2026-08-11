@@ -13,33 +13,19 @@ import { CctvViewport } from "./cctv-viewport";
  * for a pane pins it there.
  */
 export function CctvWall({ feeds }: { feeds: GateFeed[] }) {
-  const [picked, setPicked] = useState<[string | null, string | null]>([null, null]);
+  const [picked, setPicked] = useState<string | null>(null);
 
   const codes = feeds.map((f) => f.cameraCode);
 
-  /** An operator's choice wins; otherwise fall back down the list of defaults. */
-  const resolve = (pane: string | null, ...defaults: (string | null | undefined)[]) =>
-    [pane, ...defaults].find((code) => code && codes.includes(code)) ?? "";
-
-  const paneA = resolve(picked[0], codes[0]);
-  const paneB = resolve(picked[1], codes[1], codes[0]);
-
-  const setPane = (index: 0 | 1) => (cameraCode: string) =>
-    setPicked(([a, b]) => (index === 0 ? [cameraCode, b] : [a, cameraCode]));
+  const paneA = picked && codes.includes(picked) ? picked : (codes[0] ?? "");
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-4">
       <CctvViewport
-        label="Layar 1"
+        label="Tampilan Kamera Gerbang"
         feeds={feeds}
         cameraCode={paneA}
-        onCameraChange={setPane(0)}
-      />
-      <CctvViewport
-        label="Layar 2"
-        feeds={feeds}
-        cameraCode={paneB}
-        onCameraChange={setPane(1)}
+        onCameraChange={(code) => setPicked(code)}
       />
     </div>
   );

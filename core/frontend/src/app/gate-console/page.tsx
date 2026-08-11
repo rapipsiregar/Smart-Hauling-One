@@ -127,7 +127,7 @@ export default function GateConsolePage() {
 
             <div className="absolute top-1/3 left-1/3 w-48 h-24 border-2 border-emerald-500 bg-emerald-500/10 rounded flex flex-col justify-between p-2 animate-pulse">
               <div className="text-[10px] font-mono text-emerald-300 bg-black/80 px-1 rounded w-max">
-                SAM3 ROI: 99.4%
+                AI ROI: 99.4%
               </div>
               <div className="text-base font-mono font-bold text-emerald-300 text-center tracking-widest bg-black/80 rounded py-0.5">
                 DT-118
