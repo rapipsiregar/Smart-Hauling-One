@@ -17,7 +17,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="h-full" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("sg_theme");if(t==="light")document.documentElement.classList.add("light")}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="h-full text-[var(--text-primary)] flex flex-col overflow-hidden">
         <AuthProvider>
           <ThemeProvider>
