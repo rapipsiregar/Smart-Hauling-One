@@ -1361,8 +1361,10 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Preset Tombol Laporan Harian**: Menambahkan opsi preset tombol baru "Laporan Harian" di samping preset Shift Siang dan Shift Malam.
   - **Inisialisasi Default Halaman Laporan**: Otomatis memilih preset Laporan Harian 24 jam penuh saat halaman laporan pertama kali dibuka oleh operator.
   - **Format Penamaan File Ekspor**: Penamaan file PDF dan Excel hasil ekspor otomatis tersemat kode suffix `HARIAN_0600-0600` secara otomatis untuk membedakan dengan laporan shift biasa.
-
-
-
-
-
+### 3.50 Pagination Nomor Lambung Posisi Armada
+* **Implementation Status**: `[DONE]` (diimplementasikan di ad-hoc feature request)
+* **Description**: Fitur pembagian halaman (pagination) minimalis pada daftar nomor lambung truk yang berada di dalam pit maupun yang sudah keluar di panel posisi armada.
+* **Key Capabilities**:
+  - **Batas Tampilan Fleksibel**: Menampilkan maksimal 24 unit nomor lambung truk sekaligus per halaman untuk menjaga kerapian tata letak UI.
+  - **Navigasi Halaman Minimalis**: Tombol Sebelumnya/Selanjutnya dan indikator halaman ("Halaman X dari Y") yang dinonaktifkan secara otomatis saat berada di batas awal/akhir halaman.
+  - **Penyembunyian Cetak**: Tombol navigasi pagination disembunyikan secara otomatis saat dicetak (`data-print="hide"`) agar hasil cetak laporan tetap bersih.
