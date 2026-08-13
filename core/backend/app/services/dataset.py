@@ -264,3 +264,5 @@ def build_dataset() -> dict:
 
     _CACHE = {"crossings": crossings, "fleet": fleet_list, "kpis": kpis}
     return _CACHE
+
+# Trigger reload uvicorn cache database

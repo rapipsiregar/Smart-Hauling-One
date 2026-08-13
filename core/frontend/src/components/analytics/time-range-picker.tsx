@@ -65,9 +65,9 @@ export function TimeRangePicker({
             }`}
           >
             <CalendarIcon className="w-3.5 h-3.5" />
-            7 Hari Terakhir
+            Mingguan
           </button>
-
+ 
           <button
             type="button"
             onClick={() => handlePeriodChange("monthly")}
@@ -78,7 +78,7 @@ export function TimeRangePicker({
             }`}
           >
             <CalendarIcon className="w-3.5 h-3.5" />
-            30 Hari Terakhir
+            Bulanan
           </button>
 
           <button

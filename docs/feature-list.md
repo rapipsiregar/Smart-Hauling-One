@@ -1346,13 +1346,21 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Modularitas LOC**: Memisahkan panel informasi detail pos ke dalam sub-komponen `mine-map-detail.tsx` untuk menjaga ukuran file di bawah batas 256 baris.
 
 ### 3.48 Dashboard Statistik Operasional Periode (Harian, Mingguan, Bulanan)
-* **Implementation Status**: `[DONE]` (diimplementasikan di [plans/next-enhancements.md](../plans/next-enhancements.md))
-* **Description**: Modul analisis data operasional yang mengisolasi metrik lintasan, ritase, armada unik, dan rata-rata akurasi AI berdasarkan rentang waktu harian (*daily*), mingguan (*weekly*), bulanan (*monthly*), atau rentang tanggal kustom (*custom date range*).
+* **Implementation Status**: `[DONE]` (diimplementasikan di ad-hoc feature request)
+* **Description**: Modul analisis data operasional yang mengisolasi metrik lintasan, ritase, armada unik, dan rata-rata akurasi AI berdasarkan rentang waktu Harian, Mingguan, Bulanan, atau rentang tanggal kustom.
 * **Key Capabilities**:
-  - **Filter Periode Dinamis (`TimeRangePicker`)**: Tombol filter antarmuka yang memungkinkan supervisor beralih antara melihat data Hari Ini (Harian), 7 Hari Terakhir (Mingguan), 30 Hari Terakhir (Bulanan), atau rentang tanggal kustom.
+  - **Filter Periode Dinamis (`TimeRangePicker`)**: Tombol filter antarmuka yang memungkinkan supervisor beralih antara melihat data Harian, Mingguan, Bulanan, atau rentang tanggal kustom secara praktis.
   - **Metrik Kinerja Terisolasi**: Menghitung secara dinamis total lintasan terbaca, total pasangan ritase, jumlah armada unik, dan rata-rata akurasi AI yang terisolasi khusus untuk periode waktu yang dipilih.
   - **Grafik Distribusi Bar Chart**: Renders grafik batang frekuensi pergerakan lintasan per jam (untuk harian) atau per tanggal (untuk mingguan/bulanan) dengan tooltip interaktif saat di-hover.
-  - **Analisis Kinerja Deteksi per Gate**: Menyajikan rincian data lintasan (Inbound masuk vs Outbound keluar) per gerbang pos cek kamera aktif secara spesifik sesuai rentang tanggal terpilih.
+  - **Pemuatan Data Sampel 30 Hari**: Menyediakan data crossings tiruan yang terstruktur rapi selama 30 hari ke belakang di database SQLite agar visualisasi grafik terisi dengan metrik yang realistis.
+
+### 3.49 Laporan Ritase Harian 24 Jam Penuh (06.00 - 06.00)
+* **Implementation Status**: `[DONE]` (diimplementasikan di ad-hoc feature request)
+* **Description**: Preset default Laporan Harian yang mencakup 24 jam penuh operasional tambang dimulai dari jam masuk shift pagi (06.00) hingga jam masuk shift pagi keesokan harinya (06.00).
+* **Key Capabilities**:
+  - **Preset Tombol Laporan Harian**: Menambahkan opsi preset tombol baru "Laporan Harian" di samping preset Shift Siang dan Shift Malam.
+  - **Inisialisasi Default Halaman Laporan**: Otomatis memilih preset Laporan Harian 24 jam penuh saat halaman laporan pertama kali dibuka oleh operator.
+  - **Format Penamaan File Ekspor**: Penamaan file PDF dan Excel hasil ekspor otomatis tersemat kode suffix `HARIAN_0600-0600` secara otomatis untuk membedakan dengan laporan shift biasa.
 
 
 

@@ -47,12 +47,12 @@ def get_dashboard_stats(
         ref_end = _parse_dt(end_date) if end_date else max_dt
         end_dt = datetime(ref_end.year, ref_end.month, ref_end.day, 23, 59, 59)
         start_dt = datetime(end_dt.year, end_dt.month, end_dt.day, 0, 0, 0) - timedelta(days=6)
-        period_label = f"7 Hari Terakhir ({_format_date_label(start_dt)} - {_format_date_label(end_dt)})"
+        period_label = f"Mingguan ({_format_date_label(start_dt)} - {_format_date_label(end_dt)})"
     elif period == "monthly":
         ref_end = _parse_dt(end_date) if end_date else max_dt
         end_dt = datetime(ref_end.year, ref_end.month, ref_end.day, 23, 59, 59)
         start_dt = datetime(end_dt.year, end_dt.month, end_dt.day, 0, 0, 0) - timedelta(days=29)
-        period_label = f"30 Hari Terakhir ({_format_date_label(start_dt)} - {_format_date_label(end_dt)})"
+        period_label = f"Bulanan ({_format_date_label(start_dt)} - {_format_date_label(end_dt)})"
     elif period == "custom":
         start_ref = _parse_dt(start_date) if start_date else (max_dt - timedelta(days=30))
         end_ref = _parse_dt(end_date) if end_date else max_dt

@@ -19,9 +19,9 @@ const IDLE: ExportStatus = { kind: "idle", message: "" };
 export function ShiftReportModule({ report }: { report: ShiftReport }) {
   const [win, setWin] = useState<ShiftWindow>(() => ({
     date: report.date || todayIso(),
-    startTime: PRESET_HOURS.day[0],
-    endTime: PRESET_HOURS.day[1],
-    preset: "day",
+    startTime: PRESET_HOURS.full[0],
+    endTime: PRESET_HOURS.full[1],
+    preset: "full",
   }));
   const [status, setStatus] = useState<ExportStatus>(IDLE);
   const [building, setBuilding] = useState<"xlsx" | "pdf" | null>(null);
@@ -82,7 +82,7 @@ export function ShiftReportModule({ report }: { report: ShiftReport }) {
           </h3>
         </div>
         <div className="flex gap-2">
-          {(["day", "night", "custom"] as ShiftPreset[]).map((p) => (
+          {(["full", "day", "night", "custom"] as ShiftPreset[]).map((p) => (
             <button
               key={p}
               onClick={() => applyPreset(p)}

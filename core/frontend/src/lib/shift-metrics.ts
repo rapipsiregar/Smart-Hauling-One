@@ -1,6 +1,6 @@
 import { ShiftReport } from "./types";
 
-export type ShiftPreset = "day" | "night" | "custom";
+export type ShiftPreset = "day" | "night" | "full" | "custom";
 
 /** The reporting window the operator scoped the sheet to. */
 export interface ShiftWindow {
@@ -10,14 +10,16 @@ export interface ShiftWindow {
   preset: ShiftPreset;
 }
 
-export const PRESET_HOURS: Record<"day" | "night", [string, string]> = {
+export const PRESET_HOURS: Record<"day" | "night" | "full", [string, string]> = {
   day: ["06:00", "18:00"],
   night: ["18:00", "06:00"],
+  full: ["06:00", "06:00"],
 };
 
 export const PRESET_LABEL: Record<ShiftPreset, string> = {
   day: "Shift Siang",
   night: "Shift Malam",
+  full: "Laporan Harian",
   custom: "Kustom",
 };
 
@@ -108,7 +110,14 @@ export function hasReportData(report: ShiftReport): boolean {
  * `LAPORAN_RITASE_2026-07-19_MALAM_1900-0700`. Callers append the extension.
  */
 export function shiftReportFileStem(w: ShiftWindow): string {
-  const shift = w.preset === "day" ? "SIANG" : w.preset === "night" ? "MALAM" : "KUSTOM";
+  const shift =
+    w.preset === "day"
+      ? "SIANG"
+      : w.preset === "night"
+      ? "MALAM"
+      : w.preset === "full"
+      ? "HARIAN"
+      : "KUSTOM";
   const hhmm = (t: string) => t.replace(":", "");
   const stem = `LAPORAN_RITASE_${w.date}_${shift}_${hhmm(w.startTime)}-${hhmm(w.endTime)}`;
   return stem.replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
