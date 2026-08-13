@@ -60,31 +60,31 @@ export async function renderShiftReportPdf(
 
   let y = drawMasthead(doc, report, win, m.ritase, generatedAt);
 
-  y = titledTable(doc, autoTable, y, "Ringkasan Shift", {
+  y = titledTable(doc, autoTable, y, "Ringkasan Kinerja Shift", {
     head: [["Keterangan", "Nilai", "Satuan", "Dasar"]],
     body: [
-      ["Ritase (IN + OUT)", m.ritase, "siklus", "terukur"],
+      ["Total Ritase Selesai (Masuk + Keluar)", m.ritase, "siklus", "terukur"],
       // Beside the headline, not folded into it. A shift partly hauled by units
       // the master has never heard of is a registry gap, and this is the line
       // that gets it noticed by whoever signs the page.
-      ["  — di antaranya belum terdaftar", report.unregisteredRitase, "siklus", "terukur"],
-      ["Total lintasan gate", report.totalCrossings, "lintasan", "terukur"],
-      ["Belum berpasangan", report.unpairedCount, "lintasan", "terukur"],
-      ["Ritase per jam", m.ritasePerHour, "siklus/jam", "turunan atas jendela"],
-      ["Lintasan teridentifikasi", report.identified, "lintasan", "terukur"],
-      ["Lintasan tidak dikenal", report.unknown, "lintasan", "terukur"],
-      ["Lintasan terekonsiliasi", report.reconciled, "lintasan", "terukur"],
-      ["Nomor lambung unik", report.uniqueTrucks, "unit", "terukur"],
-      ["Pembacaan Nomor", report.totalReads.toLocaleString("id-ID"), "baca", "terukur"],
-      ["Rata-rata keyakinan", `${round1(report.avgConfidence)}%`, "", "terukur"],
+      ["  — di antaranya oleh armada belum terdaftar", report.unregisteredRitase, "siklus", "terukur"],
+      ["Total truk melintas gerbang", report.totalCrossings, "lintasan", "terukur"],
+      ["Truk tanpa pasangan (IN/OUT)", report.unpairedCount, "lintasan", "terukur"],
+      ["Rata-rata ritase per jam", m.ritasePerHour, "siklus/jam", "turunan atas jendela"],
+      ["Lintasan teridentifikasi kamera", report.identified, "lintasan", "terukur"],
+      ["Lintasan tidak dikenal (gagal baca)", report.unknown, "lintasan", "terukur"],
+      ["Lintasan terekonsiliasi otomatis", report.reconciled, "lintasan", "terukur"],
+      ["Jumlah armada aktif", report.uniqueTrucks, "unit", "terukur"],
+      ["Total pembacaan kamera", report.totalReads.toLocaleString("id-ID"), "baca", "terukur"],
+      ["Tingkat akurasi kamera rata-rata", `${round1(report.avgConfidence)}%`, "", "terukur"],
       ["Metode pemasangan", report.pairingBasis === "chronological" ? "kronologis" : "hitungan IN/OUT", "", "sistem"],
-      ["Waktu lintasan", report.hasCrossingTimes ? "tersedia" : "belum tersedia", "", "sistem"],
+      ["Ketersediaan waktu sensor", report.hasCrossingTimes ? "tersedia" : "belum tersedia", "", "sistem"],
     ],
     columnStyles: { 1: { halign: "right" }, 3: { textColor: MUTED } },
   });
 
-  y = titledTable(doc, autoTable, y, "Rincian per Gate", {
-    head: [["Gate", "Masuk", "Keluar", "Tanpa arah", "Total", "Porsi"]],
+  y = titledTable(doc, autoTable, y, "Lalu Lintas per Pintu Gerbang", {
+    head: [["Nama Gerbang", "Masuk (IN)", "Keluar (OUT)", "Tanpa Arah", "Total Melintas", "Porsi Trafik"]],
     body: report.perGate.map((g) => {
       const total = g.inbound + g.outbound + g.undirected;
       const share = report.totalCrossings > 0
@@ -97,8 +97,8 @@ export async function renderShiftReportPdf(
   if (report.perTruck.length > 0) {
     const sum = (pick: (t: ShiftReport["perTruck"][number]) => number) =>
       report.perTruck.reduce((total, t) => total + pick(t), 0);
-    y = titledTable(doc, autoTable, y, "Ritase per Nomor Lambung", {
-      head: [["Nomor Lambung", "Status", "Ritase", "Masuk", "Keluar", "Belum Pasangan", "Jumlah Baca", "Keyakinan"]],
+    y = titledTable(doc, autoTable, y, "Kinerja Per Nomor Lambung Truk", {
+      head: [["Nomor Lambung", "Status Registrasi", "Ritase Selesai", "Masuk", "Keluar", "Tanpa Pasangan", "Deteksi Kamera", "Akurasi Tertinggi"]],
       body: report.perTruck.map((t) => [
         t.hullId,
         // Its own column rather than a mark on the hull id: the number stays
@@ -112,7 +112,7 @@ export async function renderShiftReportPdf(
         `${round1(t.bestConf)}%`,
       ]),
       foot: [[
-        "TOTAL",
+        "TOTAL AKUMULASI",
         "",
         sum((t) => t.ritase),
         sum((t) => t.inCount),
@@ -126,8 +126,8 @@ export async function renderShiftReportPdf(
   }
 
   if (report.unpaired.length > 0) {
-    y = titledTable(doc, autoTable, y, "Lintasan Belum Berpasangan", {
-      head: [["Nomor Lambung", "Gate", "Arah", "Waktu", "Keterangan"]],
+    y = titledTable(doc, autoTable, y, "Daftar Lintasan Tanpa Pasangan (Untuk Audit)", {
+      head: [["Nomor Lambung", "Pintu Gerbang", "Arah", "Waktu Melintas", "Penyebab / Keterangan"]],
       body: report.unpaired.map((u) => [
         u.hullId,
         u.lane,
@@ -149,10 +149,10 @@ function drawMasthead(
   doc: Doc, report: ShiftReport, win: ShiftWindow, trips: number, generatedAt: Date,
 ): number {
   doc.setFont("helvetica", "normal").setFontSize(7.5).setTextColor(...MUTED);
-  doc.text("SMART GATE  ·  MONITORING RITASE", MARGIN, MARGIN + 2);
+  doc.text("SISTEM PINTAR PEMANTAUAN RITASE (ISHS)", MARGIN, MARGIN + 2);
 
   doc.setFont("helvetica", "bold").setFontSize(18).setTextColor(...INK);
-  doc.text("Laporan Shift Ritase", MARGIN, MARGIN + 10);
+  doc.text("Laporan Ritase Shift Tambang", MARGIN, MARGIN + 10);
 
   const badge = pdfSafe(PRESET_LABEL[win.preset].toUpperCase());
   doc.setFontSize(9);
@@ -219,7 +219,7 @@ function drawSignOff(doc: Doc, report: ShiftReport, y: number): void {
 
   const sigY = y + lines.length * 3.4 + 22;
   const sigW = (CONTENT_W - 20) / 2;
-  ["Pengawas Shift", "Auditor Operasi"].forEach((role, i) => {
+  ["Disiapkan Oleh: Pengawas Lapangan", "Disetujui Oleh: Superintendent Tambang"].forEach((role, i) => {
     const x = MARGIN + i * (sigW + 20);
     doc.setDrawColor(...INK).setLineWidth(0.3);
     doc.line(x, sigY, x + sigW, sigY);
