@@ -216,7 +216,17 @@ function PitPanel({ pit }: { pit: PitOccupancy }) {
 }
 
 function PerTruckPanel({ ritase }: { ritase: RitaseReport }) {
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [ritase]);
+
   const withRitase = ritase.perHull.filter((h) => h.ritase > 0);
+  const ITEMS_PER_PAGE = 10;
+  const totalPages = Math.ceil(withRitase.length / ITEMS_PER_PAGE);
+  const displayed = withRitase.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
   return (
     <GlassCard>
       <SectionHead
@@ -234,23 +244,46 @@ function PerTruckPanel({ ritase }: { ritase: RitaseReport }) {
           terbaca lagi di gate keluar.
         </Empty>
       ) : (
-        <div className="mt-3 -mx-2 overflow-x-auto">
-          <table className="w-full text-sm min-w-[26rem]">
-            <thead className="text-[11px] uppercase tracking-wide text-[var(--text-secondary)] text-left">
-              <tr>
-                <th className="px-2 py-1.5">Nomor Lambung</th>
-                <th className="px-2 py-1.5 text-right">Ritase</th>
-                <th className="px-2 py-1.5 text-right">Masuk</th>
-                <th className="px-2 py-1.5 text-right">Keluar</th>
-                <th className="px-2 py-1.5 text-right">Siklus</th>
-              </tr>
-            </thead>
-            <tbody>
-              {withRitase.map((h) => (
-                <TruckRow key={h.hullId} hull={h} />
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-3 mt-3">
+          <div className="-mx-2 overflow-x-auto">
+            <table className="w-full text-sm min-w-[26rem]">
+              <thead className="text-[11px] uppercase tracking-wide text-[var(--text-secondary)] text-left">
+                <tr>
+                  <th className="px-2 py-1.5">Nomor Lambung</th>
+                  <th className="px-2 py-1.5 text-right">Ritase</th>
+                  <th className="px-2 py-1.5 text-right">Masuk</th>
+                  <th className="px-2 py-1.5 text-right">Keluar</th>
+                  <th className="px-2 py-1.5 text-right">Siklus</th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayed.map((h) => (
+                  <TruckRow key={h.hullId} hull={h} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2 pt-2.5 border-t border-[var(--border)]" data-print="hide">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-2 py-0.5 text-[9px] font-bold rounded border border-[var(--border)] bg-[var(--bg-input)] hover:border-amber-500 disabled:opacity-40 disabled:hover:border-[var(--border)] transition-colors cursor-pointer text-[var(--text-secondary)]"
+              >
+                Sebelumnya
+              </button>
+              <span className="text-[9px] font-medium text-[var(--text-dim)]">
+                Halaman {page} dari {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-2 py-0.5 text-[9px] font-bold rounded border border-[var(--border)] bg-[var(--bg-input)] hover:border-amber-500 disabled:opacity-40 disabled:hover:border-[var(--border)] transition-colors cursor-pointer text-[var(--text-secondary)]"
+              >
+                Selanjutnya
+              </button>
+            </div>
+          )}
         </div>
       )}
     </GlassCard>

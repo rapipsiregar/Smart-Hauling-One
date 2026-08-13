@@ -1368,3 +1368,11 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Batas Tampilan Fleksibel**: Menampilkan maksimal 24 unit nomor lambung truk sekaligus per halaman untuk menjaga kerapian tata letak UI.
   - **Navigasi Halaman Minimalis**: Tombol Sebelumnya/Selanjutnya dan indikator halaman ("Halaman X dari Y") yang dinonaktifkan secara otomatis saat berada di batas awal/akhir halaman.
   - **Penyembunyian Cetak**: Tombol navigasi pagination disembunyikan secara otomatis saat dicetak (`data-print="hide"`) agar hasil cetak laporan tetap bersih.
+
+### 3.51 Pagination Tabel Ritase per Truk
+* **Implementation Status**: `[DONE]` (diimplementasikan di ad-hoc feature request)
+* **Description**: Fitur pembagian halaman (pagination) minimalis pada tabel rekapitulasi ritase per armada di halaman Status Ritase dan halaman Riwayat Pembacaan.
+* **Key Capabilities**:
+  - **Batas Tampilan Tabel Kompak**: Membatasi tampilan ritase per truk hanya 10 baris per halaman, mencegah halaman membengkak panjang ke bawah saat database memuat data historis volume tinggi.
+  - **Navigasi Halaman Selaras**: Menggunakan tombol Sebelumnya/Selanjutnya yang seragam dan indikator halaman ("Halaman X dari Y") yang dinonaktifkan otomatis.
+  - **Penyembunyian Cetak**: Tombol navigasi pagination secara otomatis disembunyikan dari hasil cetak fisik/PDF menggunakan directive CSS print (`data-print="hide"`).

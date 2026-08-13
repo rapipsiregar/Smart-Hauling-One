@@ -99,8 +99,17 @@ export function PitAndRitase() {
 }
 
 function Ritase({ report }: { report: RitaseReport | null }) {
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [report]);
+
   if (!report) return null;
   const paired = report.perHull.filter((h) => h.ritase > 0);
+  const ITEMS_PER_PAGE = 10;
+  const totalPages = Math.ceil(paired.length / ITEMS_PER_PAGE);
+  const displayed = paired.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   return (
     <div className="pt-3 border-t border-[var(--border)] space-y-2">
@@ -129,29 +138,52 @@ function Ritase({ report }: { report: RitaseReport | null }) {
           Belum ada pasangan masuk-keluar yang lengkap.
         </p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead className="text-[10px] uppercase tracking-widest text-[var(--text-dim)] text-left">
-              <tr>
-                <th className="py-1 pr-3">Nomor Lambung</th>
-                <th className="py-1 pr-3 text-right">Ritase</th>
-                <th className="py-1 pr-3 text-right">Masuk</th>
-                <th className="py-1 pr-3 text-right">Keluar</th>
-                <th className="py-1 text-right">Siklus</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paired.map((h) => (
-                <tr key={h.hullId} className="border-t border-[var(--border)]">
-                  <td className="py-1 pr-3 font-mono text-[var(--text-primary)]">{h.hullId}</td>
-                  <td className="py-1 pr-3 text-right font-mono">{h.ritase}</td>
-                  <td className="py-1 pr-3 text-right font-mono text-emerald-400">{h.inCount}</td>
-                  <td className="py-1 pr-3 text-right font-mono text-amber-400">{h.outCount}</td>
-                  <td className="py-1 text-right font-mono">{formatCycle(h.avgCycleSeconds)}</td>
+        <div className="space-y-2">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="text-[10px] uppercase tracking-widest text-[var(--text-dim)] text-left">
+                <tr>
+                  <th className="py-1 pr-3">Nomor Lambung</th>
+                  <th className="py-1 pr-3 text-right">Ritase</th>
+                  <th className="py-1 pr-3 text-right">Masuk</th>
+                  <th className="py-1 pr-3 text-right">Keluar</th>
+                  <th className="py-1 text-right">Siklus</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {displayed.map((h) => (
+                  <tr key={h.hullId} className="border-t border-[var(--border)]">
+                    <td className="py-1 pr-3 font-mono text-[var(--text-primary)]">{h.hullId}</td>
+                    <td className="py-1 pr-3 text-right font-mono">{h.ritase}</td>
+                    <td className="py-1 pr-3 text-right font-mono text-emerald-400">{h.inCount}</td>
+                    <td className="py-1 pr-3 text-right font-mono text-amber-400">{h.outCount}</td>
+                    <td className="py-1 text-right font-mono">{formatCycle(h.avgCycleSeconds)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2 pt-2 border-t border-[var(--border)]" data-print="hide">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-2 py-0.5 text-[9px] font-bold rounded border border-[var(--border)] bg-[var(--bg-input)] hover:border-amber-500 disabled:opacity-40 disabled:hover:border-[var(--border)] transition-colors cursor-pointer text-[var(--text-secondary)]"
+              >
+                Sebelumnya
+              </button>
+              <span className="text-[9px] font-medium text-[var(--text-dim)]">
+                Halaman {page} dari {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-2 py-0.5 text-[9px] font-bold rounded border border-[var(--border)] bg-[var(--bg-input)] hover:border-amber-500 disabled:opacity-40 disabled:hover:border-[var(--border)] transition-colors cursor-pointer text-[var(--text-secondary)]"
+              >
+                Selanjutnya
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
