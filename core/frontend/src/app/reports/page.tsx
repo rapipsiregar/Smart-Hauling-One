@@ -84,11 +84,11 @@ function StaleBackendNotice() {
       <ServerCrash className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
       <div className="space-y-1 min-w-0">
         <p className="text-[11px] font-mono font-bold uppercase tracking-wider text-rose-400">
-          Backend masih versi lama
+          Server masih versi lama
         </p>
         <p className="text-[12px] leading-relaxed text-[var(--text-secondary)]">
-          Server menjawab, tapi belum mengirim data ritase (pasangan IN + OUT). Angka di bawah
-          belum bisa dipakai. Jalankan ulang backend agar memuat kode terbaru:{" "}
+          Server menjawab, tetapi belum mengirimkan data ritase lengkap (pasangan Masuk + Keluar). Angka di bawah
+          belum bisa digunakan. Silakan jalankan ulang server utama agar memuat kode terbaru:{" "}
           <code className="font-mono text-[11px] text-amber-500">uv run python main.py web</code>
         </p>
       </div>

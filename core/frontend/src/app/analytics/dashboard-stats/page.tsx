@@ -82,7 +82,7 @@ export default function DashboardStatsPage() {
               Dashboard Statistik Operasional Periode
             </h2>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-              Metrik terisolasi berdasar rentang waktu harian, mingguan, dan bulanan dari database server
+              Metrik terisolasi berdasar rentang waktu harian, mingguan, dan bulanan dari pusat data sistem
             </p>
           </div>
         </div>

@@ -119,7 +119,7 @@ export default function MaintenancePage() {
           ))
         ) : (
           <div className="col-span-full p-8 text-center text-xs text-[var(--text-secondary)] font-mono border border-dashed border-[var(--border)] rounded-lg">
-            Belum ada kamera pos terdaftar di database server.
+            Belum ada kamera pos yang terdaftar di dalam sistem.
           </div>
         )}
       </div>

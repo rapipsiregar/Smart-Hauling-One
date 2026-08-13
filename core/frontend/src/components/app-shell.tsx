@@ -10,9 +10,9 @@ import { useBackendStatus, BackendStatus } from "@/lib/backend-status-context";
 import { useAuth } from "@/lib/auth-context";
 
 const STATUS_META: Record<BackendStatus, { dot: string; label: string; pulse?: boolean }> = {
-  online: { dot: "bg-emerald-500", label: "Online" },
-  offline: { dot: "bg-rose-500", label: "Offline" },
-  checking: { dot: "bg-amber-500", label: "Connecting…", pulse: true },
+  online: { dot: "bg-emerald-500", label: "Terhubung" },
+  offline: { dot: "bg-rose-500", label: "Terputus" },
+  checking: { dot: "bg-amber-500", label: "Menghubungkan…", pulse: true },
 };
 
 function ConnectionStatus({ collapsed }: { collapsed?: boolean }) {

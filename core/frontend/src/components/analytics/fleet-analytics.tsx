@@ -10,14 +10,14 @@ export function FleetAnalyticsWidget() {
         <div>
           <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
             <Truck className="w-4 h-4 text-emerald-400" />
-            Performa Merek Kendaraan (276 Unit Master)
+            Performa Merek Kendaraan (276 Unit Terdaftar)
           </h3>
           <p className="text-xs text-[var(--text-secondary)]">
-            Diimpor langsung dari master Excel database hauling CK, Caterpillar 777E, 773, Komatsu HD785 & WT
+            Diimpor langsung dari master Excel data pengangkutan CK, Caterpillar 777E, 773, Komatsu HD785 & WT
           </p>
         </div>
-        <span className="text-xs font-mono text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded border border-amber-500/20">
-          276 Master Trucks
+        <span className="text-xs font-mono text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded border border-amber-500/20">
+          276 Armada Terdaftar
         </span>
       </div>
 

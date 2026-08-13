@@ -34,7 +34,7 @@ export function CctvMonitoringSection() {
         })
         .catch((err) => {
           setCameras([]);
-          setError("Gagal terhubung ke API backend kamera. Pastikan backend di port 8000 menyala.");
+          setError("Gagal terhubung ke server kamera. Pastikan server di port 8000 aktif.");
         }),
     []
   );

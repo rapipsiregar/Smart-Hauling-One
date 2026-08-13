@@ -97,7 +97,9 @@ export default function GateConsolePage() {
             <div className="text-[11px] text-[var(--text-secondary)] font-mono">Status Kamera Pos</div>
             <div className="text-xs font-semibold text-emerald-500 mt-1 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />{" "}
-              {activeCamera ? `Status: ${activeCamera.status.toUpperCase()}` : "Offline"}
+              {activeCamera
+                ? (activeCamera.status === "online" ? "Aktif" : activeCamera.status === "offline" ? "Nonaktif" : "Perbaikan")
+                : "Tidak Terhubung"}
             </div>
           </div>
           <Camera className="w-6 h-6 text-emerald-500/80" />
@@ -107,7 +109,7 @@ export default function GateConsolePage() {
           <div>
             <div className="text-[11px] text-[var(--text-secondary)] font-mono">Arah Gerbang</div>
             <div className="text-xs font-semibold text-amber-500 mt-1 uppercase">
-              {activeCamera?.direction || "INBOUND"}
+              {activeCamera?.direction === "inbound" ? "MASUK (IN)" : activeCamera?.direction === "outbound" ? "KELUAR (OUT)" : "MASUK (IN)"}
             </div>
           </div>
           <Activity className="w-6 h-6 text-amber-500/80" />

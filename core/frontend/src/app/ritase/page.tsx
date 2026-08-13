@@ -73,7 +73,7 @@ export default function RitasePage() {
       {offline && (
         <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-3 text-xs text-amber-400 font-mono">
           <ServerCrash className="w-5 h-5 shrink-0" />
-          <span>Gagal terhubung ke API backend (port 8000). Menggunakan status data ril dari sistem.</span>
+          <span>Gagal terhubung ke server pusat (port 8000). Menggunakan status data riil dari sistem.</span>
         </div>
       )}
 

@@ -41,7 +41,7 @@ export default function AnalyticsPage() {
               Analisis Kinerja Operasional &amp; Deteksi Pos
             </h2>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-              Metrik akurasi pembacaan kamera, status gerbang aktif, dan statistik deteksi otomatis dari database server
+              Metrik akurasi pembacaan kamera, status gerbang aktif, dan statistik deteksi otomatis dari pusat data sistem
             </p>
           </div>
         </div>
