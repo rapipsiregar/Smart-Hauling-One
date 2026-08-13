@@ -41,7 +41,9 @@ def get_dashboard_stats(
     # Find fallback date if not provided
     valid_dts = [_parse_dt(c.get("crossedAt")) for c in all_crossings]
     valid_dts = [d for d in valid_dts if d is not None]
-    max_dt = max(valid_dts) if valid_dts else datetime.now()
+    # Limit fallback date to current system time to avoid skipping into future days
+    # when simulation entries exceed midnight into the next early morning.
+    max_dt = min(max(valid_dts), datetime.now()) if valid_dts else datetime.now()
 
     if period == "weekly":
         ref_end = _parse_dt(end_date) if end_date else max_dt
