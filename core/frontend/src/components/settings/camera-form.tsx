@@ -28,7 +28,7 @@ export function CameraForm({ initial, editing, onSubmit, onCancel }: CameraFormP
 
   const handleSubmit = async () => {
     if (!form.camera_code?.trim() || !form.name?.trim()) {
-      setError("Camera code and name are required.");
+      setError("Kode kamera dan nama tampilan wajib diisi.");
       return;
     }
     setSaving(true);
@@ -36,7 +36,7 @@ export function CameraForm({ initial, editing, onSubmit, onCancel }: CameraFormP
     try {
       await onSubmit(form);
     } catch {
-      setError("Save failed — code/folder may already be in use.");
+      setError("Gagal menyimpan — kode atau folder data kamera mungkin sudah digunakan.");
     } finally {
       setSaving(false);
     }
@@ -53,49 +53,57 @@ export function CameraForm({ initial, editing, onSubmit, onCancel }: CameraFormP
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Camera Code *">
+        <Field label="Kode Kamera *">
           <Input value={form.camera_code ?? ""} disabled={editing}
             onChange={(v) => set("camera_code", v.toUpperCase())} placeholder="CK-GATE-A" mono />
         </Field>
-        <Field label="Display Name *">
+        <Field label="Nama Tampilan *">
           <Input value={form.name ?? ""} onChange={(v) => set("name", v)} placeholder="CK Gate A — Inbound" />
         </Field>
-        <Field label="Gate / Location">
+        <Field label="Pos / Lokasi">
           <Input value={form.gate_location ?? ""} onChange={(v) => set("gate_location", v)} placeholder="CK Gate A" />
         </Field>
-        <Field label="Playlist Folder" hint="empty = playlist root">
+        <Field label="Folder Data" hint="kosong = folder utama">
           <Input value={form.folder ?? ""} onChange={(v) => set("folder", v)} placeholder="CK-GATE-A" mono />
         </Field>
-        <Field label="Direction">
+        <Field label="Arah Lintasan">
           <Select value={form.direction ?? "both"} onChange={(v) => set("direction", v)}
-            options={["inbound", "outbound", "both"]} />
+            options={[
+              { value: "inbound", label: "Masuk (Inbound)" },
+              { value: "outbound", label: "Keluar (Outbound)" },
+              { value: "both", label: "Dua Arah" }
+            ]} />
         </Field>
-        <Field label="Status">
+        <Field label="Status Operasional">
           <Select value={form.status ?? "offline"} onChange={(v) => set("status", v)}
-            options={["online", "offline", "maintenance"]} />
+            options={[
+              { value: "online", label: "Aktif" },
+              { value: "offline", label: "Nonaktif" },
+              { value: "maintenance", label: "Perbaikan" }
+            ]} />
         </Field>
-        <Field label="Alamat Kamera (URL Stream)" full>
+        <Field label="Alamat Kamera (URL Stream RTSP)" full>
           <Input value={form.rtsp_url ?? ""} onChange={(v) => set("rtsp_url", v)}
             placeholder="rtsp://10.0.0.5:554/stream1" mono />
         </Field>
         <Field label="Alamat IP Kamera">
           <Input value={form.ip_host ?? ""} onChange={(v) => set("ip_host", v)} placeholder="10.0.0.5" mono />
         </Field>
-        <Field label="Username">
+        <Field label="Username Masuk">
           <Input value={form.username ?? ""} onChange={(v) => set("username", v)} placeholder="operator" />
         </Field>
         <Field label="Resolusi Gambar">
           <Input value={form.resolution ?? ""} onChange={(v) => set("resolution", v)} placeholder="1920x1080" mono />
         </Field>
-        <Field label="Kecepatan Deteksi (FPS)">
+        <Field label="Kecepatan Deteksi (Gambar per Detik)">
           <Input value={form.fps == null ? "" : String(form.fps)} type="number"
             onChange={(v) => set("fps", v === "" ? null : Number(v))} placeholder="25" mono />
         </Field>
         <Field label="Tanggal Pemasangan">
           <Input value={form.install_date ?? ""} type="date" onChange={(v) => set("install_date", v)} />
         </Field>
-        <Field label="Notes" full>
-          <Input value={form.notes ?? ""} onChange={(v) => set("notes", v)} placeholder="Solar skid tower, monsoon-hardened…" />
+        <Field label="Catatan Tambahan" full>
+          <Input value={form.notes ?? ""} onChange={(v) => set("notes", v)} placeholder="Menara skid surya, tahan cuaca ekstrim…" />
         </Field>
       </div>
 
@@ -104,11 +112,11 @@ export function CameraForm({ initial, editing, onSubmit, onCancel }: CameraFormP
       <div className="flex items-center gap-2 pt-1">
         <button onClick={handleSubmit} disabled={saving}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-slate-950 font-semibold text-xs rounded-lg hover:bg-amber-400 disabled:opacity-60 transition-colors cursor-pointer">
-          <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : editing ? "Save Changes" : "Register Camera"}
+          <Save className="w-3.5 h-3.5" /> {saving ? "Menyimpan…" : editing ? "Simpan Perubahan" : "Daftarkan Kamera"}
         </button>
         <button onClick={onCancel} disabled={saving}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[var(--border)] text-[var(--text-secondary)] font-semibold text-xs rounded-lg hover:text-[var(--text-primary)] transition-colors cursor-pointer">
-          <X className="w-3.5 h-3.5" /> Cancel
+          <X className="w-3.5 h-3.5" /> Batal
         </button>
       </div>
       </GuideSwap>
@@ -138,11 +146,11 @@ function Input({ value, onChange, placeholder, mono, type = "text", disabled }: 
   );
 }
 
-function Select({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
+function Select({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)}
-      className="w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-amber-500 capitalize cursor-pointer">
-      {options.map((o) => <option key={o} value={o}>{o}</option>)}
+      className="w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-amber-500 cursor-pointer">
+      {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
   );
 }

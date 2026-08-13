@@ -163,13 +163,32 @@ export default function GateConsolePage() {
                 </div>
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center p-8 text-center text-[var(--text-secondary)] space-y-2 font-mono text-xs">
-                <AlertCircle className="w-8 h-8 text-amber-500/60" />
-                <p>Belum ada rekaman bukti tangkapan kamera dari server.</p>
-                <p className="text-[10px] text-[var(--text-dim)]">
-                  Proses pembacaan otomatis akan menampilkan tangkapan kamera real-time saat truk melintas.
-                </p>
-              </div>
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/dummy-cctv-feed.png"
+                  alt="Dummy CCTV Feed"
+                  className="w-full h-full object-cover"
+                />
+                {/* Overlay: camera label */}
+                <div className="absolute top-2 left-2 bg-black/70 px-2 py-0.5 rounded font-mono text-[10px] text-white/80">
+                  {activeCamera?.camera_code || "CAM-GATE"} · LIVE
+                </div>
+                {/* Overlay: recording indicator */}
+                <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-black/70 px-2 py-0.5 rounded">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  <span className="font-mono text-[10px] text-red-400">REC</span>
+                </div>
+                {/* Dummy detection box */}
+                <div className="absolute top-1/3 left-1/3 w-48 h-24 border-2 border-emerald-500 bg-emerald-500/10 rounded flex flex-col justify-between p-2">
+                  <div className="text-[10px] font-mono text-emerald-300 bg-black/80 px-1 rounded w-max">
+                    Deteksi: 96.8%
+                  </div>
+                  <div className="text-base font-mono font-bold text-emerald-300 text-center tracking-widest bg-black/80 rounded py-0.5">
+                    HD 2047
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>

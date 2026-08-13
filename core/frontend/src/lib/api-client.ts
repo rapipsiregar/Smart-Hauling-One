@@ -100,7 +100,27 @@ export const api = {
     fetchJSON<CctvDetection[]>(`/api/cctv-detections${cameraQuery(cameraCode)}`),
   getFleetRegistry: (cameraCode?: string): Promise<FleetUnit[]> =>
     fetchJSON<FleetUnit[]>(`/api/fleet-registry${cameraQuery(cameraCode)}`),
-  getPerformanceKpis: (): Promise<PerformanceKpis> => fetchJSON<PerformanceKpis>("/api/performance-kpis"),
+  getPerformanceKpis: (params?: { period?: string; start_date?: string; end_date?: string }): Promise<PerformanceKpis & { periodLabel?: string }> => {
+    const q = new URLSearchParams();
+    if (params?.period) q.set("period", params.period);
+    if (params?.start_date) q.set("start_date", params.start_date);
+    if (params?.end_date) q.set("end_date", params.end_date);
+    const qs = q.toString() ? `?${q.toString()}` : "";
+    return fetchJSON(`/api/performance-kpis${qs}`);
+  },
+
+  getDashboardStats: (
+    params?: { period?: string; start_date?: string; end_date?: string },
+    signal?: AbortSignal
+  ): Promise<import("./types").DashboardStatsResponse> => {
+    const q = new URLSearchParams();
+    if (params?.period) q.set("period", params.period);
+    if (params?.start_date) q.set("start_date", params.start_date);
+    if (params?.end_date) q.set("end_date", params.end_date);
+    const qs = q.toString() ? `?${q.toString()}` : "";
+    return fetchJSON(`/api/dashboard-stats${qs}`, { signal });
+  },
+
   getShiftReport: (): Promise<ShiftReport> => fetchJSON<ShiftReport>("/api/shift-report"),
 
   /** Ritase = IN paired with OUT, plus the crossings that stayed unpaired. */

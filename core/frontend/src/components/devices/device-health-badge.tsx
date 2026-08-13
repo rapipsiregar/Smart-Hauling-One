@@ -39,7 +39,7 @@ export function DeviceHealthBadge({
   agentVersion?: string | null;
 }) {
   const tone = deviceHealthTone(status, queueDepth);
-  const queueTone = queueDepth > 0 ? "text-amber-400" : "text-[var(--text-dim)]";
+  const queueTone = queueDepth > 0 ? "text-amber-600 dark:text-amber-400" : "text-[var(--text-dim)]";
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
@@ -70,13 +70,13 @@ export function DeviceHealthBadge({
 export function ConfigSyncBadge({ state }: { state: ConfigSyncState }) {
   if (state === "saved") {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/25 text-[11px] font-semibold text-emerald-400">
+      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/25 text-[11px] font-semibold text-emerald-800 dark:text-emerald-400">
         <CheckCircle2 className="w-3 h-3" /> Pengaturan tersimpan
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/25 text-[11px] font-semibold text-amber-400">
+    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/25 text-[11px] font-semibold text-amber-800 dark:text-amber-400">
       <Clock3 className="w-3 h-3" /> Menunggu perangkat
     </span>
   );

@@ -10,6 +10,7 @@ import { PitOccupancy, PitTruck, RitaseReport, TruckRitase } from "@/lib/types";
 import { GlassCard } from "@/components/ui/glass-card";
 import { ConfChip } from "@/components/ui/conf-chip";
 import { GuideSwap } from "@/components/ui/guide-note";
+import { MineMap } from "@/components/monitoring/mine-map";
 
 export default function RitasePage() {
   const [ritase, setRitase] = useState<RitaseReport | null>(null);
@@ -79,6 +80,7 @@ export default function RitasePage() {
       {ritase && pit ? (
         <>
           <SummaryRow ritase={ritase} pit={pit} />
+          <MineMap pit={pit} />
           <div className="grid gap-6 xl:grid-cols-2">
             <PitPanel pit={pit} />
             <PerTruckPanel ritase={ritase} />
@@ -101,7 +103,7 @@ function SummaryRow({ ritase, pit }: { ritase: RitaseReport; pit: PitOccupancy }
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <Stat
         icon={<RotateCw className="w-5 h-5" />}
-        accent="text-amber-500"
+        accent="text-amber-600 dark:text-amber-500"
         value={ritase.totalRitase}
         label="Ritase Selesai"
         unit="ritase"
@@ -110,7 +112,7 @@ function SummaryRow({ ritase, pit }: { ritase: RitaseReport; pit: PitOccupancy }
       />
       <Stat
         icon={<Mountain className="w-5 h-5" />}
-        accent="text-emerald-400"
+        accent="text-emerald-600 dark:text-emerald-400"
         value={pit.insideCount}
         label="Truk Di Dalam Area"
         unit="unit"
@@ -119,7 +121,7 @@ function SummaryRow({ ritase, pit }: { ritase: RitaseReport; pit: PitOccupancy }
       />
       <Stat
         icon={<Truck className="w-5 h-5" />}
-        accent="text-sky-400"
+        accent="text-amber-600 dark:text-amber-500"
         value={ritase.totalCrossings}
         label="Total Lintasan"
         unit="lintasan"
@@ -131,7 +133,7 @@ function SummaryRow({ ritase, pit }: { ritase: RitaseReport; pit: PitOccupancy }
           to close it. */}
       <Stat
         icon={<AlertTriangle className="w-5 h-5" />}
-        accent={ritase.unregisteredRitase > 0 ? "text-rose-400" : "text-[var(--text-dim)]"}
+        accent={ritase.unregisteredRitase > 0 ? "text-rose-600 dark:text-rose-400" : "text-[var(--text-dim)]"}
         value={ritase.unregisteredRitase}
         label="Ritase Belum Terdaftar"
         unit="ritase"

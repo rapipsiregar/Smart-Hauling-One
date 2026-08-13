@@ -317,3 +317,28 @@ export interface PitOccupancy {
 // The video test bench types lived here. The bench moved to the gate
 // devices, where the pipeline actually runs -- see the OCR Inspection HUD in
 // edge/frontend. The core no longer starts or watches detection runs.
+
+export interface TimeSeriesBucket {
+  label: string;
+  total: number;
+}
+
+export interface DashboardStatsResponse {
+  period: "daily" | "weekly" | "monthly" | "custom";
+  periodLabel: string;
+  startDate: string;
+  endDate: string;
+  totalPassages: number;
+  totalRitase: number;
+  identifiedCount: number;
+  unidentifiedCount: number;
+  uniqueTrucks: number;
+  avgConfidence: number;
+  pairingBasis: PairingBasis;
+  unpairedCount: number;
+  timeSeries: TimeSeriesBucket[];
+  perGate: GateDirectionBreakdown[];
+  perTruck: TruckRitase[];
+  unpaired: UnpairedCrossing[];
+}
+

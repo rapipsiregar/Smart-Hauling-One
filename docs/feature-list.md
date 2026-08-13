@@ -1319,6 +1319,25 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Eliminated Demo Fallback Data**: Removed `DEMO_CAMERAS`, `DEMO_RITASE_FALLBACK`, `DEMO_PIT_FALLBACK`, and `DEMO_SHIFT_REPORT` constants from app views (`/`, `/ritase`, `/reports`, `/settings`, `/settings/devices`).
   - **Clean Error & Empty States**: Integrated informative empty and offline states when backend data is unpopulated or backend connection is unavailable.
 
+### 2.46 Peta Satelit Geografis Interaktif (Leaflet.js)
+* **Implementation Status**: `[DONE]`
+* **Description**: Visualisasi peta satelit riil interaktif menggunakan Leaflet.js di halaman Ritase untuk memantau koordinat geografis pos pemeriksaan tambang batubara (CP 01 - CP 04) secara real-time.
+* **Key Capabilities**:
+  - **Koordinat Satelit Riil**: Menggunakan koordinat desimal GPS riil (Latitude & Longitude) yang dikonversi dari UTM Zona 50S, memposisikan penanda pos cek di atas peta satelit ESRI World Imagery secara presisi di area tambang Kalimantan Selatan.
+  - **Penghapusan Atribusi & Minimalis**: Menyembunyikan teks atribusi hak cipta Leaflet dan menghapus garis polyline rute jalan untuk menghasilkan tampilan peta yang bersih, rapi, dan profesional.
+  - **Peningkatan Interaksi Pengguna**: Menambahkan tooltip petunjuk klik pos cek saat di-hover dan pointer kursor dinamis, serta mengintegrasikan klik marker pos untuk memperbarui panel detail pos di kolom kanan secara instan.
+  - **Pemuatan Dinamis Client-Side**: Diimpor secara dinamis menggunakan Next.js `dynamic` dengan `{ ssr: false }` untuk menjamin keamanan dari kegagalan kompilasi prerendering di sisi server.
+  - **Modularitas LOC**: Memisahkan panel informasi detail pos ke dalam sub-komponen `mine-map-detail.tsx` untuk menjaga ukuran file di bawah batas 256 baris.
+
+### 3.48 Dashboard Statistik Operasional Periode (Harian, Mingguan, Bulanan)
+* **Implementation Status**: `[DONE]` (diimplementasikan di [plans/next-enhancements.md](../plans/next-enhancements.md))
+* **Description**: Modul analisis data operasional yang mengisolasi metrik lintasan, ritase, armada unik, dan rata-rata akurasi AI berdasarkan rentang waktu harian (*daily*), mingguan (*weekly*), bulanan (*monthly*), atau rentang tanggal kustom (*custom date range*).
+* **Key Capabilities**:
+  - **Filter Periode Dinamis (`TimeRangePicker`)**: Tombol filter antarmuka yang memungkinkan supervisor beralih antara melihat data Hari Ini (Harian), 7 Hari Terakhir (Mingguan), 30 Hari Terakhir (Bulanan), atau rentang tanggal kustom.
+  - **Metrik Kinerja Terisolasi**: Menghitung secara dinamis total lintasan terbaca, total pasangan ritase, jumlah armada unik, dan rata-rata akurasi AI yang terisolasi khusus untuk periode waktu yang dipilih.
+  - **Grafik Distribusi Bar Chart**: Renders grafik batang frekuensi pergerakan lintasan per jam (untuk harian) atau per tanggal (untuk mingguan/bulanan) dengan tooltip interaktif saat di-hover.
+  - **Analisis Kinerja Deteksi per Gate**: Menyajikan rincian data lintasan (Inbound masuk vs Outbound keluar) per gerbang pos cek kamera aktif secara spesifik sesuai rentang tanggal terpilih.
+
 
 
 

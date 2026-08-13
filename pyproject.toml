@@ -5,8 +5,9 @@ description = "Pipeline for analyzing hauling-truck footage: download playlist, 
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "numpy>=1.26,<2",
+    "numpy>=1.26,<3",
     "opencv-python-headless>=4.10,<5",
+
     "pillow>=12.3.0",
     "torch>=2.12.1",
     "torchvision>=0.27.1",

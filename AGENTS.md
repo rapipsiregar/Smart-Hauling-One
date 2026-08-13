@@ -63,3 +63,30 @@ Never edit files inside git submodules.
   - Agent wajib **melakukan reset pemahaman konteks (refresh state)** seolah-olah memulai percakapan baru (*new chat fresh state*), tanpa mengulangi asumsi dari percakapan atau repositori sebelumnya.
   - Berikan respon yang lugas, tepat sasaran, dan langsung berfokus pada repositori serta file aktif yang sedang dikerjakan user.
 
+## 7. Bahasa & Penulisan UI (Language & UX Rules)
+- **Wajib Selalu Menggunakan Bahasa Indonesia**: Agent wajib selalu berkomunikasi, memberikan penjelasan, serta menuliskan dokumen/respon menggunakan Bahasa Indonesia.
+- **UI Wajib Menggunakan Bahasa Non-Teknis**: Tampilan antarmuka (UI) **WAJIB menggunakan bahasa non-teknis** yang awam dan mudah dipahami oleh operator lapangan maupun supervisor operasional tambang. **Dilarang keras menggunakan bahasa/istilah teknis** (seperti istilah pemrograman, database, JSON, HTTP, API, query, backend, status code, dsb.) pada label, tombol, tabel, notifikasi, modul, maupun judul visual di UI.
+
+## 8. Lokasi Resmi UI & Backend Proyek (Strict Project Directory Rules)
+- **Folder UI Resmi (WAJIB)**: Aplikasi tampilan antarmuka resmi proyek **WAJIB HANYA DI `core/frontend`** (aplikasi Next.js buatan user). Agent DILARANG KERAS membuat, mengubah, mengacak-acak, atau mengarahkan dev server ke folder UI lain.
+- **Folder Backend Resmi (WAJIB)**: Backend Python resmi berada di **`core/backend`** (FastAPI `app.main:app`).
+- **Perintah Menjalankan Aplikasi Resmi**:
+  - Frontend: `npm --prefix core/frontend run dev` (atau `npm run dev` pada root proyek).
+  - Backend: `cd "core/backend"` kemudian `uv run python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload`
+- **Larangan Mengubah Desain & Layout Asli User**: Agent DILARANG KERAS mengubah, merusak, atau mengganti layout antarmuka buatan user di `core/frontend`. Semua penambahan fitur baru WAJIB disesuaikan dan diintegrasikan langsung ke dalam komponen Next.js resmi di `core/frontend`.
+
+## 9. Prinsip Verifikasi Empiris Tanpa Asumsi (Zero-Assumption Protocol)
+- **DILARANG BERSPEKULASI / ASUMSI**: Agent DILARANG KERAS memberikan klaim bahwa server berjalan, kode berhasil, atau path benar tanpa mengeksekusi perintah verifikasi empiris di terminal terlebih dahulu.
+- **BUKTI DAHULU, BARU LAPOR**: Setiap pernyataan status keberhasilan WAJIB menyertakan bukti output log/eksekusi terminal riil yang membuktikan bahwa fitur/server tersebut benar-benar berfungsi 100%.
+- **VERIFIKASI FILE DAHULU**: Sebelum mengubah atau mengarahkan path/file apa pun, Agent WAJIB memeriksa keberadaan file secara riil di sistem menggunakan perintah pencarian file/baca file.
+
+## 10. Larangan Mutlak Gimmick & Data Palsu (Strict Real-Backend Only)
+- **GARIS KERAS DILARANG KERAS MEMBUAT GIMMICK**: Agent DILARANG KERAS membuat data palsu, mock data, `Math.random()`, data simulasi, atau gimmick visual apa pun di frontend maupun backend.
+- **WAJIB 100% DATA RIIL DARI BACKEND**: Semua data statistik, ritase, dan metrik operasional WAJIB 100% bersumber dari query database SQLite / backend API Python (`core/backend`) yang sebenarnya.
+- **TAMPILKAN 0 JIKA KOSONG**: Jika data pada tanggal/periode yang dipilih di database belum ada atau 0, UI WAJIB menampilkan 0/kosong secara jujur. Dilarang keras merekayasa angka fallback atau simulasi.
+
+## 11. Standar Estetika Antarmuka (Strict UI/UX Rules)
+- **KUALITAS ANTARMUKA TERBAIK**: Tampilan UI wajib profesional, rapih, jelas, mudah dipahami, seimbang, dan semuanya sinkron. 
+- **LARANGAN KERAS BERBAGI LAYOUT KAKU ATAU TERTUTUP**: Komponen visual tidak boleh bertabrakan dengan legenda, teks, atau elemen kontrol lainnya. Tata letak harus responsif dan menyatu dengan tema visual utama.
+- **KETERBACAAN & KONTRAS TINGGI**: Pada mode terang (*light mode*), dilarang menggunakan teks abu-abu terang (seperti `#94a3b8` atau `slate-400`) di atas latar belakang putih/terang. Gunakan warna abu-abu yang lebih gelap (seperti `#475569` atau slate-600) untuk teks sekunder/pendukung. Seluruh teks aksen emas/amber wajib menggunakan warna yang lebih gelap (seperti `text-amber-600` atau `#ea8a04`) di atas latar belakang terang agar terbaca jelas dengan kontras yang memadai.
+- **ADAPTASI TEMA DINAMIS**: Hindari penggunaan warna background statis hitam pekat (seperti `bg-slate-900` or `bg-slate-950`) atau putih solid pada komponen atau panel utama. Selalu gunakan variabel CSS dinamis (seperti `bg-[var(--bg-elevated)]` dan `text-[var(--text-primary)]`) agar antarmuka beradaptasi dengan sempurna baik di mode gelap maupun terang tanpa merusak kontras.

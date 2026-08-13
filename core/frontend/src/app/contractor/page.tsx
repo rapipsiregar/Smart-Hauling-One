@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Building2, RotateCw, Truck, Timer, ShieldCheck, TrendingUp, RefreshCw } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { FleetEntry, ShiftReport } from "@/lib/types";
+import { GlassCard } from "@/components/ui/glass-card";
 
 interface ContractorStat {
   name: string;
@@ -73,14 +74,14 @@ export default function ContractorPage() {
   return (
     <div className="space-y-6">
       {/* Header Bar */}
-      <div className="glass-panel border border-[var(--border)] rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <GlassCard className="p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-400 flex items-center justify-center shadow-lg shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-400 flex items-center justify-center shadow-lg shrink-0">
             <Building2 className="w-5 h-5 text-white" />
           </div>
           <div>
             <h2 className="text-base font-bold text-[var(--text-primary)] font-mono uppercase tracking-wide">
-              Kinerja & Perolehan Hasil Kontraktor
+              Kinerja &amp; Perolehan Hasil Kontraktor
             </h2>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
               Pemantauan ritase aktif dan unit armada per kontraktor hauling (TIA, BIC, PPA, CK) dari server
@@ -96,23 +97,23 @@ export default function ContractorPage() {
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
           Refresh Data
         </button>
-      </div>
+      </GlassCard>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { icon: RotateCw,    label: "Total Ritase Selesai", value: totalRitase, unit: "perjalanan", color: "text-amber-400" },
+          { icon: RotateCw,    label: "Total Ritase Selesai", value: totalRitase, unit: "perjalanan", color: "text-amber-500" },
           { icon: Truck,       label: "Truk Aktif Hari Ini",  value: totalActive, unit: "unit",        color: "text-emerald-400" },
-          { icon: Timer,       label: "Total Truk Terdaftar", value: totalMaster, unit: "unit",        color: "text-cyan-400" },
-          { icon: ShieldCheck, label: "Kontraktor Terdaftar", value: contractors.length, unit: "entitas", color: "text-indigo-400" },
+          { icon: Timer,       label: "Total Truk Terdaftar", value: totalMaster, unit: "unit",        color: "text-amber-500" },
+          { icon: ShieldCheck, label: "Kontraktor Terdaftar", value: contractors.length, unit: "entitas", color: "text-amber-500" },
         ].map(({ icon: Icon, label, value, unit, color }) => (
-          <div key={label} className="glass-panel border border-[var(--border)] rounded-xl p-3.5 flex items-center gap-3">
+          <GlassCard key={label} className="p-3.5 flex items-center gap-3">
             <Icon className={`w-5 h-5 shrink-0 ${color}`} />
             <div>
               <div className={`text-xl font-bold font-mono ${color}`}>{value}</div>
               <div className="text-[10px] text-[var(--text-dim)]">{unit} · {label}</div>
             </div>
-          </div>
+          </GlassCard>
         ))}
       </div>
 
@@ -121,7 +122,7 @@ export default function ContractorPage() {
         {contractors.map((c) => {
           const isActive = c.activeTrucks > 0 || c.totalRitase > 0;
           return (
-            <div key={c.shortName} className="glass-panel border border-[var(--border)] rounded-2xl p-5 space-y-4">
+            <GlassCard key={c.shortName} className="p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div
@@ -157,7 +158,7 @@ export default function ContractorPage() {
                     <div className="text-[9px] text-[var(--text-dim)]">Unit Aktif</div>
                   </div>
                   <div>
-                    <div className="text-base font-bold text-cyan-400">{c.avgConf}%</div>
+                    <div className="text-base font-bold text-amber-500">{c.avgConf}%</div>
                     <div className="text-[9px] text-[var(--text-dim)]">Akurasi Pembacaan</div>
                   </div>
                 </div>
@@ -166,7 +167,7 @@ export default function ContractorPage() {
                   Belum ada aktivitas ritase untuk kontraktor ini hari ini.
                 </div>
               )}
-            </div>
+            </GlassCard>
           );
         })}
       </div>

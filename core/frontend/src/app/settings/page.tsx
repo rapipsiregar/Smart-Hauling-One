@@ -34,7 +34,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-5 w-full">
-      <div className="flex items-center gap-2 text-amber-500 font-mono text-xs font-bold tracking-widest uppercase">
+      <div className="flex items-start gap-2 text-amber-500 font-mono text-xs font-bold tracking-widest uppercase">
         <Laptop className="w-4 h-4" /> Konfigurasi Sistem
       </div>
 

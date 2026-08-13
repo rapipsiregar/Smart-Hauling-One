@@ -70,7 +70,7 @@ export function TunableStepper({
       </div>
 
       <p className="text-[10px] text-[var(--text-dim)] mt-1 leading-snug">
-        {field.hint} · lazim {field.typical} · batas {field.min}–{field.max}
+        {field.hint} · rekomendasi: {field.typical} · kisaran nilai: {field.min}–{field.max}
       </p>
 
       {error && <p className="text-[11px] font-medium text-rose-400 mt-1">{error}</p>}

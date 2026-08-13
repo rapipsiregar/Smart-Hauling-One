@@ -24,17 +24,17 @@ export interface TunableField {
 export const TUNABLES: TunableField[] = [
   {
     key: "yolo_fps",
-    label: "Kecepatan Deteksi Kamera (FPS)",
+    label: "Kecepatan Deteksi Kamera (Gambar/Detik)",
     hint: "Berapa banyak frame gambar yang diperiksa kamera setiap detik",
     min: 1, max: 30, step: 1, precision: 0,
-    typical: "18–25",
+    typical: "18–25 gambar/detik",
   },
   {
     key: "ocr_fps",
-    label: "Frekuensi Pembacaan Teks (FPS)",
+    label: "Frekuensi Deteksi Teks (Gambar/Detik)",
     hint: "Laju pembacaan nomor lambung oleh sistem setiap detik",
     min: 1, max: 15, step: 1, precision: 0,
-    typical: "±4",
+    typical: "±4 gambar/detik",
   },
   {
     key: "detect_window_sec",
@@ -89,9 +89,9 @@ export function deviceHealthTone(status: DeviceStatus, queueDepth: number): Heal
 }
 
 export const TONE_CLASS: Record<HealthTone, string> = {
-  ok: "text-emerald-400",
-  warn: "text-amber-400",
-  down: "text-rose-400",
+  ok: "text-emerald-600 dark:text-emerald-400",
+  warn: "text-amber-600 dark:text-amber-400",
+  down: "text-rose-500 dark:text-rose-400",
 };
 
 /** Compact "12s ago" / "3m ago" for a heartbeat timestamp; "—" when never seen. */

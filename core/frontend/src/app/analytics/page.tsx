@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { TrendingUp, Activity, CheckCircle2, ShieldCheck, Camera as CameraIcon, RefreshCw, Cpu } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { PerformanceKpis, Camera } from "@/lib/types";
+import { GlassCard } from "@/components/ui/glass-card";
 
 export default function AnalyticsPage() {
   const [kpis, setKpis] = useState<PerformanceKpis | null>(null);
@@ -30,14 +31,14 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-6">
       {/* Header Bar */}
-      <div className="glass-panel border border-[var(--border)] rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <GlassCard className="p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-cyan-400 flex items-center justify-center shadow-lg shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-400 flex items-center justify-center shadow-lg shrink-0">
             <TrendingUp className="w-5 h-5 text-white" />
           </div>
           <div>
             <h2 className="text-base font-bold text-[var(--text-primary)] font-mono uppercase tracking-wide">
-              Analisis Kinerja Operasional & Deteksi Pos
+              Analisis Kinerja Operasional &amp; Deteksi Pos
             </h2>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
               Metrik akurasi pembacaan kamera, status gerbang aktif, dan statistik deteksi otomatis dari database server
@@ -53,11 +54,11 @@ export default function AnalyticsPage() {
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
           Refresh Metrik Realtime
         </button>
-      </div>
+      </GlassCard>
 
       {/* Real Performance Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="glass-panel border border-[var(--border)] p-4 rounded-xl space-y-2">
+        <GlassCard className="p-4 space-y-2">
           <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] font-mono">
             <span>Total Lintasan Terbaca</span>
             <Activity className="w-4 h-4 text-amber-500" />
@@ -66,9 +67,9 @@ export default function AnalyticsPage() {
             {kpis?.totalPassages ?? 0} <span className="text-xs text-[var(--text-dim)] font-normal">lintasan</span>
           </div>
           <div className="text-[10px] text-[var(--text-dim)] font-mono">Tercatat di seluruh pos gerbang</div>
-        </div>
+        </GlassCard>
 
-        <div className="glass-panel border border-[var(--border)] p-4 rounded-xl space-y-2">
+        <GlassCard className="p-4 space-y-2">
           <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] font-mono">
             <span>Armada Unik Terbaca</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
@@ -77,33 +78,33 @@ export default function AnalyticsPage() {
             {kpis?.uniqueTrucks ?? 0} <span className="text-xs text-[var(--text-dim)] font-normal">unit</span>
           </div>
           <div className="text-[10px] text-[var(--text-dim)] font-mono">Nomor lambung terdaftar</div>
-        </div>
+        </GlassCard>
 
-        <div className="glass-panel border border-[var(--border)] p-4 rounded-xl space-y-2">
+        <GlassCard className="p-4 space-y-2">
           <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] font-mono">
             <span>Rata-rata Akurasi AI</span>
-            <ShieldCheck className="w-4 h-4 text-cyan-400" />
+            <ShieldCheck className="w-4 h-4 text-amber-500" />
           </div>
-          <div className="text-2xl font-mono font-bold text-cyan-400">
+          <div className="text-2xl font-mono font-bold text-amber-500">
             {kpis?.avgConfidence != null ? `${(kpis.avgConfidence > 1 ? kpis.avgConfidence : kpis.avgConfidence * 100).toFixed(1)}%` : "0.0%"}
           </div>
           <div className="text-[10px] text-[var(--text-dim)] font-mono">Tingkat presisi voting AI</div>
-        </div>
+        </GlassCard>
 
-        <div className="glass-panel border border-[var(--border)] p-4 rounded-xl space-y-2">
+        <GlassCard className="p-4 space-y-2">
           <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] font-mono">
             <span>Kamera Pos Aktif</span>
-            <CameraIcon className="w-4 h-4 text-indigo-400" />
+            <CameraIcon className="w-4 h-4 text-amber-500" />
           </div>
-          <div className="text-2xl font-mono font-bold text-indigo-400">
+          <div className="text-2xl font-mono font-bold text-amber-500">
             {cameras.length} <span className="text-xs text-[var(--text-dim)] font-normal">kamera</span>
           </div>
           <div className="text-[10px] text-[var(--text-dim)] font-mono">Terdaftar di sistem tambang</div>
-        </div>
+        </GlassCard>
       </div>
 
       {/* Gate Performance Breakdown (Real Data) */}
-      <div className="glass-panel border border-[var(--border)] rounded-xl p-5 space-y-4">
+      <GlassCard className="p-5 space-y-4">
         <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2 font-mono">
           <Cpu className="w-4 h-4 text-amber-500" />
           Analisis Kinerja Deteksi Otomatis per Gate Kamera
@@ -129,7 +130,7 @@ export default function AnalyticsPage() {
             Semua gerbang pos aktif melayani deteksi otomatis. Metrik diperbarui secara otomatis setiap kali ada pergerakan armada.
           </div>
         )}
-      </div>
+      </GlassCard>
     </div>
   );
 }

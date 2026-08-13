@@ -2,6 +2,8 @@
 
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 :root {
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
@@ -32,8 +34,8 @@
   --border: rgba(15, 23, 42, 0.1);
   --border-strong: rgba(15, 23, 42, 0.16);
   --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-dim: #94a3b8;
+  --text-secondary: #1e293b;
+  --text-dim: #475569;
   --accent: #ea8a04;
   --accent-hover: #c2740a;
   --card: rgba(255, 255, 255, 0.62);
@@ -73,15 +75,20 @@ body::before {
   pointer-events: none;
 }
 
-.light body::before,
 .light::before { display: none; }
 
 .light body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: block !important;
   background:
     radial-gradient(1100px 650px at 72% 92%, rgba(234, 138, 4, 0.14), transparent 60%),
     radial-gradient(900px 600px at 10% 0%, rgba(148, 163, 184, 0.28), transparent 60%),
     linear-gradient(180deg, #eef1f6 0%, #e6ebf2 100%);
   opacity: 1;
+  pointer-events: none;
 }
 
 /* keep app content above the backdrop */

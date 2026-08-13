@@ -5,7 +5,7 @@ import Link from "next/link";
 import { GateFeed } from "@/lib/gate-feeds";
 import { GlassCard } from "../ui/glass-card";
 import { GuideSwap } from "../ui/guide-note";
-import { Cctv, SatelliteDish } from "lucide-react";
+import { Cctv } from "lucide-react";
 
 /**
  * One screen of the monitoring wall: a gate's raw camera view.
@@ -81,21 +81,25 @@ export function CctvViewport({
   );
 }
 
-/** RTSP is registered but nothing consumes it on this page — say so, don't fake a feed. */
+/** Dummy CCTV feed image for development / demo purposes. */
 function CctvPlaceholder({ feed }: { feed: GateFeed | undefined }) {
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center">
-      <SatelliteDish className="w-7 h-7 text-[var(--text-dim)]" />
-      <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-amber-400">
-        CCTV belum tersambung
-      </p>
-      <p className="font-mono text-[10px] text-white/50 break-all">
-        {feed?.rtspUrl || "Alamat kamera belum diisi di Konfigurasi Sistem"}
-      </p>
-      <p className="text-[10px] text-white/40 max-w-xs">
-        Alamat kamera sudah terdaftar, tetapi belum ada aliran langsung yang masuk ke
-        halaman ini.
-      </p>
-    </div>
+    <>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/dummy-cctv-feed.png"
+        alt="Dummy CCTV Feed"
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+      {/* Overlay: camera label */}
+      <div className="absolute top-2 left-2 bg-black/70 px-2 py-0.5 rounded font-mono text-[10px] text-white/80">
+        {feed?.cameraName || "CAM-GATE"} · {feed?.direction || "LIVE"}
+      </div>
+      {/* Overlay: recording indicator */}
+      <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-black/70 px-2 py-0.5 rounded">
+        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+        <span className="font-mono text-[10px] text-red-400">REC</span>
+      </div>
+    </>
   );
 }

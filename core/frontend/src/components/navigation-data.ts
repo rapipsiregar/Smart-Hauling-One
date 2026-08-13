@@ -93,7 +93,16 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Analisis Kinerja Operasional",
     href: "/analytics",
     icon: TrendingUp,
-    match: (p) => p.startsWith("/analytics"),
+    match: (p) => p === "/analytics",
+    section: "Laporan & Analisis",
+    roles: ["super_admin", "logistics_auditor"],
+  },
+  {
+    key: "dashboard-stats",
+    label: "Dashboard Statistik Operasional",
+    href: "/analytics/dashboard-stats",
+    icon: TrendingUp,
+    match: (p) => p.startsWith("/analytics/dashboard-stats"),
     section: "Laporan & Analisis",
     roles: ["super_admin", "logistics_auditor"],
   },
@@ -135,10 +144,12 @@ export const HEADINGS: Record<string, string> = {
   "/cctv-history": "Riwayat Pembacaan Kamera Pos",
   "/reports": "Laporan Ritase Harian & Shift",
   "/analytics": "Analisis Kinerja Operasional & Deteksi Pos",
+  "/analytics/dashboard-stats": "Dashboard Statistik Operasional (Harian, Mingguan, Bulanan)",
   "/contractor": "Kinerja & Perolehan Hasil Kontraktor",
   "/settings": "Pengaturan Pos Check Point & Kamera",
   "/settings/devices": "Pengaturan Kamera Per Pos Gerbang",
   "/live": "Tayangan Langsung Kamera Pos",
 };
+
 
 

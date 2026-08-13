@@ -8,6 +8,8 @@ export interface Checkpoint {
   entities: string[];
   keterangan: string;
   status: "active" | "pending";
+  coordinates?: { x: number; y: number }; // Koordinat UTM bumi riil
+  gps?: { lat: number; lon: number }; // Koordinat GPS desimal (WGS84)
 }
 
 export const CHECKPOINTS: Checkpoint[] = [
@@ -19,6 +21,8 @@ export const CHECKPOINTS: Checkpoint[] = [
     entities: ["KGB", "PT. TIA"],
     keterangan: "-",
     status: "active",
+    coordinates: { x: 344527.45, y: 9602896.80 },
+    gps: { lat: -3.59159349, lon: 115.60021536 },
   },
   {
     id: "CP-02",
@@ -28,6 +32,8 @@ export const CHECKPOINTS: Checkpoint[] = [
     entities: ["PT. CK", "PT. BIB", "KGU"],
     keterangan: "-",
     status: "active",
+    coordinates: { x: 342775.23, y: 9612131.45 },
+    gps: { lat: -3.50804920, lon: 115.58456978 },
   },
   {
     id: "CP-03",
@@ -37,6 +43,8 @@ export const CHECKPOINTS: Checkpoint[] = [
     entities: ["PT. PPA", "PT. BIB"],
     keterangan: "-",
     status: "active",
+    coordinates: { x: 344877.93, y: 9611972.68 },
+    gps: { lat: -3.50951372, lon: 115.60349358 },
   },
   {
     id: "CP-04",
@@ -46,6 +54,8 @@ export const CHECKPOINTS: Checkpoint[] = [
     entities: ["PT. CK", "PT. TIA"],
     keterangan: "Dipasang setelah akses OB selesai di-progress",
     status: "pending",
+    coordinates: { x: 344539.62, y: 9604439.93 },
+    gps: { lat: -3.57763722, lon: 115.60034612 },
   },
 ];
 

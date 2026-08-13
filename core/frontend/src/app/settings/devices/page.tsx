@@ -73,7 +73,7 @@ export default function DeviceSettingsPage() {
           <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
             Satu pos = satu kamera = satu perangkat pos. Perubahan disimpan di server seketika,
             lalu diterapkan perangkat pada detak koneksi berikutnya — sampai perangkat mengonfirmasi,
-            kartunya bertanda <span className="text-amber-400 font-semibold">menunggu perangkat</span>.
+            kartunya bertanda <span className="text-amber-700 dark:text-amber-400 font-semibold">menunggu perangkat</span>.
           </p>
         </GuideSwap>
       </GlassCard>
