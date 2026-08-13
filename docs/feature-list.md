@@ -309,6 +309,22 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **OCR Bounding Box Analytics**: Displays coordinate ranges (X, Y, W, H) indicating where the SAM3 model detected the truck license plate.
   - **Confidence Ratings Details**: Breaks down raw text OCR and SAM visual segmentation confidence percentages for detailed technical review.
 
+### 2.17 Pos Cek (Check Point) Filter Interaktif
+* **Implementation Status**: `[DONE]` (implemented in ad-hoc feature request)
+* **Description**: Fitur penyaring dinamis pada tabel pos cek operasional tambang untuk memilah lokasi berdasarkan perusahaan mitra kerja (CK, TIA, PPA, dll.) dan wilayah kerja (Utara/Selatan) secara instan.
+* **Key Capabilities**:
+  - **Saring Multi-Perusahaan**: Menyediakan tombol pil penyaring interaktif untuk menyembunyikan atau menampilkan pos cek mitra kerja terpilih.
+  - **Penyaring Wilayah Tambang**: Membagi pos cek ke dalam kategori wilayah Area Utara dan Area Selatan dengan sekali klik.
+  - **Status Dinamis**: Menghitung dan memperbarui jumlah pos cek aktif yang lolos filter secara real-time di atas tabel.
+
+### 2.18 Penyelarasan Jam Shift Kerja Tambang Harian
+* **Implementation Status**: `[DONE]` (implemented in ad-hoc feature request)
+* **Description**: Penyesuaian kalkulasi dan pembagian rentang waktu pemantauan ritase agar sinkron dengan jam kerja shift lapangan yang sebenarnya (06.00 pagi hingga 06.00 pagi keesokan harinya).
+* **Key Capabilities**:
+  - **Batas Waktu Operasional Harian (Cut-Off)**: Menggeser awal hari kerja laporan dari jam 00.00 malam ke jam 06.00 pagi di API backend `/api/dashboard-stats`.
+  - **Grafik Distribusi Kronologis**: Menampilkan visualisasi data per jam di dashboard terurut rapi secara berputar dari jam 06.00 pagi hingga jam 05.00 pagi berikutnya.
+  - **Sinkronisasi Ekspor Laporan Excel**: Otomatisasi pengisian periode laporan Excel sesuai batas waktu shift pagi (06.00 - 18.00) dan malam (18.00 - 06.00) pada template ekspor.
+
 ----
 
 ## 3. Analytics & Reporting Features

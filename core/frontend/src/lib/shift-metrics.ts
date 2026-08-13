@@ -11,8 +11,8 @@ export interface ShiftWindow {
 }
 
 export const PRESET_HOURS: Record<"day" | "night", [string, string]> = {
-  day: ["07:00", "19:00"],
-  night: ["19:00", "07:00"],
+  day: ["06:00", "18:00"],
+  night: ["18:00", "06:00"],
 };
 
 export const PRESET_LABEL: Record<ShiftPreset, string> = {

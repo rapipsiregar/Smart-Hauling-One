@@ -63,8 +63,8 @@ def get_dashboard_stats(
         # Default: daily
         period = "daily"
         ref_day = _parse_dt(start_date) if start_date else max_dt
-        start_dt = datetime(ref_day.year, ref_day.month, ref_day.day, 0, 0, 0)
-        end_dt = datetime(ref_day.year, ref_day.month, ref_day.day, 23, 59, 59)
+        start_dt = datetime(ref_day.year, ref_day.month, ref_day.day, 6, 0, 0)
+        end_dt = start_dt + timedelta(days=1) - timedelta(seconds=1)
         period_label = f"Harian ({_format_date_label(start_dt)})"
 
     # Filter crossings strictly within start_dt and end_dt
@@ -129,7 +129,8 @@ def get_dashboard_stats(
 
 def _build_empty_buckets(period: str, start_dt: datetime, end_dt: datetime) -> list[dict]:
     if period == "daily":
-        return [{"label": f"{h:02d}:00", "total": 0} for h in range(24)]
+        hours = [(6 + i) % 24 for i in range(24)]
+        return [{"label": f"{h:02d}:00", "total": 0} for h in hours]
     cur = start_dt
     buckets = []
     while cur <= end_dt:
@@ -140,12 +141,13 @@ def _build_empty_buckets(period: str, start_dt: datetime, end_dt: datetime) -> l
 
 def _build_time_series(period: str, start_dt: datetime, end_dt: datetime, crossings: list[dict]) -> list[dict]:
     if period == "daily":
-        counts = {h: 0 for h in range(24)}
+        hours = [(6 + i) % 24 for i in range(24)]
+        counts = {h: 0 for h in hours}
         for c in crossings:
             dt = _parse_dt(c.get("crossedAt"))
-            if dt and dt.day == start_dt.day:
+            if dt and (start_dt <= dt <= end_dt):
                 counts[dt.hour] += 1
-        return [{"label": f"{h:02d}:00", "total": counts[h]} for h in range(24)]
+        return [{"label": f"{h:02d}:00", "total": counts[h]} for h in hours]
 
     cur = start_dt
     counts_by_day: dict[str, int] = {}

@@ -1,11 +1,41 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { CHECKPOINTS, Checkpoint } from "@/lib/checkpoints";
 import { MapPin, Building2, Info, CheckCircle2, Clock, Shield } from "lucide-react";
 import { GlassCard } from "@/components/ui/glass-card";
 
 export function CheckpointsTable() {
+  const [selectedEntities, setSelectedEntities] = useState<string[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState<string>("all");
+
+  // Ambil data unik dinamis untuk filter
+  const allEntities = Array.from(
+    new Set(CHECKPOINTS.flatMap((cp) => cp.entities))
+  ).sort();
+
+  const allRegions = Array.from(
+    new Set(CHECKPOINTS.map((cp) => cp.region))
+  ).sort();
+
+  const handleEntityToggle = (entity: string) => {
+    setSelectedEntities((prev) =>
+      prev.includes(entity)
+        ? prev.filter((e) => e !== entity)
+        : [...prev, entity]
+    );
+  };
+
+  const filteredCheckpoints = CHECKPOINTS.filter((cp) => {
+    if (selectedRegion !== "all" && cp.region !== selectedRegion) {
+      return false;
+    }
+    if (selectedEntities.length > 0) {
+      return cp.entities.some((ent) => selectedEntities.includes(ent));
+    }
+    return true;
+  });
+
   return (
     <GlassCard className="p-5 space-y-4">
       {/* Header */}
@@ -23,9 +53,77 @@ export function CheckpointsTable() {
             </p>
           </div>
         </div>
-        <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 uppercase">
-          4 Check Points Registered
+        <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 dark:border-amber-500/30 uppercase">
+          {filteredCheckpoints.length} POS CEK AKTIF
         </span>
+      </div>
+
+      {/* Filter Bar */}
+      <div className="flex flex-wrap items-center gap-4 bg-[var(--bg-elevated)] p-3 rounded-lg border border-[var(--border)] text-xs">
+        <div className="flex items-center gap-1.5 text-[var(--text-primary)] font-sans font-semibold">
+          <Building2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+          <span>Saring Perusahaan:</span>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            onClick={() => setSelectedEntities([])}
+            className={`px-2.5 py-1 rounded text-[10px] font-bold cursor-pointer transition border ${
+              selectedEntities.length === 0
+                ? "bg-amber-500 text-slate-950 border-amber-600/30 hover:bg-amber-400"
+                : "bg-[var(--bg-elevated)] hover:bg-[var(--border)] text-[var(--text-primary)] border-[var(--border)]"
+            }`}
+          >
+            SEMUA
+          </button>
+          {allEntities.map((ent) => {
+            const active = selectedEntities.includes(ent);
+            return (
+              <button
+                key={ent}
+                onClick={() => handleEntityToggle(ent)}
+                className={`px-2.5 py-1 rounded text-[10px] font-bold cursor-pointer transition uppercase border ${
+                  active
+                    ? "bg-amber-500 text-slate-950 border-amber-600/30 hover:bg-amber-400"
+                    : "bg-[var(--bg-elevated)] hover:bg-[var(--border)] text-[var(--text-primary)] border-[var(--border)]"
+                }`}
+              >
+                {ent}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="h-4 w-px bg-[var(--border)] hidden md:block" />
+
+        <div className="flex items-center gap-1.5 text-[var(--text-primary)] font-sans font-semibold">
+          <MapPin className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+          <span>Wilayah:</span>
+        </div>
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => setSelectedRegion("all")}
+            className={`px-2.5 py-1 rounded text-[10px] font-bold cursor-pointer transition border ${
+              selectedRegion === "all"
+                ? "bg-amber-500 text-slate-950 border-amber-600/30 hover:bg-amber-400"
+                : "bg-[var(--bg-elevated)] hover:bg-[var(--border)] text-[var(--text-primary)] border-[var(--border)]"
+            }`}
+          >
+            SEMUA
+          </button>
+          {allRegions.map((reg) => (
+            <button
+              key={reg}
+              onClick={() => setSelectedRegion(reg)}
+              className={`px-2.5 py-1 rounded text-[10px] font-bold cursor-pointer transition uppercase border ${
+                selectedRegion === reg
+                  ? "bg-amber-500 text-slate-950 border-amber-600/30 hover:bg-amber-400"
+                  : "bg-[var(--bg-elevated)] hover:bg-[var(--border)] text-[var(--text-primary)] border-[var(--border)]"
+              }`}
+            >
+              {reg}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Table */}
@@ -42,7 +140,7 @@ export function CheckpointsTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border)]">
-            {CHECKPOINTS.map((cp) => {
+            {filteredCheckpoints.map((cp) => {
               const isPending = cp.status === "pending";
               return (
                 <tr

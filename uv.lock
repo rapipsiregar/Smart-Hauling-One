@@ -14,12 +14,6 @@ resolution-markers = [
     "(python_full_version < '3.14' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version < '3.14' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32')",
 ]
 
-[manifest]
-members = [
-    "ocr-hauling-truck",
-    "sam3",
-]
-
 [[package]]
 name = "aiohappyeyeballs"
 version = "2.7.1"
@@ -1572,7 +1566,6 @@ dependencies = [
     { name = "python-multipart" },
     { name = "rapidfuzz" },
     { name = "regex" },
-    { name = "sam3" },
     { name = "supervision" },
     { name = "timm" },
     { name = "torch" },
@@ -1602,7 +1595,6 @@ requires-dist = [
     { name = "python-multipart", specifier = ">=0.0.32" },
     { name = "rapidfuzz", specifier = ">=3.14.5" },
     { name = "regex" },
-    { name = "sam3", editable = "sam3" },
     { name = "supervision", specifier = ">=0.29.1" },
     { name = "timm", specifier = ">=1.0.17" },
     { name = "torch", specifier = ">=2.12.1" },
@@ -2645,11 +2637,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/1b/6d/3fba214c1e5e0f69991677ec3bc17023f0421776975e1de0c682dca475e2/safetensors-0.8.0-cp310-abi3-win_amd64.whl", hash = "sha256:096ec1a98435df7beb08853bb5aa9081a84f23d0adc67ed1a0a10550f608373f", size = 355540, upload-time = "2026-06-09T07:52:27.832Z" },
     { url = "https://files.pythonhosted.org/packages/8d/fc/7eedc3510d97878876e32774eebbeb61c43f148a96e915c84229a3e967aa/safetensors-0.8.0-cp310-abi3-win_arm64.whl", hash = "sha256:f7838e5135a406ad3e02efdcb8cf2e5397d368b0154537c4fec682dbc544d452", size = 340500, upload-time = "2026-06-09T07:52:26.745Z" },
 ]
-
-[[package]]
-name = "sam3"
-version = "0.1.0"
-source = { editable = "sam3" }
 
 [[package]]
 name = "scikit-learn"
