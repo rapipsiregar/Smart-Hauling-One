@@ -1376,3 +1376,11 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Batas Tampilan Tabel Kompak**: Membatasi tampilan ritase per truk hanya 10 baris per halaman, mencegah halaman membengkak panjang ke bawah saat database memuat data historis volume tinggi.
   - **Navigasi Halaman Selaras**: Menggunakan tombol Sebelumnya/Selanjutnya yang seragam dan indikator halaman ("Halaman X dari Y") yang dinonaktifkan otomatis.
   - **Penyembunyian Cetak**: Tombol navigasi pagination secara otomatis disembunyikan dari hasil cetak fisik/PDF menggunakan directive CSS print (`data-print="hide"`).
+
+### 3.52 Pagination Daftar Pembacaan Nomor Lambung
+* **Implementation Status**: `[DONE]` (diimplementasikan di ad-hoc feature request)
+* **Description**: Fitur pembagian halaman (pagination) minimalis pada daftar riwayat pembacaan nomor lambung oleh AI Kamera di halaman Riwayat Pembacaan Kamera Pos.
+* **Key Capabilities**:
+  - **Optimasi Beban Render Client**: Membatasi tampilan log deteksi maksimal 10 baris per halaman, mencegah browser freeze/lag akibat merender ribuan elemen list deteksi secara bersamaan.
+  - **Navigasi Halaman Selaras**: Dilengkapi tombol Sebelumnya/Selanjutnya yang seragam dan indikator halaman ("Halaman X dari Y") yang dinonaktifkan otomatis.
+  - **Penyembunyian Cetak**: Tombol navigasi pagination secara otomatis disembunyikan dari hasil cetak fisik/PDF menggunakan directive CSS print (`data-print="hide"`).
