@@ -8,6 +8,7 @@ export interface ShiftWindow {
   startTime: string; // HH:mm
   endTime: string; // HH:mm
   preset: ShiftPreset;
+  company?: "BIB" | "TIA";
 }
 
 export const PRESET_HOURS: Record<"day" | "night" | "full", [string, string]> = {

@@ -82,6 +82,9 @@ def _master_registry() -> dict[str, dict]:
             t["hull_id"]: {
                 "hull_id": t["hull_id"],
                 "status": "inactive" if t.get("status") == "Tidak Layak" else "active",
+                "model_type": t.get("model_type"),
+                "unit_type": t.get("unit_type"),
+                "contractor": t.get("contractor"),
             }
             for t in truck_master_repo.list_all()
         }
@@ -177,6 +180,7 @@ def _build_crossing(
         lane = "Unassigned Gate"
         direction = None
 
+    info = registered.get(hull, {}) if registered else {}
     return {
         "id": idx + 1,
         "hull_id": hull if known else "UNIDENTIFIED",
@@ -196,17 +200,23 @@ def _build_crossing(
         "annotated_video": _annotated_video(vid),
         "known": known,
         "registered": is_registered,
+        "model_type": info.get("model_type") if is_registered else None,
+        "unit_type": info.get("unit_type") if is_registered else None,
+        "contractor": info.get("contractor") if is_registered else None,
     }
 
 
 def _accumulate_fleet(fleet: dict, crossing: dict, registered: dict, reads: int) -> None:
     hull = crossing["hull_id"]
     status = registered.get(hull, {}).get("status", "active")
-    registered.setdefault(hull, {"hull_id": hull, "status": "active"})
+    info = registered.setdefault(hull, {"hull_id": hull, "status": "active"})
     f = fleet.setdefault(
         hull,
         {"hull_id": hull, "passages": 0, "reads": 0, "best_conf": 0.0,
-         "snapshot": crossing["snapshot"], "status": status, "cameras_seen": []},
+         "snapshot": crossing["snapshot"], "status": status, "cameras_seen": [],
+         "model_type": info.get("model_type"),
+         "unit_type": info.get("unit_type"),
+         "contractor": info.get("contractor")},
     )
     f["passages"] += 1
     f["reads"] += reads
@@ -242,6 +252,9 @@ def build_dataset() -> dict:
         fleet.setdefault(hull, {
             "hull_id": hull, "passages": 0, "reads": 0, "best_conf": 0.0,
             "snapshot": None, "status": info.get("status", "active"), "cameras_seen": [],
+            "model_type": info.get("model_type"),
+            "unit_type": info.get("unit_type"),
+            "contractor": info.get("contractor"),
         })
 
     fleet_list = sorted(

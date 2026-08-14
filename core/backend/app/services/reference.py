@@ -67,6 +67,9 @@ def build_crossings(
             # detection run happened and is the same for every crossing.
             "crossedAt": c.get("crossed_at"),
             "processedAt": meta["timestamp"],
+            "modelType": c.get("model_type"),
+            "unitType": c.get("unit_type"),
+            "contractor": c.get("contractor"),
         })
     return filter_by_camera(crossings, camera_code, camera_id)
 
@@ -98,6 +101,9 @@ def build_fleet(
             "snapshot": f.get("snapshot"),
             "camerasSeen": seen.get(f["hull_id"], []),
             "lastActive": meta["timestamp"] if f["passages"] > 0 else None,
+            "modelType": f.get("model_type"),
+            "unitType": f.get("unit_type"),
+            "contractor": f.get("contractor"),
         })
 
     if camera_code is not None or camera_id is not None:

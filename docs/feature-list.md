@@ -584,12 +584,13 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Quick Re-Filtering**: Clicking any suggestion term fills the search field and triggers live crossing card filtering instantly.
 
 ### 3.29 Automated Excel Reconciliation Exporter
-* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.16)
-* **Description**: Multi-sheet structured Excel (.xlsx) reconciliation exporter aggregating active shift statistics.
+* **Implementation Status**: `[DONE]` (implemented in ad-hoc feature request)
+* **Description**: Multi-sheet structured Excel (.xlsx) reconciliation exporter aggregating active shift statistics, daily recap, and company-specific selection filters.
 * **Key Capabilities**:
-  - **Dynamic In-Memory openpyxl Generation**: Builds spreadsheets using openpyxl dynamically and streams the response directly to the supervisor client.
-  - **Multi-Sheet Classification Structure**: Generates structured worksheets detailing Shift Distribution + OHT Ritase volumes, Subcontractor Compliance rates, and Discrepancy Alerts logs.
-  - **Automated Column Auto-fitting and Styling**: Formats tables with clean headers, borders, Segoe UI typography, and severity color mappings.
+  - **Pilihan Perusahaan / Konsesi (BIB & TIA)**: Menyediakan dropdown selektor pada toolbar laporan untuk memilih ekspor data khusus perusahaan (misal BIB atau TIA). Header utama sheet disesuaikan dinamis berdasarkan perusahaan terpilih (contoh: "OB DARI BIB" atau "OB DARI TIA").
+  - **Penyaringan Data Terpadu Semua Sheet**: Seluruh data di semua sheet (Ringkasan, Per Gate, Per Nomor Lambung, Belum Berpasangan) otomatis disaring secara konsisten berdasarkan armada dan lintasan yang berasosiasi dengan perusahaan terpilih.
+  - **Penyelarasan Gaya Visual Seragam**: Menerapkan gaya visual biru-kuning-border ke seluruh lembar kerja di dalam buku kerja Excel (header biru steel `#B4C6E7`, border hitam tipis penuh untuk setiap sel data, dan warna kuning `#FFFF00` untuk kolom ritase/total).
+  - **Format Rekap Harian OB per Tanggal**: Menyusun lembar kerja pertama untuk merekap ritase harian dan unit OHT 777 dan 773 secara terpisah sepanjang bulan berjalan (*Month-to-Date*).
 
 ### 3.30 Customizable Discrepancy Alert Thresholds Modal
 * **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.17)

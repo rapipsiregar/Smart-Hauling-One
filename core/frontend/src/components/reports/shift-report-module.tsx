@@ -22,6 +22,7 @@ export function ShiftReportModule({ report }: { report: ShiftReport }) {
     startTime: PRESET_HOURS.full[0],
     endTime: PRESET_HOURS.full[1],
     preset: "full",
+    company: "BIB",
   }));
   const [status, setStatus] = useState<ExportStatus>(IDLE);
   const [building, setBuilding] = useState<"xlsx" | "pdf" | null>(null);

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Calendar, CheckCircle2, Clock, FileDown, FileSpreadsheet, Loader2, TriangleAlert } from "lucide-react";
+import { Calendar, CheckCircle2, Clock, FileDown, FileSpreadsheet, Loader2, TriangleAlert, Building } from "lucide-react";
 import { GuideSwap } from "@/components/ui/guide-note";
 import { ShiftWindow, windowHours } from "@/lib/shift-metrics";
 
@@ -32,7 +32,7 @@ export function ShiftWindowToolbar({
       note="Atur tanggal dan jam awal-akhir shift yang ingin dilaporkan, lalu unduh hasilnya sebagai Excel untuk diolah lagi, atau PDF untuk lampiran resmi. Isi laporannya mengikuti jendela waktu yang Anda pilih di sini."
     >
       <div className="space-y-2" data-print="hide">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl p-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl p-4">
           <Field label="Tanggal Shift" icon={<Calendar size={13} />}>
             <input
               type="date"
@@ -40,6 +40,16 @@ export function ShiftWindowToolbar({
               onChange={(e) => onChange({ date: e.target.value })}
               className={inputClass}
             />
+          </Field>
+          <Field label="Perusahaan / Konsesi" icon={<Building size={13} />}>
+            <select
+              value={value.company || "BIB"}
+              onChange={(e) => onChange({ company: e.target.value as "BIB" | "TIA" })}
+              className={selectClass}
+            >
+              <option value="BIB">BIB</option>
+              <option value="TIA">TIA</option>
+            </select>
           </Field>
           <Field label="Jam Mulai" icon={<Clock size={13} />}>
             <input
@@ -104,6 +114,9 @@ export function ShiftWindowToolbar({
 
 const inputClass =
   "w-full bg-[var(--bg-input)] border border-[var(--border)] rounded px-2.5 py-1.5 pl-8 text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:border-amber-500";
+
+const selectClass =
+  "w-full bg-[var(--bg-input)] border border-[var(--border)] rounded px-2.5 py-1.5 pl-8 text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:border-amber-500 appearance-none cursor-pointer";
 
 function Field({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
