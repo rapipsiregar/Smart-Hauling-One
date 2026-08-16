@@ -38,6 +38,28 @@ docker compose logs -f    # lihat log
 
 Konsol Gerbang ada di `http://<alamat-perangkat>:3100`.
 
+## Rekaman untuk pengujian
+
+Tombol **Jalankan Uji** di Konsol Gerbang menawarkan dua kelompok:
+
+| Kelompok | Asal | Isi |
+| :--- | :--- | :--- |
+| Klip gate ini | `backend/video-sources/` | Sepuluh rekaman gerbang asli, lima truk masuk dan keluar |
+| Video contoh | `docs/sample-references/sample-video/sample-videos/` | Rekaman rujukan, bukan armada pos ini |
+
+Video contoh dipasang read-only dan **tidak pernah digabung** ke rekaman pos:
+mencampurnya akan menaruh video tak berkaitan ke dalam folder yang diperlakukan
+pos sebagai catatannya sendiri, dan itu tidak bisa dibatalkan. Bila ada nama yang
+sama, rekaman pos yang menang.
+
+Pilihan **"Semua klip gate"** sengaja hanya menjalankan rekaman pos. Video contoh
+harus dipilih satu per satu berdasarkan namanya — karena menjalankannya **tetap
+mencatat lintasan di pos ini**, dan menyapu seluruh rujukan sekaligus akan
+mengisi catatan pos dengan truk milik orang lain.
+
+Menambah rekaman contoh cukup dengan menaruh berkasnya di folder tersebut; tidak
+ada langkah lain. Folder yang dipakai bisa diubah lewat `SMART_GATE_SAMPLE_CLIP_DIR`.
+
 ## Menyalakan deteksi
 
 Deteksi butuh kamera, GPU, dan berkas model, jadi bawaannya mati supaya

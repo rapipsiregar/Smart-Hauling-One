@@ -78,6 +78,8 @@ services:
       # dev container. The API, the master replica and local matching all work
       # without it, which is the part worth exercising here.
       - SMART_GATE_RUN_AGENT=${EDGE_RUN_AGENT:-false}
+      # Rekaman contoh ikut ditawarkan di tombol Jalankan Uji.
+      - SMART_GATE_SAMPLE_CLIP_DIR=/srv/sample-videos
       - SMART_GATE_RTSP_URL=${EDGE_RTSP_URL:-rtsp://localhost:554/live}
     volumes:
       - ./edge/backend/data:/srv/data
@@ -85,6 +87,8 @@ services:
       # the image: they are gate footage, not code, and a real device gets them
       # from its own camera.
       - ./edge/backend/video-sources:/srv/video-sources:ro
+      # Read-only: pos tidak boleh menulis ke folder contoh.
+      - ./docs/sample-references/sample-video/sample-videos:/srv/sample-videos:ro
     depends_on:
       - core-backend
     restart: unless-stopped

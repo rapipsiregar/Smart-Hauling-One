@@ -38,6 +38,7 @@ services:
       - SMART_GATE_SNAPSHOT_DIR=/srv/data/snapshots
       - SMART_GATE_VIDEO_DIR=/srv/data/video
       - SMART_GATE_CLIP_DIR=/srv/video-sources
+      - SMART_GATE_SAMPLE_CLIP_DIR=/srv/sample-videos
       - SMART_GATE_MODEL_PATH=${SMART_GATE_MODEL_PATH:-/srv/model/model.pt}
       - SMART_GATE_OCR_BACKEND=${SMART_GATE_OCR_BACKEND:-ppocrv6-tiny}
       # Detection needs a camera, a GPU and the weights. Off by default so a
@@ -50,6 +51,8 @@ services:
       # to prevent.
       - ./data/${SMART_GATE_CAMERA_CODE}:/srv/data
       - ./backend/video-sources:/srv/video-sources:ro
+      # Rekaman contoh dari repositori. Read-only: pos tidak boleh menulis ke sini.
+      - ../docs/sample-references/sample-video/sample-videos:/srv/sample-videos:ro
       - ./model:/srv/model:ro
     restart: unless-stopped
 
