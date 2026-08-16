@@ -13,7 +13,7 @@ interface CameraFormProps {
 }
 
 const EMPTY: Partial<Camera> = {
-  camera_code: "", name: "", gate_location: "", direction: "both",
+  camera_code: "", name: "", gate_location: "",
   status: "offline", folder: "", rtsp_url: "", ip_host: "", username: "",
   resolution: "", fps: null, install_date: "", notes: "",
 };
@@ -46,7 +46,7 @@ export function CameraForm({ initial, editing, onSubmit, onCancel }: CameraFormP
     <div className="rounded-xl border border-amber-500/30 bg-[var(--bg-elevated)] p-4 space-y-3">
       <GuideSwap
         title={editing ? "Ubah Kamera" : "Daftarkan Kamera Baru"}
-        note="Formulir pendaftaran kamera gate. Kode Kamera harus sama persis dengan yang dipakai perangkat di lokasi. Arah (masuk/keluar) menentukan lintasan di gate ini dihitung sebagai truk masuk atau keluar, dan itulah dasar perhitungan ritase. Alamat RTSP dipakai untuk tayangan langsung."
+        note="Formulir pendaftaran kamera gate. Kode Kamera harus sama persis dengan yang dipakai perangkat di lokasi. Setiap gate kini mendeteksi truk masuk maupun keluar sendiri, dari arah lintasan truk melewati garis tengah virtual pada video — bukan dari pengaturan gate. Alamat RTSP dipakai untuk tayangan langsung."
       >
       <p className="text-xs font-semibold text-amber-500 uppercase tracking-wider">
         {editing ? "Ubah Kamera" : "Daftarkan Kamera Baru"}
@@ -58,21 +58,13 @@ export function CameraForm({ initial, editing, onSubmit, onCancel }: CameraFormP
             onChange={(v) => set("camera_code", v.toUpperCase())} placeholder="CK-GATE-A" mono />
         </Field>
         <Field label="Nama Tampilan *">
-          <Input value={form.name ?? ""} onChange={(v) => set("name", v)} placeholder="CK Gate A — Inbound" />
+          <Input value={form.name ?? ""} onChange={(v) => set("name", v)} placeholder="CK Gate A" />
         </Field>
         <Field label="Pos / Lokasi">
           <Input value={form.gate_location ?? ""} onChange={(v) => set("gate_location", v)} placeholder="CK Gate A" />
         </Field>
         <Field label="Folder Data" hint="kosong = folder utama">
           <Input value={form.folder ?? ""} onChange={(v) => set("folder", v)} placeholder="CK-GATE-A" mono />
-        </Field>
-        <Field label="Arah Lintasan">
-          <Select value={form.direction ?? "both"} onChange={(v) => set("direction", v)}
-            options={[
-              { value: "inbound", label: "Masuk (Inbound)" },
-              { value: "outbound", label: "Keluar (Outbound)" },
-              { value: "both", label: "Dua Arah" }
-            ]} />
         </Field>
         <Field label="Status Operasional">
           <Select value={form.status ?? "offline"} onChange={(v) => set("status", v)}

@@ -25,27 +25,6 @@ type LoadState =
  * `refreshKey` bumps on the page's poll tick; the card reloads its own config
  * so a `pending` save resolves to `saved` without a manual reload.
  */
-const DEFAULT_MOCK_EDGE_CONFIG = (code: string): EdgeConfig => ({
-  camera_code: code,
-  yolo_fps: 25,
-  ocr_fps: 4,
-  detect_window_sec: 6,
-  ocr_min_conf: 0.85,
-  dedup_iou: 0.92,
-  inbound_axis: "ltr",
-  config_version: 1,
-  device_status: "online",
-  agent_version: "v1.4.2-edge",
-  last_heartbeat_at: "16:42:15",
-  last_config_applied_at: "16:42:15",
-  applied_config_version: 1,
-  local_queue_depth: 0,
-  rtsp_url: null,
-  ip_host: null,
-  core_url: "",
-  api_key_set: false,
-});
-
 export function DeviceCard({ camera, refreshKey }: { camera: Camera; refreshKey: number }) {
   const [state, setState] = useState<LoadState>({ kind: "loading" });
   const cameraCode = camera.camera_code;
@@ -61,7 +40,7 @@ export function DeviceCard({ camera, refreshKey }: { camera: Camera; refreshKey:
         if (isEndpointMissing(err)) {
           setState({ kind: "unsupported" });
         } else {
-          setState({ kind: "ready", config: DEFAULT_MOCK_EDGE_CONFIG(cameraCode) });
+          setState({ kind: "error", message: err instanceof Error ? err.message : String(err) });
         }
       }
     })();

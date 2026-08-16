@@ -37,7 +37,7 @@ const CARDS = [
     guide: "Berapa banyak nomor lambung berbeda yang berhasil dikenali sistem.",
   },
   {
-    href: "/gate-console",
+    href: "/cctv-history",
     icon: <AlertTriangle className="w-5 h-5" />,
     label: "Gagal Terbaca",
     unit: "perlu ditinjau",

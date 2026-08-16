@@ -60,7 +60,7 @@ export function CameraRegistry() {
 
   return (
     <GlassCard className="p-5">
-      <GuideSwap title="Daftar Kamera" note="Daftar kamera yang terpasang di tiap gate. Isian yang paling menentukan adalah Kode Kamera dan Arah: kode dipakai perangkat gate untuk memperkenalkan diri ke pusat, dan Arah (masuk/keluar) yang menentukan sebuah lintasan dihitung sebagai truk masuk atau truk keluar — salah mengisinya membuat perhitungan ritase ikut salah. Status menandai kamera itu sedang dipakai atau tidak.">
+      <GuideSwap title="Daftar Kamera" note="Daftar kamera yang terpasang di tiap gate. Kode Kamera dipakai perangkat gate untuk memperkenalkan diri ke pusat. Setiap gate kini mendeteksi truk masuk maupun keluar sendiri dari arah lintasan truk melewati garis tengah virtual pada video, jadi tidak ada lagi pengaturan arah per gate. Status menandai kamera itu sedang dipakai atau tidak.">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
           <div className="flex items-center gap-2 text-[var(--text-primary)]">
@@ -115,7 +115,6 @@ export function CameraRegistry() {
               <tr className="bg-[var(--bg-elevated)] text-[10px] font-mono uppercase tracking-widest text-[var(--text-dim)] border-b border-[var(--border)]">
                 <th className="px-3 py-2.5">Kode Kamera</th>
                 <th className="px-3 py-2.5">Pos / Lokasi</th>
-                <th className="px-3 py-2.5">Arah</th>
                 <th className="px-3 py-2.5">Folder Data</th>
                 <th className="px-3 py-2.5">Alamat Kamera (RTSP)</th>
                 <th className="px-3 py-2.5">Status</th>
@@ -133,9 +132,6 @@ export function CameraRegistry() {
                       <p className="text-[11px] text-[var(--text-secondary)]">{c.name}</p>
                     </td>
                     <td className="px-3 py-2.5 text-xs text-[var(--text-primary)]">{c.gate_location || "—"}</td>
-                    <td className="px-3 py-2.5 text-[11px] font-medium uppercase text-[var(--text-secondary)]">
-                      {c.direction === "inbound" ? "Masuk" : c.direction === "outbound" ? "Keluar" : "Dua Arah"}
-                    </td>
                     <td className="px-3 py-2.5 text-[11px] font-mono text-[var(--text-secondary)]">{c.folder || "(utama)"}</td>
                     <td className="px-3 py-2.5 text-[11px] font-mono text-[var(--text-dim)] max-w-[180px] truncate" title={c.rtsp_url || ""}>
                       {c.rtsp_url || c.ip_host || "—"}

@@ -12,7 +12,6 @@ export interface GateFeed {
   cameraCode: string;
   cameraName: string;
   gateLocation: string | null;
-  direction: Camera["direction"];
   status: Camera["status"];
   rtspUrl: string | null;
 }
@@ -22,7 +21,6 @@ export function buildGateFeeds(cameras: Camera[]): GateFeed[] {
     cameraCode: camera.camera_code,
     cameraName: camera.name || camera.camera_code,
     gateLocation: camera.gate_location,
-    direction: camera.direction,
     status: camera.status,
     rtspUrl: camera.rtsp_url ?? camera.ip_host ?? null,
   }));

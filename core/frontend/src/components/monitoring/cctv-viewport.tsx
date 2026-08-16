@@ -5,6 +5,7 @@ import Link from "next/link";
 import { GateFeed } from "@/lib/gate-feeds";
 import { GlassCard } from "../ui/glass-card";
 import { GuideSwap } from "../ui/guide-note";
+import { LivePlayer } from "../live/live-player";
 import { Cctv } from "lucide-react";
 
 /**
@@ -49,7 +50,7 @@ export function CctvViewport({
           )}
           {feeds.map((f) => (
             <option key={f.cameraCode} value={f.cameraCode}>
-              {f.cameraName} · {f.direction}
+              {f.cameraName}
             </option>
           ))}
         </select>
@@ -57,11 +58,15 @@ export function CctvViewport({
 
       <GuideSwap
         title={`Layar Gate — ${label}`}
-        note="Layar pantau gate. Menu di atas tiap layar memilih gate mana yang ditampilkan, dan kedua layar bisa diarahkan ke gate berbeda — misalnya gate masuk di kiri, gate keluar di kanan. Gambarnya sengaja polos: tidak ada kotak deteksi maupun nomor lambung yang ditempel, karena tayangan langsung dipakai untuk melihat kondisi lapangan, bukan untuk menilai hasil AI. Hasil pembacaan ada di halaman Riwayat Pembacaan. Tombol 'Buka tayangan langsung' membuka aliran video gate itu."
+        note="Layar pantau gate. Menu di atas tiap layar memilih gate mana yang ditampilkan, dan kedua layar bisa diarahkan ke gate berbeda. Setiap gate kini mendeteksi truk masuk maupun keluar sendiri, jadi tidak ada lagi gate yang dikhususkan untuk satu arah. Gambarnya sengaja polos: tidak ada kotak deteksi maupun nomor lambung yang ditempel, karena tayangan langsung dipakai untuk melihat kondisi lapangan, bukan untuk menilai hasil AI. Hasil pembacaan ada di halaman Riwayat Pembacaan. Tombol 'Buka tayangan langsung' membuka aliran video gate itu."
       >
-        <div className="relative aspect-video rounded-lg overflow-hidden bg-black border border-[var(--border)]">
-          <CctvPlaceholder feed={feed} />
-        </div>
+        {feed ? (
+          <LivePlayer cameraCode={feed.cameraCode} cameraName={feed.cameraName} />
+        ) : (
+          <div className="relative aspect-video rounded-lg overflow-hidden bg-black border border-[var(--border)] flex items-center justify-center">
+            <p className="font-mono text-xs text-[var(--text-dim)]">Kamera belum dipilih</p>
+          </div>
+        )}
 
         <p className="font-mono text-[10px] text-[var(--text-dim)] truncate">
           {feed
@@ -78,28 +83,5 @@ export function CctvViewport({
         )}
       </GuideSwap>
     </GlassCard>
-  );
-}
-
-/** Dummy CCTV feed image for development / demo purposes. */
-function CctvPlaceholder({ feed }: { feed: GateFeed | undefined }) {
-  return (
-    <>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/dummy-cctv-feed.png"
-        alt="Dummy CCTV Feed"
-        className="absolute inset-0 w-full h-full object-cover"
-      />
-      {/* Overlay: camera label */}
-      <div className="absolute top-2 left-2 bg-black/70 px-2 py-0.5 rounded font-mono text-[10px] text-white/80">
-        {feed?.cameraName || "CAM-GATE"} · {feed?.direction || "LIVE"}
-      </div>
-      {/* Overlay: recording indicator */}
-      <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-black/70 px-2 py-0.5 rounded">
-        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-        <span className="font-mono text-[10px] text-red-400">REC</span>
-      </div>
-    </>
   );
 }

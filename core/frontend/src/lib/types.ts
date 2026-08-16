@@ -15,7 +15,9 @@ export interface Crossing {
   reads: number;
   frames: number;
   lane: string;
-  direction: "inbound" | "outbound";
+  /** Decided per truck on the edge device from its own virtual center line
+   *  (edge/backend/agent/pipeline.py); null when the truck never crossed it. */
+  direction: "inbound" | "outbound" | null;
   camera_id?: number | null;
   camera_code?: string | null;
   camera_name?: string | null;
@@ -112,7 +114,6 @@ export interface Camera extends CameraEdgeFields {
   camera_code: string;
   name: string;
   gate_location: string | null;
-  direction: "inbound" | "outbound" | "both";
   status: "online" | "offline" | "maintenance";
   rtsp_url: string | null;
   ip_host: string | null;
@@ -133,7 +134,7 @@ export interface CrossingEvent {
   confidence: number;
   video: string;
   lane: string;
-  direction: "inbound" | "outbound";
+  direction: "inbound" | "outbound" | null;
   cameraId: number | null;
   cameraCode: string | null;
   cameraName: string | null;
@@ -186,6 +187,18 @@ export interface FleetUnit {
   snapshot: string | null;
   camerasSeen: string[];
   lastActive: string | null;
+}
+
+/** One row of the operator's own fleet registry, as-is — for manual review. */
+export interface FleetMasterUnit {
+  hullId: string;
+  hullCode: string;
+  contractor: string | null;
+  unitType: string | null;
+  brand: string | null;
+  modelType: string | null;
+  year: number | null;
+  status: string | null;
 }
 
 export interface GateBreakdown {
@@ -322,24 +335,5 @@ export interface PitOccupancy {
 export interface TimeSeriesBucket {
   label: string;
   total: number;
-}
-
-export interface DashboardStatsResponse {
-  period: "daily" | "weekly" | "monthly" | "custom";
-  periodLabel: string;
-  startDate: string;
-  endDate: string;
-  totalPassages: number;
-  totalRitase: number;
-  identifiedCount: number;
-  unidentifiedCount: number;
-  uniqueTrucks: number;
-  avgConfidence: number;
-  pairingBasis: PairingBasis;
-  unpairedCount: number;
-  timeSeries: TimeSeriesBucket[];
-  perGate: GateDirectionBreakdown[];
-  perTruck: TruckRitase[];
-  unpaired: UnpairedCrossing[];
 }
 
