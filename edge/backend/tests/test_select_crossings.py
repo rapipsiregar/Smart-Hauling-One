@@ -21,12 +21,13 @@ from app.services.test_runs import select_crossings  # noqa: E402
 from vendor.hull_matching import EXACT, UNREGISTERED, HullMatch  # noqa: E402
 
 
-def _window(hull_id, *, outcome=EXACT, reads=8, conf=0.95, raw=None):
+def _window(hull_id, *, outcome=EXACT, reads=8, conf=0.95, raw=None, direction=None):
     return {
         "hull_id": hull_id,
         "match": HullMatch(outcome=outcome, hull_code=raw, hull_id=hull_id,
                            raw_code=raw or (hull_id or "").replace("HD ", "")),
         "result": {"read_count": reads, "confidence": conf, "hull_id": hull_id},
+        "direction": direction,
     }
 
 
@@ -100,3 +101,66 @@ def test_an_identified_truck_wins_over_a_longer_unresolved_window() -> None:
     ])
 
     assert _hulls(selected) == ["HD 2221"]
+
+
+# --- direction carried across a split pass -----------------------------------
+
+def test_a_direction_survives_when_the_clearest_window_missed_it() -> None:
+    """The 6s cap splits one pass; the trailing fragment reads best but barely moves.
+
+    Measured on the reference footage: window 1 travels 0.26-0.79 of frame width
+    and resolves a direction, window 2 travels 0.006-0.16 and often resolves
+    none — while carrying the better reading. Ranking ignores direction (it
+    should: the clearest plate is not the window that saw movement), so without
+    this the recorded crossing had no direction at all, which is exactly what
+    leaves a ritase unpaired.
+    """
+    selected = select_crossings([
+        _window("HD 2152", reads=6, direction="inbound"),
+        _window("HD 2152", reads=14, direction=None),
+    ])
+    assert len(selected) == 1
+    assert selected[0]["result"]["read_count"] == 14   # still the best reading
+    assert selected[0]["direction"] == "inbound"       # ...with the observed direction
+
+
+def test_a_window_with_its_own_direction_keeps_it() -> None:
+    selected = select_crossings([
+        _window("HD 2152", reads=6, direction="outbound"),
+        _window("HD 2152", reads=14, direction="inbound"),
+    ])
+    assert selected[0]["direction"] == "inbound"
+
+
+def test_disagreeing_windows_leave_the_direction_unknown() -> None:
+    """A truck that reversed, or a second vehicle in frame — a real ambiguity.
+
+    Picking a side would invent the one fact ritase pairing depends on. Observed
+    on the 2264 arrival, whose two windows genuinely report opposite directions.
+    """
+    selected = select_crossings([
+        _window("HD 2264", reads=6, direction="inbound"),
+        _window("HD 2264", reads=5, direction="outbound"),
+        _window("HD 2264", reads=14, direction=None),
+    ])
+    assert len(selected) == 1
+    assert selected[0]["direction"] is None
+
+
+def test_direction_is_not_borrowed_from_a_different_truck() -> None:
+    selected = select_crossings([
+        _window("HD 2152", reads=14, direction=None),
+        _window("HD 2221", reads=6, direction="inbound"),
+    ])
+    by_hull = {e["hull_id"]: e for e in selected}
+    assert by_hull["HD 2152"]["direction"] is None
+    assert by_hull["HD 2221"]["direction"] == "inbound"
+
+
+def test_an_unregistered_truck_also_keeps_its_direction() -> None:
+    selected = select_crossings([
+        _window("UNKNOWN", outcome=UNREGISTERED, reads=4, direction="outbound"),
+        _window("UNKNOWN", outcome=UNREGISTERED, reads=9, direction=None),
+    ])
+    assert len(selected) == 1
+    assert selected[0]["direction"] == "outbound"

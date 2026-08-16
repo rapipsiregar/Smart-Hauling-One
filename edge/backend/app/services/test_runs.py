@@ -479,10 +479,46 @@ def select_crossings(resolved: list[dict]) -> list[dict]:
         if current is None or rank(entry) > rank(current):
             identified[entry["hull_id"]] = entry
     if identified:
-        return list(identified.values())
+        return [
+            _with_observed_direction(entry, resolved)
+            for entry in identified.values()
+        ]
 
     unresolved = [e for e in resolved if e["result"]["read_count"] > 0]
-    return [max(unresolved, key=rank)] if unresolved else []
+    if not unresolved:
+        return []
+    return [_with_observed_direction(max(unresolved, key=rank), resolved)]
+
+
+def _with_observed_direction(winner: dict, resolved: list[dict]) -> dict:
+    """Carry a direction observed by the same truck's other windows.
+
+    The winner is chosen by read count and confidence -- direction plays no part,
+    and it should not, because the clearest reading of the plate is not
+    necessarily the window that saw the truck move. On the reference footage the
+    6 s cap splits one pass in two, and the trailing fragment routinely has the
+    better reading while travelling too little to resolve a direction at all. The
+    recorded crossing then had no direction, which is precisely what leaves a
+    ritase unpaired.
+
+    Both windows are the same truck on the same pass, so a direction seen by
+    either is evidence about this crossing rather than a guess.
+
+    When the windows DISAGREE the ambiguity is real -- a truck that reversed, or
+    a second vehicle caught in the frame -- and None is kept. Picking a side
+    there would be inventing the one fact the whole pairing depends on.
+    """
+    if winner.get("direction"):
+        return winner
+
+    seen = {
+        entry["direction"]
+        for entry in resolved
+        if entry["hull_id"] == winner["hull_id"] and entry.get("direction")
+    }
+    if len(seen) != 1:
+        return winner
+    return {**winner, "direction": seen.pop()}
 
 
 def _record(resolved: dict, camera_code: str, detected_at: str | None = None) -> dict:
