@@ -13,7 +13,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.config import DATA_DIR, ensure_directories
 from app.repositories import run_write_repo
 from app.routers import api_router
-from app.services import device_status, live_sessions
+from app.services import backup_scheduler, device_status, live_sessions
 from pathlib import Path
 
 
@@ -28,9 +28,13 @@ async def lifespan(app: FastAPI):
     """
     device_status.start_background_sweep()
     live_sessions.start_stale_sweep()
+    # Unattended, and first run is immediate: the likeliest moment to find out
+    # there is no backup is the moment the database is already gone.
+    backup_scheduler.start()
     yield
     device_status.stop_background_sweep()
     live_sessions.stop_stale_sweep()
+    backup_scheduler.stop()
 
 
 def create_app() -> FastAPI:
