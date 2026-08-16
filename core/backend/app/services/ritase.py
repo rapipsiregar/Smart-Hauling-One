@@ -127,6 +127,50 @@ def _reason(event: dict) -> str:
     return "missing-out" if direction == IN else "missing-in"
 
 
+def _per_checkpoint(crossings: list[dict], by_hull: dict[str, list[dict]]) -> list[dict]:
+    """Ritase and traffic broken down by checkpoint (CP 01..CP 04).
+
+    A ritase is a *pair* of crossings and the two halves need not happen at the
+    same checkpoint, so a pair is credited to the checkpoint of its INBOUND leg
+    -- the moment the load entered. Splitting the credit in half, or counting the
+    pair at both ends, would make the checkpoint totals stop summing to the site
+    total, and the whole point of the breakdown is that the parts add up.
+    """
+    stats: dict[str, dict] = {}
+
+    def bucket(name: str) -> dict:
+        return stats.setdefault(name, {
+            "checkpoint": name,
+            "ritase": 0,
+            "inbound": 0,
+            "outbound": 0,
+            "undirected": 0,
+            "crossings": 0,
+            "unidentified": 0,
+        })
+
+    for crossing in crossings:
+        entry = bucket(crossing.get("checkpoint") or crossing.get("lane") or "-")
+        entry["crossings"] += 1
+        if not crossing.get("known"):
+            entry["unidentified"] += 1
+        direction = crossing.get("direction")
+        if direction == IN:
+            entry["inbound"] += 1
+        elif direction == OUT:
+            entry["outbound"] += 1
+        else:
+            entry["undirected"] += 1
+
+    for events in by_hull.values():
+        pairs, _ = pair_hull_events(events)
+        for pair in pairs:
+            leg = pair["in"]
+            bucket(leg.get("checkpoint") or leg.get("lane") or "-")["ritase"] += 1
+
+    return sorted(stats.values(), key=lambda c: c["checkpoint"])
+
+
 def build_ritase(crossings: list[dict]) -> dict:
     """Aggregate reference-shaped crossings into ritase.
 
@@ -181,6 +225,8 @@ def build_ritase(crossings: list[dict]) -> dict:
         key = direction if direction in (IN, OUT) else "undirected"
         gate[key if key == "undirected" else direction] += 1
 
+    per_checkpoint = _per_checkpoint(crossings, by_hull)
+
     flagged = [
         {
             "id": e.get("id"),
@@ -218,5 +264,9 @@ def build_ritase(crossings: list[dict]) -> dict:
         "unpairedCount": len(flagged),
         "perHull": per_hull,
         "perGate": sorted(per_gate.values(), key=lambda g: g["gate"]),
+        # The breakdown the site actually plans and reports by. `perGate` is kept
+        # alongside it rather than replaced: it groups by area, which the map
+        # views still read.
+        "perCheckpoint": per_checkpoint,
         "unpaired": flagged,
     }

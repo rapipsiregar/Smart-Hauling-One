@@ -26,6 +26,10 @@ CROSSING_KEYS = {
     "registered",
     "isReconciled", "reconciledBy", "ocrReads", "imageProofUrl",
     "contextImageUrl", "crossedAt", "processedAt",
+    # The checkpoint (CP 01..CP 04) the crossing belongs to. The site plans and
+    # reports by checkpoint, and `lane` holds the broader area -- two
+    # checkpoints can share one, so it cannot stand in. Purely additive.
+    "checkpoint",
 }
 CCTV_KEYS = {
     "id", "video", "towerId", "location", "camera", "cameraId", "cameraCode",
@@ -53,6 +57,10 @@ SHIFT_KEYS = {
     # Added so the exports can flag haulage by units the master does not list --
     # the PDF and spreadsheet are exactly where that flag has to appear.
     "unregisteredRitase", "unregisteredHulls",
+    # The checkpoint breakdown the site reports by, and the window this sheet
+    # covers. `miningDayStartHour` is carried so the exported PDF/XLSX can print
+    # the cut-off instead of leaving the reader to assume midnight.
+    "perCheckpoint", "miningDayStartHour", "startDate", "endDate",
 }
 RECEIPT_KEYS = {"syncedAt", "count", "source", "status"}
 

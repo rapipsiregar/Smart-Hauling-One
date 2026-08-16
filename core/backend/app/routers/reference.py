@@ -10,8 +10,24 @@ router = APIRouter(tags=["reference"])
 
 
 @router.get("/crossings")
-def list_crossings(camera_code: str | None = None, camera_id: int | None = None):
-    return reference.build_crossings(camera_code=camera_code, camera_id=camera_id)
+def list_crossings(
+    camera_code: str | None = None,
+    camera_id: int | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
+    """Crossing log, optionally narrowed to one checkpoint's camera and a window.
+
+    ``start_date``/``end_date`` are mining dates (06:00 to 06:00) and both ends
+    are inclusive, so a single date returns that one full working day. This is
+    what backs "click a checkpoint, see the trucks that passed it" -- each row
+    already carries ``imageProofUrl``, the still frame the gate captured, so a
+    cross-check never needs the video file opened.
+    """
+    return reference.build_crossings(
+        camera_code=camera_code, camera_id=camera_id,
+        start_date=start_date, end_date=end_date,
+    )
 
 
 @router.get("/cctv-detections")
@@ -36,14 +52,47 @@ def performance_kpis():
 
 
 @router.get("/shift-report")
-def shift_report():
-    return reference.build_shift_report()
+def shift_report(start_date: str | None = None, end_date: str | None = None):
+    """The daily sheet, cut to the mining day (06:00 to 06:00)."""
+    return reference.build_shift_report(start_date=start_date, end_date=end_date)
 
 
 @router.get("/ritase")
-def ritase(camera_code: str | None = None, camera_id: int | None = None):
-    """Ritase = IN paired with OUT, plus the flagged unpaired crossings."""
-    return reference.build_ritase_report(camera_code=camera_code, camera_id=camera_id)
+def ritase(
+    camera_code: str | None = None,
+    camera_id: int | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
+    """Ritase = IN paired with OUT, plus the flagged unpaired crossings.
+
+    Includes ``perCheckpoint`` -- the CP 01..CP 04 breakdown the site plans and
+    reports by. ``perGate`` is still there, grouping by area, for the map views.
+    """
+    return reference.build_ritase_report(
+        camera_code=camera_code, camera_id=camera_id,
+        start_date=start_date, end_date=end_date,
+    )
+
+
+@router.get("/ritase-trend")
+def ritase_trend(
+    granularity: str = "day",
+    start_date: str | None = None,
+    end_date: str | None = None,
+    camera_code: str | None = None,
+):
+    """Ritase over time for the trend page.
+
+    ``granularity`` is one of day/week/month/year; anything else falls back to
+    day rather than erroring, so a stale bookmark still renders. Buckets are
+    mining days (06:00 to 06:00), and empty ones are emitted so a stoppage shows
+    as the gap it was.
+    """
+    return reference.build_ritase_trend(
+        granularity=granularity, start_date=start_date,
+        end_date=end_date, camera_code=camera_code,
+    )
 
 
 @router.get("/pit-occupancy")

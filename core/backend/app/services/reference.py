@@ -11,12 +11,30 @@ from __future__ import annotations
 from app.core.config import RECONCILE_THRESHOLD
 from app.repositories import truck_master_repo
 from app.repositories.video_results_repo import detections_by_video, run_meta
+from app.services import mining_day
 from app.services.cctv import build_cctv_detections  # re-exported; see routers
 from app.services.dataset import build_dataset, filter_by_camera
 from app.services.ritase import build_ritase
 
+# Shown when a crossing cannot be attributed to a camera at all, so it still
+# appears in a per-checkpoint breakdown instead of vanishing from the totals.
+UNASSIGNED_CHECKPOINT = "Tanpa Pos Cek"
+
+
+def checkpoint_of(crossing: dict) -> str:
+    """Which checkpoint a raw dataset crossing belongs to.
+
+    The camera's ``name`` IS the checkpoint at this site ("CP 01"); ``lane``
+    holds the wider area and is deliberately not used, because two checkpoints
+    can share one area and grouping by it merges them.
+    """
+    return crossing.get("camera_name") or UNASSIGNED_CHECKPOINT
+
+
 __all__ = [
     "build_crossings",
+    "build_ritase_trend",
+    "checkpoint_of",
     "build_fleet",
     "build_fleet_master",
     "build_performance_kpis",
@@ -29,13 +47,25 @@ __all__ = [
 # --- Crossings ---------------------------------------------------------------
 
 def build_crossings(
-    camera_code: str | None = None, camera_id: int | None = None
+    camera_code: str | None = None,
+    camera_id: int | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
 ) -> list[dict]:
+    """Reference-shaped crossings, optionally narrowed to one camera and window.
+
+    ``start_date``/``end_date`` are MINING dates (06:00 to 06:00, see
+    ``app/services/mining_day.py``), inclusive of both ends. Omitting them
+    returns everything, which is what every existing caller gets.
+    """
     ds = build_dataset()
     meta = run_meta()
     det_map = detections_by_video()
+    since, until = mining_day.resolve_window(start_date, end_date)
     crossings: list[dict] = []
     for c in ds["crossings"]:
+        if not mining_day.in_window(c.get("crossed_at"), since, until):
+            continue
         video = c["video"]
         ocr_reads = len(det_map.get(video, {}).get("reads", []))
         reconciled = bool(c["known"] and c["confidence"] >= RECONCILE_THRESHOLD)
@@ -46,6 +76,11 @@ def build_crossings(
             "video": video,
             "lane": c["lane"],
             "direction": c["direction"],
+            # The checkpoint this crossing belongs to ("CP 01"). The site plans,
+            # staffs, and reports by checkpoint, so this -- not `lane`, which
+            # holds the broader area ("Area Utara") and lumps two checkpoints
+            # together -- is what the dashboard groups by.
+            "checkpoint": checkpoint_of(c),
             "cameraId": c.get("camera_id"),
             "cameraCode": c.get("camera_code"),
             "cameraName": c.get("camera_name"),
@@ -155,8 +190,17 @@ def build_performance_kpis() -> dict:
 
 # --- Shift / daily report (real aggregation) ---------------------------------
 
-def build_shift_report() -> dict:
-    crossings = build_crossings()
+def build_shift_report(
+    start_date: str | None = None, end_date: str | None = None
+) -> dict:
+    """The signed-and-filed daily sheet, cut to the mining day.
+
+    The reporting unit is the mining day (06:00 to 06:00), not the calendar day
+    and no longer a 12-hour day/night shift: BIB cuts its own reports that way,
+    and a sheet cut differently cannot be reconciled against theirs. The name
+    ``shift-report`` is kept because it is the frontend's existing route.
+    """
+    crossings = build_crossings(start_date=start_date, end_date=end_date)
     meta = run_meta()
     kpis = build_performance_kpis()
     ritase = build_ritase(crossings)
@@ -203,6 +247,12 @@ def build_shift_report() -> dict:
         "totalReads": kpis["totalReads"],
         "avgConfidence": kpis["avgConfidence"],
         "perGate": ritase["perGate"],
+        "perCheckpoint": ritase["perCheckpoint"],
+        # The window this sheet actually covers, so the exported PDF/XLSX can
+        # print it instead of the reader having to assume.
+        "miningDayStartHour": mining_day.DAY_START_HOUR,
+        "startDate": start_date,
+        "endDate": end_date,
         "perTruck": per_truck,
         "unpaired": ritase["unpaired"],
     }
@@ -211,9 +261,123 @@ def build_shift_report() -> dict:
 # --- Ritase (IN + OUT pairing) & Sync ----------------------------------------
 
 def build_ritase_report(
-    camera_code: str | None = None, camera_id: int | None = None
+    camera_code: str | None = None,
+    camera_id: int | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
 ) -> dict:
-    return build_ritase(build_crossings(camera_code=camera_code, camera_id=camera_id))
+    return build_ritase(build_crossings(
+        camera_code=camera_code, camera_id=camera_id,
+        start_date=start_date, end_date=end_date,
+    ))
+
+
+# --- Trend -------------------------------------------------------------------
+
+def build_ritase_trend(
+    granularity: str = "day",
+    start_date: str | None = None,
+    end_date: str | None = None,
+    camera_code: str | None = None,
+) -> dict:
+    """Ritase over time, bucketed by mining day / week / month / year.
+
+    Every bucket between the first and last observed one is emitted, including
+    empty ones. A day the site hauled nothing is a fact worth seeing on the
+    chart; omitting it would draw the line straight across the gap and hide a
+    stoppage.
+
+    Crossings with no recorded time cannot be placed on a timeline at all. They
+    are excluded from the series and reported separately as ``undated`` -- the
+    honest alternative to silently dropping them or parking them on an arbitrary
+    date.
+    """
+    if granularity not in mining_day.GRANULARITIES:
+        granularity = "day"
+
+    crossings = build_crossings(
+        camera_code=camera_code, start_date=start_date, end_date=end_date
+    )
+
+    # A ritase is credited to the mining day of its INBOUND leg, matching the
+    # per-checkpoint breakdown -- a cycle belongs to the day the load started.
+    report = build_ritase(crossings)
+    dated: dict[str, dict] = {}
+    undated = 0
+    days_seen: list = []
+
+    def cell(day) -> dict:
+        label = mining_day.bucket_label(day, granularity)
+        entry = dated.setdefault(label, {
+            "bucket": label,
+            "ritase": 0,
+            "crossings": 0,
+            "perCheckpoint": {},
+        })
+        return entry
+
+    for crossing in crossings:
+        moment = mining_day.parse_dt(crossing.get("crossedAt"))
+        if moment is None:
+            undated += 1
+            continue
+        day = mining_day.mining_date(moment)
+        days_seen.append(day)
+        cell(day)["crossings"] += 1
+
+    for hull_events in _by_hull(crossings).values():
+        from app.services.ritase import pair_hull_events
+
+        pairs, _ = pair_hull_events(hull_events)
+        for pair in pairs:
+            moment = mining_day.parse_dt(pair["in"].get("crossedAt"))
+            if moment is None:
+                continue
+            day = mining_day.mining_date(moment)
+            days_seen.append(day)
+            entry = cell(day)
+            entry["ritase"] += 1
+            checkpoint = pair["in"].get("checkpoint") or UNASSIGNED_CHECKPOINT
+            entry["perCheckpoint"][checkpoint] = entry["perCheckpoint"].get(checkpoint, 0) + 1
+
+    series = _fill_buckets(days_seen, dated, granularity)
+    return {
+        "granularity": granularity,
+        "startDate": start_date,
+        "endDate": end_date,
+        "dayStartHour": mining_day.DAY_START_HOUR,
+        "totalRitase": report["totalRitase"],
+        "totalCrossings": len(crossings),
+        # Crossings the timeline cannot place. Surfaced so a short series is
+        # explainable rather than mysterious.
+        "undatedCrossings": undated,
+        "checkpoints": [c["checkpoint"] for c in report["perCheckpoint"]],
+        "series": series,
+    }
+
+
+def _by_hull(crossings: list[dict]) -> dict[str, list[dict]]:
+    grouped: dict[str, list[dict]] = {}
+    for crossing in crossings:
+        if crossing.get("known"):
+            grouped.setdefault(crossing["hullId"], []).append(crossing)
+    return grouped
+
+
+def _fill_buckets(days_seen: list, dated: dict[str, dict], granularity: str) -> list[dict]:
+    """The observed buckets in order, with the empty ones in between filled in."""
+    if not days_seen:
+        return []
+    cursor = mining_day.bucket_start(min(days_seen), granularity)
+    last = mining_day.bucket_start(max(days_seen), granularity)
+    series: list[dict] = []
+    while cursor <= last:
+        label = mining_day.bucket_label(cursor, granularity)
+        series.append(dated.get(label, {
+            "bucket": label, "ritase": 0, "crossings": 0, "perCheckpoint": {},
+        }))
+        cursor = mining_day.next_bucket(cursor, granularity)
+    return series
 
 
 def sync_ritase(payload: dict) -> dict:
