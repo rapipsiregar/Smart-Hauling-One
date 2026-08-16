@@ -83,16 +83,33 @@ def match_outbound(text: str | None) -> HullMatch:
 
     Inbound gates are untouched: an arriving truck is, by definition, not in the
     pit yet, so there is no smaller set to prefer.
+
+    **The pit set narrows an uncertain reading; it never overrules a certain
+    one.** A code the device read cleanly and that names a real master unit is
+    already the answer, so the master is consulted *first* and an EXACT hit
+    returns immediately. Narrowing before that check is what let a unanimous
+    read of ``2222`` be "corrected" to ``HD 2221`` -- distance 1 away, and the
+    only unit the system believed was inside -- silently filing a real crossing
+    of one truck against another. Worse, the pit set is itself derived from
+    earlier directions, so one bad direction turned into a wrong hull id, which
+    then unbalanced that truck's ritase too. An exact match is the one piece of
+    evidence stronger than the occupancy guess, and it now wins.
     """
     from app.services import pit_occupancy
 
     code = extract_code(text)
+
+    # Consult the master first: an exact hit is stronger evidence than occupancy.
+    from_master = match_code(code)
+    if from_master.outcome == EXACT:
+        return from_master
+
     inside = pit_occupancy.hull_codes_inside()
     if inside:
         result = match_code(code, candidates=inside)
         if result.is_registered:
             return result
-    return match_code(code)
+    return from_master
 
 
 def resolve_display_hull(text: str | None, candidates: list[str] | None = None) -> str:

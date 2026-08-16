@@ -135,6 +135,32 @@ def test_an_empty_pit_behaves_exactly_like_the_plain_matcher(monkeypatch):
     assert hull_matcher.match_outbound("2152").hull_id == "HD 2152"
 
 
+def test_an_exact_read_is_never_corrected_into_a_truck_that_is_inside(monkeypatch):
+    """The regression from the ten-clip run: 2222 was filed as HD 2221.
+
+    The device read ``2222`` unanimously (22 of 22 votes, confidence 1.0) and
+    2222 is a real master unit -- there was nothing to correct. But the pit set
+    was consulted first and held only 2221, one edit away, so the narrowed
+    fuzzy match won and a real crossing of one truck was recorded against
+    another. That also unbalanced both trucks' ritase: 2221 ended the run with
+    three crossings and 2222 with one.
+
+    Occupancy is an inference; an exact master hit is evidence. Evidence wins.
+    """
+    monkeypatch.setattr(
+        hull_matcher.truck_master_repo, "all_hull_codes", lambda: ["2221", "2222"]
+    )
+    monkeypatch.setattr(
+        hull_matcher.truck_master_repo, "get_by_hull_code",
+        lambda code: {"hull_id": f"HD {code}"},
+    )
+    monkeypatch.setattr(pit_occupancy, "hull_codes_inside", lambda *a, **k: ["2221"])
+
+    result = hull_matcher.match_outbound("2222")
+    assert result.outcome == EXACT
+    assert result.hull_id == "HD 2222"
+
+
 def test_an_unreadable_outbound_reading_is_still_unreadable(monkeypatch):
     monkeypatch.setattr(pit_occupancy, "hull_codes_inside", lambda *a, **k: ["2152"])
     monkeypatch.setattr(

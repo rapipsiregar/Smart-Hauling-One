@@ -229,13 +229,20 @@ def _process_clip(run_id: str, clip: Path, tunables) -> tuple[list[tuple], int, 
     from agent.inference import _primary_box
     from agent.live_state import LIVE
     from agent.ocr_worker import OcrJob
+    from agent.config import inbound_axis_from_env
     from agent.pipeline import DetectionWindow
     from vendor.ocr_utils import fuzzy_vote_distribution, pad_crop
 
     engine = _engine()
     loop = engine["loop"]
     pool = engine["ocr_pool"]
-    window = DetectionWindow(tunables, queuelib.Queue())
+    # Same mounting geometry the live loop uses -- a bench that assumed the
+    # default axis would report every replayed clip's direction backwards on a
+    # right-to-left gate, which is exactly the discrepancy this bench exists to
+    # catch rather than introduce.
+    window = DetectionWindow(
+        tunables, queuelib.Queue(), inbound_axis=inbound_axis_from_env()
+    )
 
     closed: list = []
     window._queue.put = closed.append   # collect instead of handing to a thread

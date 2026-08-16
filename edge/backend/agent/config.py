@@ -69,6 +69,17 @@ class Tunables:
         )
 
 
+def inbound_axis_from_env() -> str:
+    """This device's inbound axis, without requiring the full agent environment.
+
+    ``Settings.from_env`` raises unless every RTSP/API-key variable is present,
+    which is the right contract for booting the agent but the wrong one for the
+    console's clip bench -- that runs inside the edge web app, where those
+    variables may be absent, and it still has to judge direction the same way.
+    """
+    return os.environ.get("SMART_GATE_INBOUND_AXIS", "ltr").strip().lower() or "ltr"
+
+
 @dataclass(frozen=True)
 class Settings:
     """Static, boot-time configuration from the environment."""
@@ -81,6 +92,10 @@ class Settings:
     snapshot_dir: Path
     video_dir: Path
     model_path: Path
+    # "ltr" or "rtl": which way an ARRIVING truck travels across this camera's
+    # frame. Mounting geometry, fixed at install time -- see
+    # agent/pipeline.py::LTR. Wrong value == every crossing recorded backwards.
+    inbound_axis: str = "ltr"
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -101,6 +116,7 @@ class Settings:
             snapshot_dir=Path(os.environ.get("SMART_GATE_SNAPSHOT_DIR", "./snapshots")),
             video_dir=Path(os.environ.get("SMART_GATE_VIDEO_DIR", "./video")),
             model_path=Path(os.environ.get("SMART_GATE_MODEL_PATH", "./model.pt")),
+            inbound_axis=inbound_axis_from_env(),
         )
 
 

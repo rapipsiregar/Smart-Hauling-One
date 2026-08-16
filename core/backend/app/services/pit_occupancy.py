@@ -15,6 +15,7 @@ from app.services.dataset import build_dataset
 from app.services.hull_matching import extract_code
 
 INBOUND = "inbound"
+OUTBOUND = "outbound"
 
 
 def _order(crossing: dict) -> tuple[str, int]:
@@ -56,7 +57,7 @@ def build_occupancy(crossings: list[dict] | None = None) -> dict:
     of the count would mean the number on screen is not the number on site.
     """
     latest = latest_by_hull(crossings)
-    inside, outside = [], []
+    inside, outside, undetermined = [], [], []
     for hull, crossing in sorted(latest.items()):
         entry = {
             "hullId": hull,
@@ -67,7 +68,19 @@ def build_occupancy(crossings: list[dict] | None = None) -> dict:
             "lastCrossedAt": crossing.get("crossed_at"),
             "confidence": crossing.get("confidence"),
         }
-        (inside if crossing.get("direction") == INBOUND else outside).append(entry)
+        direction = crossing.get("direction")
+        if direction == INBOUND:
+            inside.append(entry)
+        elif direction == OUTBOUND:
+            outside.append(entry)
+        else:
+            # Neither, and it must not be quietly filed as either. The device
+            # could not tell which way this truck moved, so the honest report is
+            # a third list an operator can act on. The old code sent it to
+            # `outside` by falling through the else -- which is how a truck
+            # whose only crossing had no direction disappeared from the count
+            # entirely instead of raising a question.
+            undetermined.append(entry)
 
     return {
         "insideCount": len(inside),
@@ -75,6 +88,10 @@ def build_occupancy(crossings: list[dict] | None = None) -> dict:
         "inside": inside,
         "outsideCount": len(outside),
         "outside": outside,
+        # Trucks whose last crossing carried no direction. Surfaced, not hidden:
+        # each one is a real crossing the gate saw but could not orient.
+        "undeterminedCount": len(undetermined),
+        "undetermined": undetermined,
     }
 
 

@@ -26,7 +26,7 @@ from collections.abc import Callable
 from agent.config import DETECT_TRIGGER_CONF, Settings, TunableStore
 from agent.live_state import LIVE
 from agent.ocr_worker import OcrJob, OcrPool
-from agent.pipeline import ACTIVE, DetectionWindow, encode_jpeg
+from agent.pipeline import ACTIVE, LTR, DetectionWindow, encode_jpeg
 
 # How long a finished window will wait for OCR still in flight before closing
 # without it. Without a wait, a slow recogniser means every window closes with
@@ -118,7 +118,13 @@ class InferenceLoop(threading.Thread):
     ) -> None:
         super().__init__(name="inference", daemon=True)
         self.ring = ring
-        self.window = DetectionWindow(tunables, finalizer_queue)
+        self.window = DetectionWindow(
+            tunables,
+            finalizer_queue,
+            # getattr, not settings.inbound_axis: the loop is constructed with
+            # settings=None in tests that only exercise model loading.
+            inbound_axis=getattr(settings, "inbound_axis", LTR),
+        )
         self.settings = settings
         # Resolved at construction, not import: it is the machine that decides.
         self.device = resolve_device(device)
