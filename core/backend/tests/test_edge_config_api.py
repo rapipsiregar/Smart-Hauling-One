@@ -9,9 +9,13 @@ from tests.conftest import EDGE_TEST_CODE
 
 EXPECTED_KEYS = {
     "camera_code", "yolo_fps", "ocr_fps", "detect_window_sec", "ocr_min_conf",
-    "dedup_iou", "config_version", "device_status", "agent_version",
-    "last_heartbeat_at", "last_config_applied_at", "applied_config_version",
-    "local_queue_depth",
+    "dedup_iou", "inbound_axis", "config_version", "device_status",
+    "agent_version", "last_heartbeat_at", "last_config_applied_at",
+    "applied_config_version", "local_queue_depth",
+    # Connectivity, so the device card can show both ends of the link in one
+    # place. `api_key_set` is a boolean on purpose -- only the key's hash is
+    # stored, so there is no plaintext left to return (SRS §7.3).
+    "rtsp_url", "ip_host", "core_url", "api_key_set",
 }
 
 

@@ -8,6 +8,17 @@
 export type DeviceStatus = "online" | "offline" | "maintenance";
 
 /**
+ * Which way an *arriving* truck travels across this camera's frame.
+ *
+ * `"ltr"` left-to-right, `"rtl"` right-to-left. Mounting geometry, so it is set
+ * per device: two gates rarely face the same way. Get it wrong and the gate
+ * records every crossing as its exact opposite — departed trucks stay "inside"
+ * the pit and ritase pairing silently corrupts — which is why it is on the
+ * dashboard rather than buried in the device's own `.env`.
+ */
+export type InboundAxis = "ltr" | "rtl";
+
+/**
  * One gate device's inference tunables plus its health, as returned by
  * `GET/PUT /api/cameras/{code}/edge-config`.
  *
@@ -22,6 +33,7 @@ export interface EdgeConfig {
   detect_window_sec: number;
   ocr_min_conf: number;
   dedup_iou: number;
+  inbound_axis: InboundAxis;
   config_version: number;
   device_status: DeviceStatus;
   agent_version: string | null;
@@ -29,12 +41,45 @@ export interface EdgeConfig {
   last_config_applied_at: string | null;
   applied_config_version: number;
   local_queue_depth: number;
+
+  // --- connectivity ---------------------------------------------------------
+  /** Video source the device pulls from. Editable via `PUT /api/cameras/{code}`. */
+  rtsp_url: string | null;
+  /** The device's address on the site network. */
+  ip_host: string | null;
+  /**
+   * The core's address *as the device must dial it*. Read-only: a device needs
+   * this value before it can reach the core at all, so it is copied into the
+   * Jetson's `.env` at provisioning and can never be pushed down.
+   */
+  core_url: string;
+  /**
+   * Whether a key has ever been issued — never the key itself. Only the hash is
+   * stored, so there is nothing to reveal; the card can offer "issue" or
+   * "rotate", never "show".
+   */
+  api_key_set: boolean;
 }
 
 /** Partial update — at least one field, or the server answers 400 (§2.2). */
 export type EdgeConfigPatch = Partial<
-  Pick<EdgeConfig, "yolo_fps" | "ocr_fps" | "detect_window_sec" | "ocr_min_conf" | "dedup_iou">
+  Pick<
+    EdgeConfig,
+    "yolo_fps" | "ocr_fps" | "detect_window_sec" | "ocr_min_conf" | "dedup_iou" | "inbound_axis"
+  >
 >;
+
+/**
+ * The one-shot result of `POST /api/cameras/{code}/provision`.
+ *
+ * `api_key` is plaintext and exists only in this response — no endpoint can
+ * return it again. Show it, let the operator copy it, and never persist it.
+ */
+export interface DeviceProvisioning {
+  camera_code: string;
+  api_key: string;
+  core_url: string;
+}
 
 /** An on-demand live-view session (§2.4). Ephemeral, held server-side only. */
 export interface LiveSession {

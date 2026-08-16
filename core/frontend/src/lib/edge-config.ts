@@ -1,63 +1,44 @@
-import { DeviceStatus, EdgeConfig, EdgeConfigPatch } from "./types";
+import { DeviceStatus, EdgeConfig, InboundAxis } from "./types";
 
 /**
- * The edge tunables, straight from the backend spec's canonical table
- * (`docs/edge-system/PRD.md` §9) with the API ranges from API_CONTRACT §2.2.
+ * The detection tunables (frame rates, OCR threshold, dedup tolerance) are no
+ * longer on this page. They are commissioning-time values that the site does
+ * not revisit, and putting five sliders in front of the one setting operators
+ * *do* change made the important control hard to find.
  *
- * `min`/`max` are the API's hard limits — the server rejects anything outside
- * them regardless of what the form allows. `typical` is the business owner's
- * preferred operating range, shown as helper text only: narrowing the input to
- * it would make legitimate tuning impossible during commissioning.
+ * They still exist server-side with their documented defaults, and the API
+ * still accepts them — nothing was removed from the contract, only from the
+ * screen. Restoring the form would be additive.
  */
-export interface TunableField {
-  key: keyof EdgeConfigPatch;
+
+/**
+ * What each axis means, phrased the way an operator looks at the gate: they
+ * know which way trucks drive past the camera, not which way an "axis" points.
+ *
+ * Both options are stated in full rather than as a checkbox, because "inbound
+ * is right-to-left" and "inbound is left-to-right" are equally plausible before
+ * you look at the footage — a checkbox would make one of them the silent
+ * default and hide the very ambiguity this setting exists to resolve.
+ */
+export interface AxisOption {
+  value: InboundAxis;
   label: string;
   hint: string;
-  min: number;
-  max: number;
-  step: number;
-  /** Decimal places — 0 for the integer fps/window fields. */
-  precision: number;
-  typical: string;
 }
 
-export const TUNABLES: TunableField[] = [
+export const AXIS_OPTIONS: AxisOption[] = [
   {
-    key: "yolo_fps",
-    label: "Kecepatan Deteksi Kamera (Gambar/Detik)",
-    hint: "Berapa banyak frame gambar yang diperiksa kamera setiap detik",
-    min: 1, max: 30, step: 1, precision: 0,
-    typical: "18–25 gambar/detik",
+    value: "rtl",
+    label: "Kanan ke kiri = Masuk",
+    hint: "Truk yang bergerak dari kanan ke kiri layar dihitung MASUK area tambang, dan yang dari kiri ke kanan dihitung KELUAR.",
   },
   {
-    key: "ocr_fps",
-    label: "Frekuensi Deteksi Teks (Gambar/Detik)",
-    hint: "Laju pembacaan nomor lambung oleh sistem setiap detik",
-    min: 1, max: 15, step: 1, precision: 0,
-    typical: "±4 gambar/detik",
-  },
-  {
-    key: "detect_window_sec",
-    label: "Lama Waktu Pengamatan (Detik)",
-    hint: "Durasi maksimum pengumpulan foto satu kendaraan sebelum nomor lambung disimpulkan",
-    min: 1, max: 30, step: 1, precision: 0,
-    typical: "5–7 detik",
-  },
-  {
-    key: "ocr_min_conf",
-    label: "Batas Kejelasan Pembacaan",
-    hint: "Hasil pembacaan gambar yang buram di bawah batas ini akan diabaikan demi akurasi",
-    min: 0, max: 1, step: 0.01, precision: 2,
-    typical: "0.30",
-  },
-  {
-    key: "dedup_iou",
-    label: "Toleransi Kesamaan Gambar",
-    hint: "Tingkat kemiripan posisi foto untuk menganggap dua tangkapan sebagai kendaraan yang sama",
-    min: 0, max: 1, step: 0.01, precision: 2,
-    typical: "0.92",
+    value: "ltr",
+    label: "Kiri ke kanan = Masuk",
+    hint: "Truk yang bergerak dari kiri ke kanan layar dihitung MASUK area tambang, dan yang dari kanan ke kiri dihitung KELUAR.",
   },
 ];
+
 
 /**
  * Whether the device has confirmed applying the settings the server holds.
@@ -108,45 +89,3 @@ export function lastSeenLabel(iso: string | null, now: number = Date.now()): str
   return `${Math.round(hours / 24)} hari lalu`;
 }
 
-/** Round to a field's precision — keeps 0.1 + 0.2 out of the request body. */
-export function quantize(value: number, field: TunableField): number {
-  const factor = 10 ** field.precision;
-  return Math.round(value * factor) / factor;
-}
-
-/**
- * Only the fields that actually changed, as the API expects a partial update.
- * An empty result means there is nothing to save (the server answers 400 to an
- * empty body), which is what disables the save button.
- */
-export function buildPatch(draft: EdgeConfigPatch, saved: EdgeConfig): EdgeConfigPatch {
-  const patch: EdgeConfigPatch = {};
-  for (const field of TUNABLES) {
-    const next = draft[field.key];
-    if (next === undefined) continue;
-    if (quantize(next, field) !== quantize(saved[field.key], field)) {
-      patch[field.key] = quantize(next, field);
-    }
-  }
-  return patch;
-}
-
-/** Client-side mirror of the API range check — the server stays authoritative. */
-export function rangeError(value: number, field: TunableField): string | null {
-  if (!Number.isFinite(value)) return `${field.label} harus berupa angka`;
-  if (value < field.min || value > field.max) {
-    return `${field.label} harus antara ${field.min} dan ${field.max}`;
-  }
-  return null;
-}
-
-/** The saved values as a form draft. */
-export function draftFrom(cfg: EdgeConfig): EdgeConfigPatch {
-  return {
-    yolo_fps: cfg.yolo_fps,
-    ocr_fps: cfg.ocr_fps,
-    detect_window_sec: cfg.detect_window_sec,
-    ocr_min_conf: cfg.ocr_min_conf,
-    dedup_iou: cfg.dedup_iou,
-  };
-}

@@ -25,3 +25,7 @@ class EdgeConfigUpdate(BaseModel):
     detect_window_sec: int | None = None
     ocr_min_conf: float | None = None
     dedup_iou: float | None = None
+    # "ltr" | "rtl". Typed as a plain string for the same reason the numbers are
+    # not constrained here: the service owns validation so the API can answer
+    # with the contract's own message instead of a Pydantic 422.
+    inbound_axis: str | None = None

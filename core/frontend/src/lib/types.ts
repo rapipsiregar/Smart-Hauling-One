@@ -97,6 +97,7 @@ export interface JobResult {
 // domain types from one place.
 export type {
   DeviceStatus, EdgeConfig, EdgeConfigPatch, LiveSession, CameraEdgeFields,
+  InboundAxis, DeviceProvisioning,
 } from "./edge-types";
 
 import { CameraEdgeFields } from "./edge-types";

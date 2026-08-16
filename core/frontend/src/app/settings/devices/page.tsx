@@ -67,9 +67,9 @@ export default function DeviceSettingsPage() {
       <GlassCard className="p-5">
         <GuideSwap
           title="Perangkat Pos Gerbang"
-          note="Tiap pos gerbang dilengkapi satu kamera dan perangkat pemrosesan di lokasi yang menjalankan deteksi kendaraan otomatis. Halaman ini tempat mengatur kecepatan pembacaan, kejelasan gambar, dan durasi pengamatan."
+          note="Tiap pos gerbang dilengkapi satu kamera dan perangkat pemrosesan di lokasi yang menjalankan deteksi kendaraan otomatis. Halaman ini tempat menentukan arah gerak truk yang berarti masuk area tambang, sekaligus mengatur sambungan antara pusat dan perangkat pos."
         >
-          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Pengaturan Pemrosesan Kamera Pos</h2>
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Arah Baca &amp; Koneksi Kamera Pos</h2>
           <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
             Satu pos = satu kamera = satu perangkat pos. Perubahan disimpan di server seketika,
             lalu diterapkan perangkat pada detak koneksi berikutnya — sampai perangkat mengonfirmasi,

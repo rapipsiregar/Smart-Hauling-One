@@ -9,12 +9,21 @@ state for an offline device, not an error.
 
 from __future__ import annotations
 
-from app.core.config import EDGE_TUNABLE_FIELDS, EDGE_TUNABLE_RANGES
+from app.core.config import (
+    CORE_PUBLIC_URL,
+    EDGE_CHOICE_DEFAULTS,
+    EDGE_CHOICE_FIELDS,
+    EDGE_TUNABLE_FIELDS,
+    EDGE_TUNABLE_RANGES,
+)
 from app.repositories import edge_repo
 from app.services import cameras
 
 # Never leaves this module -- SRS §7.3 Security NFR.
 _SECRET_FIELDS = ("api_key_hash",)
+
+# Everything an operator may change from the device card.
+EDITABLE_FIELDS = EDGE_TUNABLE_FIELDS + tuple(EDGE_CHOICE_FIELDS)
 
 
 def _health_projection(cam: dict) -> dict:
@@ -26,6 +35,19 @@ def _health_projection(cam: dict) -> dict:
         "detect_window_sec": cam["detect_window_sec"],
         "ocr_min_conf": cam["ocr_min_conf"],
         "dedup_iou": cam["dedup_iou"],
+        "inbound_axis": cam.get("inbound_axis") or EDGE_CHOICE_DEFAULTS["inbound_axis"],
+        # --- connectivity -----------------------------------------------------
+        # The device's own end of the link, so the card can show both halves in
+        # one place instead of sending the operator to the camera registry.
+        "rtsp_url": cam.get("rtsp_url"),
+        "ip_host": cam.get("ip_host"),
+        # The core's end. Display-only -- see CORE_PUBLIC_URL.
+        "core_url": CORE_PUBLIC_URL,
+        # Whether a key has ever been issued. The key ITSELF is never returned:
+        # only its hash is stored, so there is nothing to return even if it were
+        # allowed (SRS §7.3). A card can therefore offer "issue" or "rotate",
+        # never "reveal".
+        "api_key_set": bool(cam.get("api_key_hash")),
         "config_version": cam["config_version"],
         # Reuses the existing Camera.status enum unmodified (SRS §5.1).
         "device_status": cam["status"],
@@ -44,10 +66,10 @@ def get_edge_config(camera_code: str) -> dict | None:
 
 
 def validate(payload: dict) -> str | None:
-    """Return the first range violation's message, or ``None`` if all values pass.
+    """Return the first invalid value's message, or ``None`` if all values pass.
 
-    Checked in ``EDGE_TUNABLE_FIELDS`` order so the message is deterministic.
-    API_CONTRACT §2.2: "one message per first-failing field is sufficient."
+    Checked in field order so the message is deterministic. API_CONTRACT §2.2:
+    "one message per first-failing field is sufficient."
     """
     for field in EDGE_TUNABLE_FIELDS:
         if field not in payload:
@@ -58,6 +80,12 @@ def validate(payload: dict) -> str | None:
             return f"{field} must be a number"
         if not (low <= value <= high):
             return f"{field} must be between {low} and {high}"
+
+    for field, allowed in EDGE_CHOICE_FIELDS.items():
+        if field not in payload:
+            continue
+        if payload[field] not in allowed:
+            return f"{field} must be one of {', '.join(allowed)}"
     return None
 
 
@@ -69,7 +97,7 @@ def update_edge_config(camera_code: str, payload: dict) -> tuple[dict | None, st
     ``config_version`` by exactly 1 (BR-012); ``applied_config_version`` is
     untouched until the device confirms via heartbeat.
     """
-    fields = {k: v for k, v in payload.items() if k in EDGE_TUNABLE_FIELDS}
+    fields = {k: v for k, v in payload.items() if k in EDITABLE_FIELDS}
     if not fields:
         return None, "At least one settings field is required"
 

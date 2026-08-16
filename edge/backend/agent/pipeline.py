@@ -218,7 +218,20 @@ class DetectionWindow:
         crossing with no direction rather than inventing one, and shows it for
         review instead of silently filing it as a departure.
         """
-        return travel_direction(self.positions, self.frame_width, self._inbound_axis)
+        return travel_direction(self.positions, self.frame_width, self.inbound_axis)
+
+    @property
+    def inbound_axis(self) -> str:
+        """The axis in force right now.
+
+        The core owns this (it is on the device card), so it is read from the
+        live tunables rather than frozen at construction -- a correction pushed
+        from the dashboard has to take effect on the next window, not the next
+        agent restart. The constructor value remains the fallback for a
+        TunableStore that has not learned the field yet.
+        """
+        axis = getattr(self._tunables.get(), "inbound_axis", None)
+        return axis if axis in (LTR, RTL) else self._inbound_axis
 
     # -- state transitions ----------------------------------------------------
 

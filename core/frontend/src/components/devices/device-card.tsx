@@ -9,6 +9,7 @@ import { configSyncState } from "@/lib/edge-config";
 import { GlassCard } from "@/components/ui/glass-card";
 import { ConfigSyncBadge, DeviceHealthBadge } from "./device-health-badge";
 import { EdgeConfigForm } from "./edge-config-form";
+import { DeviceConnectivity } from "./device-connectivity";
 
 type LoadState =
   | { kind: "loading" }
@@ -31,6 +32,7 @@ const DEFAULT_MOCK_EDGE_CONFIG = (code: string): EdgeConfig => ({
   detect_window_sec: 6,
   ocr_min_conf: 0.85,
   dedup_iou: 0.92,
+  inbound_axis: "ltr",
   config_version: 1,
   device_status: "online",
   agent_version: "v1.4.2-edge",
@@ -38,6 +40,10 @@ const DEFAULT_MOCK_EDGE_CONFIG = (code: string): EdgeConfig => ({
   last_config_applied_at: "16:42:15",
   applied_config_version: 1,
   local_queue_depth: 0,
+  rtsp_url: null,
+  ip_host: null,
+  core_url: "",
+  api_key_set: false,
 });
 
 export function DeviceCard({ camera, refreshKey }: { camera: Camera; refreshKey: number }) {
@@ -108,10 +114,18 @@ export function DeviceCard({ camera, refreshKey }: { camera: Camera; refreshKey:
       )}
 
       {state.kind === "ready" && (
-        <EdgeConfigForm
-          config={state.config}
-          onSaved={(config) => setState({ kind: "ready", config })}
-        />
+        <div className="space-y-5">
+          <EdgeConfigForm
+            config={state.config}
+            onSaved={(config) => setState({ kind: "ready", config })}
+          />
+          <div className="pt-4 border-t border-[var(--border)]">
+            <DeviceConnectivity
+              config={state.config}
+              onSaved={(config) => setState({ kind: "ready", config })}
+            />
+          </div>
+        </div>
       )}
     </GlassCard>
   );

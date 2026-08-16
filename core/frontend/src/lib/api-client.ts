@@ -3,7 +3,7 @@ import {
   CrossingEvent, CctvDetection, FleetUnit, PerformanceKpis, ShiftReport, RitaseReport,
   PitOccupancy,
   Camera, DashboardData, SitePlanData,
-  EdgeConfig, EdgeConfigPatch, LiveSession,
+  EdgeConfig, EdgeConfigPatch, LiveSession, DeviceProvisioning,
 } from "./types";
 
 const API_BASE = "";
@@ -172,6 +172,20 @@ export const api = {
       method: "PUT",
       body: JSON.stringify(patch),
     }),
+
+  /**
+   * Issue a fresh API key for a device. Returns the plaintext EXACTLY once —
+   * the core stores only its hash, so no later call can retrieve it.
+   *
+   * This also rotates: the previous key stops working the moment it returns,
+   * and the device buffers crossings in its outbox until its `.env` is updated.
+   * Confirm with the operator before calling.
+   */
+  provisionDevice: (camera_code: string): Promise<DeviceProvisioning> =>
+    fetchJSON<DeviceProvisioning>(
+      `/api/cameras/${encodeURIComponent(camera_code)}/provision`,
+      { method: "POST" },
+    ),
 
   // --- Live raw CCTV view (API_CONTRACT §2.4) ---
   // Raw feed only. Detection results never travel this path.

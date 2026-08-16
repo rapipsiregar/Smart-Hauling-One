@@ -13,7 +13,11 @@ from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Uploa
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from app.core.config import LIVE_SESSION_DEFAULT_WAIT_SEC, LIVE_SESSION_MAX_WAIT_SEC
+from app.core.config import (
+    EDGE_CHOICE_DEFAULTS,
+    LIVE_SESSION_DEFAULT_WAIT_SEC,
+    LIVE_SESSION_MAX_WAIT_SEC,
+)
 from app.repositories import edge_repo, truck_master_repo
 from app.schemas.edge import CrossingPayload, HeartbeatRequest
 from app.services import edge_ingest, live_sessions
@@ -25,6 +29,9 @@ router = APIRouter(tags=["edge"])
 # Tunables the device is allowed to know about (API_CONTRACT §1.1).
 _CONFIG_FIELDS = (
     "yolo_fps", "ocr_fps", "detect_window_sec", "ocr_min_conf", "dedup_iou",
+    # Mounting geometry, owned by the core so an operator can correct a gate
+    # that is recording every crossing backwards without touching the Jetson.
+    "inbound_axis",
 )
 
 
@@ -57,7 +64,11 @@ def get_edge_config(device: dict = Depends(authenticate_device)):
     at the registry level, it decides per truck from its own virtual center
     line (agent/pipeline.py) and reports that with each crossing instead.
     """
-    config = {field: device[field] for field in _CONFIG_FIELDS}
+    # .get with a default, not [] -- a camera row written before the
+    # inbound_axis migration has no such key, and a device asking for its config
+    # must not get a 500 for a column it is about to be told the default of.
+    config = {field: device.get(field, EDGE_CHOICE_DEFAULTS.get(field))
+              for field in _CONFIG_FIELDS}
     return {
         "camera_code": device["camera_code"],
         **config,

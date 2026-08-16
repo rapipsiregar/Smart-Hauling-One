@@ -26,13 +26,16 @@ def test_config_returns_the_contract_shape(client, edge_camera, auth_headers):
     # (agent/pipeline.py's virtual center line).
     assert set(body) == {
         "camera_code", "yolo_fps", "ocr_fps", "detect_window_sec",
-        "ocr_min_conf", "dedup_iou", "config_version",
+        "ocr_min_conf", "dedup_iou", "inbound_axis", "config_version",
     }
     assert body["yolo_fps"] == 20      # PRD §9 defaults
     assert body["ocr_fps"] == 4
     assert body["detect_window_sec"] == 6
     assert body["ocr_min_conf"] == 0.30
     assert body["dedup_iou"] == 0.92
+    # Mounting geometry, and the device cannot work it out for itself -- the
+    # core tells it which way an arriving truck crosses the frame.
+    assert body["inbound_axis"] == "ltr"
 
 
 def test_heartbeat_brings_device_online(client, edge_camera, auth_headers):

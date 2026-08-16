@@ -5,10 +5,11 @@ from __future__ import annotations
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
+from app.core.config import CORE_PUBLIC_URL
 from app.schemas.camera import CameraCreate, CameraUpdate
 from app.schemas.common import StatusResponse
 from app.schemas.edge_config import EdgeConfigUpdate
-from app.services import cameras, edge_config
+from app.services import cameras, edge_config, edge_devices
 from app.services.dataset import invalidate_cache
 
 router = APIRouter(tags=["cameras"])
@@ -88,6 +89,28 @@ def put_edge_config(camera_code: str, payload: EdgeConfigUpdate):
     if updated is None:
         return JSONResponse({"error": "Camera not found"}, status_code=404)
     return updated
+
+
+@router.post("/cameras/{camera_code}/provision")
+def provision_device(camera_code: str):
+    """Issue a fresh API key for one device and return it EXACTLY once.
+
+    The core stores only the key's SHA-256 hash (SRS §7.3), so this response is
+    the only moment the plaintext exists anywhere outside the operator's screen
+    -- there is no endpoint that can show it again, by design.
+
+    Rotating is the same call: the previous hash is overwritten, so the old key
+    stops working the instant this returns. The device keeps buffering crossings
+    in its outbox until its ``.env`` carries the new key, which is why the UI
+    asks for confirmation before calling this.
+    """
+    if cameras.get_camera(camera_code) is None:
+        return JSONResponse({"error": "Camera not found"}, status_code=404)
+    return {
+        "camera_code": camera_code,
+        "api_key": edge_devices.provision(camera_code),
+        "core_url": CORE_PUBLIC_URL,
+    }
 
 
 @router.post("/cameras-sync-attribution")

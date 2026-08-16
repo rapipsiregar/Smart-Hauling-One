@@ -21,6 +21,9 @@ EDGE_CAMERA_COLUMNS = {
     "detect_window_sec": "INTEGER NOT NULL DEFAULT 6",
     "ocr_min_conf": "REAL NOT NULL DEFAULT 0.30",
     "dedup_iou": "REAL NOT NULL DEFAULT 0.92",
+    # 'ltr' | 'rtl' -- which way an ARRIVING truck crosses this camera's frame.
+    # Defaults to 'ltr' so existing rows keep the behaviour they were running.
+    "inbound_axis": "TEXT NOT NULL DEFAULT 'ltr'",
     "config_version": "INTEGER NOT NULL DEFAULT 1",
     "applied_config_version": "INTEGER NOT NULL DEFAULT 0",
     "last_heartbeat_at": "TEXT",                  # ISO 8601 UTC with 'Z'

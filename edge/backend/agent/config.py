@@ -55,16 +55,25 @@ class Tunables:
     detect_window_sec: int = 6
     ocr_min_conf: float = 0.30
     dedup_iou: float = 0.92
+    # "ltr" | "rtl" -- which way an ARRIVING truck crosses this camera's frame.
+    # Owned by the core so a gate caught recording every crossing backwards can
+    # be corrected from the dashboard on the next heartbeat, rather than needing
+    # someone on site to edit .env and restart the agent.
+    inbound_axis: str = "ltr"
     config_version: int = 0          # 0 = nothing applied yet since boot
 
     @classmethod
     def from_api(cls, payload: dict) -> "Tunables":
+        # inbound_axis uses .get: a core that predates the field must not make
+        # the agent throw away an otherwise valid config push.
+        axis = str(payload.get("inbound_axis") or "ltr").strip().lower()
         return cls(
             yolo_fps=int(payload["yolo_fps"]),
             ocr_fps=int(payload["ocr_fps"]),
             detect_window_sec=int(payload["detect_window_sec"]),
             ocr_min_conf=float(payload["ocr_min_conf"]),
             dedup_iou=float(payload["dedup_iou"]),
+            inbound_axis=axis if axis in ("ltr", "rtl") else "ltr",
             config_version=int(payload["config_version"]),
         )
 

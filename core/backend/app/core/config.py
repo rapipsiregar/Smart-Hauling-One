@@ -119,6 +119,25 @@ EDGE_TUNABLE_FIELDS = (
     "yolo_fps", "ocr_fps", "detect_window_sec", "ocr_min_conf", "dedup_iou",
 )
 
+# Settings whose value is one of a fixed set rather than a number in a range.
+#
+# ``inbound_axis`` says which way a truck travels across THIS camera's frame
+# when it is arriving: "ltr" left-to-right, "rtl" right-to-left. It is mounting
+# geometry, and it is per device because two gates rarely face the same way.
+#
+# It lives here rather than in the device's own .env because getting it wrong is
+# not a small inaccuracy: the gate then records every crossing as its exact
+# opposite, which parks departed trucks "inside" the pit and corrupts ritase
+# pairing. An operator who sees that on the dashboard must be able to correct it
+# from the dashboard, without an SSH session to the Jetson.
+EDGE_CHOICE_FIELDS = {
+    "inbound_axis": ("ltr", "rtl"),
+}
+
+EDGE_CHOICE_DEFAULTS = {
+    "inbound_axis": "ltr",
+}
+
 # (min, max) inclusive. Authoritative server-side validation -- the settings form
 # mirrors these client-side but the server rejects out-of-range values regardless.
 EDGE_TUNABLE_RANGES = {
@@ -136,6 +155,12 @@ EDGE_TUNABLE_DEFAULTS = {
     "ocr_min_conf": 0.30,
     "dedup_iou": 0.92,
 }
+
+# The core's address as an EDGE DEVICE must dial it. Display-only on the
+# dashboard: a device needs this value before it can reach the core at all, so
+# it is copied into the Jetson's .env at provisioning and can never be pushed.
+# Shown on the device card purely so the two halves cannot drift unnoticed.
+CORE_PUBLIC_URL = os.environ.get("SMART_GATE_CORE_PUBLIC_URL", "http://localhost:8000")
 
 HEARTBEAT_INTERVAL_SEC = 30              # docs/edge-system/SRS.md §3.5
 OFFLINE_THRESHOLD_SEC = 90               # 3x heartbeat interval, SRS §5.1
