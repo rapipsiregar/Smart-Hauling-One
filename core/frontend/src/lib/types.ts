@@ -134,6 +134,13 @@ export interface CrossingEvent {
   confidence: number;
   video: string;
   lane: string;
+  /**
+   * The checkpoint this crossing belongs to ("CP 01").
+   *
+   * Not `lane`, which holds the wider area — two checkpoints can share one, so
+   * grouping by it merges them.
+   */
+  checkpoint: string;
   direction: "inbound" | "outbound" | null;
   cameraId: number | null;
   cameraCode: string | null;

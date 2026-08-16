@@ -138,6 +138,22 @@ export function defaultRange(days = 30, now: Date = new Date()): {
   return { startDate: iso(start), endDate: iso(end) };
 }
 
+/**
+ * Turn a stored evidence path into a URL the browser can actually fetch.
+ *
+ * The API returns paths relative to the PROJECT root ("data/03-snapshots/x.jpg")
+ * while the backend serves that directory at "/media" — so the leading "data/"
+ * segment is swapped, not merely prefixed. Used raw, the value is a *relative*
+ * URL that resolves against whatever route is open: it 404s from a nested page
+ * and works from the root, a bug that hides itself on the page you would test
+ * first.
+ */
+export function mediaUrl(stored: string | null): string | null {
+  if (!stored) return null;
+  if (stored.startsWith("http") || stored.startsWith("/media/")) return stored;
+  return `/media/${stored.replace(/^data\//, "")}`;
+}
+
 /** Local calendar date as YYYY-MM-DD. `toISOString` would shift by the UTC offset. */
 export function iso(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");

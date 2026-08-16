@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { PitOccupancy, PitTruck, RitaseReport, TruckRitase } from "@/lib/types";
+import { CheckpointPanel } from "@/components/checkpoints/checkpoint-panel";
+import { useIsDarkTheme } from "@/lib/use-theme";
 import { GlassCard } from "@/components/ui/glass-card";
 import { ConfChip } from "@/components/ui/conf-chip";
 import { GuideSwap } from "@/components/ui/guide-note";
@@ -18,6 +20,8 @@ export default function RitasePage() {
   const [offline, setOffline] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  // Checkpoint swatches have a selected step per theme, not an automatic flip.
+  const dark = useIsDarkTheme();
 
   const fetchBoth = useCallback(
     () =>
@@ -85,6 +89,9 @@ export default function RitasePage() {
             <PitPanel pit={pit} />
             <PerTruckPanel ritase={ritase} />
           </div>
+          {/* Checkpoint first — that is the unit the site plans and reports by.
+              The per-area panel stays below it for the map-side reading. */}
+          <CheckpointPanel ritase={ritase} dark={dark} />
           <GatePanel ritase={ritase} />
         </>
       ) : (

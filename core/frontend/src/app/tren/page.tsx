@@ -5,6 +5,7 @@ import { TrendingUp, RefreshCw, ServerCrash, Clock } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { RitaseTrend, TrendGranularity } from "@/lib/types";
 import { GRANULARITIES, defaultRange, trendTotals } from "@/lib/trend";
+import { useIsDarkTheme } from "@/lib/use-theme";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GuideSwap } from "@/components/ui/guide-note";
 import { CheckpointLegend, RitaseBarChart } from "@/components/trend/ritase-bar-chart";
@@ -24,24 +25,7 @@ export default function TrendPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
-  const [dark, setDark] = useState(true);
-
-  // The palette has a selected dark and light step, so the chart has to know
-  // which is on screen. Read from the document, where the theme toggle stamps it.
-  useEffect(() => {
-    const read = () => {
-      const stamped = document.documentElement.getAttribute("data-theme");
-      if (stamped === "light") return setDark(false);
-      if (stamped === "dark") return setDark(true);
-      setDark(!document.documentElement.classList.contains("light"));
-    };
-    read();
-    const observer = new MutationObserver(read);
-    observer.observe(document.documentElement, {
-      attributes: true, attributeFilter: ["data-theme", "class"],
-    });
-    return () => observer.disconnect();
-  }, []);
+  const dark = useIsDarkTheme();
 
   useEffect(() => {
     let cancelled = false;
