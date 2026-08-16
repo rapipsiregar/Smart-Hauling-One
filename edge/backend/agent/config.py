@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 import threading
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 try:  # python-dotenv is optional at import time so tests need no .env
@@ -46,6 +46,17 @@ VIDEO_MIN_FREE_DISK_FRACTION = 0.10
 AGENT_VERSION = "1.0.0"
 
 
+def inbound_axis_from_env() -> str:
+    """This device's inbound axis, without requiring the full agent environment.
+
+    ``Settings.from_env`` raises unless every RTSP/API-key variable is present,
+    which is the right contract for booting the agent but the wrong one for the
+    console's clip bench -- that runs inside the edge web app, where those
+    variables may be absent, and it still has to judge direction the same way.
+    """
+    return os.environ.get("SMART_GATE_INBOUND_AXIS", "ltr").strip().lower() or "ltr"
+
+
 @dataclass(frozen=True)
 class Tunables:
     """Device settings owned by the induk (API_CONTRACT §1.1). Frozen by design."""
@@ -59,34 +70,34 @@ class Tunables:
     # Owned by the core so a gate caught recording every crossing backwards can
     # be corrected from the dashboard on the next heartbeat, rather than needing
     # someone on site to edit .env and restart the agent.
-    inbound_axis: str = "ltr"
+    #
+    # Defaults to the device's own SMART_GATE_INBOUND_AXIS rather than a fixed
+    # "ltr". A literal default is always a valid value, so it always won over the
+    # environment -- which made the documented "value used before the first
+    # config fetch lands" untrue, and silently: a device provisioned as rtl
+    # recorded every crossing backwards until the core happened to push its
+    # config, and after any reset of the local settings it went back to doing so.
+    inbound_axis: str = field(default_factory=lambda: inbound_axis_from_env())
     config_version: int = 0          # 0 = nothing applied yet since boot
 
     @classmethod
     def from_api(cls, payload: dict) -> "Tunables":
         # inbound_axis uses .get: a core that predates the field must not make
-        # the agent throw away an otherwise valid config push.
-        axis = str(payload.get("inbound_axis") or "ltr").strip().lower()
+        # the agent throw away an otherwise valid config push. When it is absent
+        # the device keeps its OWN provisioned axis rather than snapping to
+        # "ltr" -- an older core saying nothing is not the same as it saying
+        # left-to-right, and treating it that way would flip a correctly
+        # installed rtl gate the moment it fetched config.
+        axis = str(payload.get("inbound_axis") or inbound_axis_from_env()).strip().lower()
         return cls(
             yolo_fps=int(payload["yolo_fps"]),
             ocr_fps=int(payload["ocr_fps"]),
             detect_window_sec=int(payload["detect_window_sec"]),
             ocr_min_conf=float(payload["ocr_min_conf"]),
             dedup_iou=float(payload["dedup_iou"]),
-            inbound_axis=axis if axis in ("ltr", "rtl") else "ltr",
+            inbound_axis=axis if axis in ("ltr", "rtl") else inbound_axis_from_env(),
             config_version=int(payload["config_version"]),
         )
-
-
-def inbound_axis_from_env() -> str:
-    """This device's inbound axis, without requiring the full agent environment.
-
-    ``Settings.from_env`` raises unless every RTSP/API-key variable is present,
-    which is the right contract for booting the agent but the wrong one for the
-    console's clip bench -- that runs inside the edge web app, where those
-    variables may be absent, and it still has to judge direction the same way.
-    """
-    return os.environ.get("SMART_GATE_INBOUND_AXIS", "ltr").strip().lower() or "ltr"
 
 
 @dataclass(frozen=True)
