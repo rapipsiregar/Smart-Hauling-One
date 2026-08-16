@@ -7,6 +7,7 @@ import {
   RotateCw,
   Wrench,
   Truck,
+  TrendingUp,
   LucideIcon,
 } from "lucide-react";
 
@@ -75,6 +76,15 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Truck,
     match: (p) => p.startsWith("/fleet-master"),
     section: "Data Ritase & Armada",
+    roles: ["super_admin", "logistics_auditor"],
+  },
+  {
+    key: "tren",
+    label: "Tren Produksi Ritase",
+    href: "/tren",
+    icon: TrendingUp,
+    match: (p) => p.startsWith("/tren"),
+    section: "Laporan & Analisis",
     roles: ["super_admin", "logistics_auditor"],
   },
   {

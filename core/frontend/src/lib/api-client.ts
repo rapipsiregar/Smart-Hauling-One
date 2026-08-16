@@ -4,6 +4,7 @@ import {
   PitOccupancy,
   Camera, DashboardData, SitePlanData,
   EdgeConfig, EdgeConfigPatch, LiveSession, DeviceProvisioning,
+  RitaseTrend, TrendGranularity,
 } from "./types";
 
 const API_BASE = "";
@@ -50,6 +51,35 @@ function cameraQuery(cameraCode?: string): string {
   return cameraCode ? `?camera_code=${encodeURIComponent(cameraCode)}` : "";
 }
 
+/**
+ * A window of MINING days (06:00–06:00), both ends inclusive.
+ *
+ * Dates, not timestamps: the caller picks working days and the server resolves
+ * them to real moments, so there is one definition of where a day starts
+ * (`app/services/mining_day.py`) rather than one per caller.
+ */
+export interface DateRange {
+  startDate?: string;
+  endDate?: string;
+}
+
+function rangeQuery(range?: DateRange): string {
+  if (!range) return "";
+  const parts: string[] = [];
+  if (range.startDate) parts.push(`start_date=${encodeURIComponent(range.startDate)}`);
+  if (range.endDate) parts.push(`end_date=${encodeURIComponent(range.endDate)}`);
+  return parts.length ? `?${parts.join("&")}` : "";
+}
+
+/**
+ * Merge query fragments that each think they start the query string.
+ * The helpers above all emit a leading "?", so only the first may keep it.
+ */
+function joinQuery(...fragments: string[]): string {
+  const parts = fragments.filter(Boolean).map((f) => f.replace(/^\?/, ""));
+  return parts.length ? `?${parts.join("&")}` : "";
+}
+
 async function fetchJSON<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${API_BASE}${path}`;
   const res = await fetch(url, {
@@ -94,8 +124,17 @@ export const api = {
 
   // --- Reference (Integrated Smart Hauling System) real-data endpoints ---
   // Pass a camera code to filter server-side; omit it for the full set.
-  getCrossingEvents: (cameraCode?: string): Promise<CrossingEvent[]> =>
-    fetchJSON<CrossingEvent[]>(`/api/crossings${cameraQuery(cameraCode)}`),
+  /**
+   * The crossing log. `range` narrows it to mining days (06:00–06:00), both
+   * ends inclusive — a single date returns that one full working day.
+   *
+   * Each row carries `imageProofUrl`, the still the gate captured, so a
+   * cross-check against BIB's sheet never needs the video file opened.
+   */
+  getCrossingEvents: (cameraCode?: string, range?: DateRange): Promise<CrossingEvent[]> =>
+    fetchJSON<CrossingEvent[]>(
+      `/api/crossings${joinQuery(cameraQuery(cameraCode), rangeQuery(range))}`,
+    ),
   getCctvDetections: (cameraCode?: string): Promise<CctvDetection[]> =>
     fetchJSON<CctvDetection[]>(`/api/cctv-detections${cameraQuery(cameraCode)}`),
   getFleetRegistry: (cameraCode?: string): Promise<FleetUnit[]> =>
@@ -106,11 +145,29 @@ export const api = {
     fetchJSON<FleetMasterUnit[]>("/api/fleet-master"),
   getPerformanceKpis: (): Promise<PerformanceKpis> => fetchJSON("/api/performance-kpis"),
 
-  getShiftReport: (): Promise<ShiftReport> => fetchJSON<ShiftReport>("/api/shift-report"),
+  /** The daily sheet, cut to the mining day (06:00–06:00), not to midnight. */
+  getShiftReport: (range?: DateRange): Promise<ShiftReport> =>
+    fetchJSON<ShiftReport>(`/api/shift-report${joinQuery(rangeQuery(range))}`),
 
   /** Ritase = IN paired with OUT, plus the crossings that stayed unpaired. */
-  getRitase: (cameraCode?: string): Promise<RitaseReport> =>
-    fetchJSON<RitaseReport>(`/api/ritase${cameraQuery(cameraCode)}`),
+  getRitase: (cameraCode?: string, range?: DateRange): Promise<RitaseReport> =>
+    fetchJSON<RitaseReport>(
+      `/api/ritase${joinQuery(cameraQuery(cameraCode), rangeQuery(range))}`,
+    ),
+
+  /** Ritase over time for the trend page, bucketed by mining day. */
+  getRitaseTrend: (
+    granularity: TrendGranularity,
+    range?: DateRange,
+    cameraCode?: string,
+  ): Promise<RitaseTrend> =>
+    fetchJSON<RitaseTrend>(
+      `/api/ritase-trend${joinQuery(
+        `?granularity=${encodeURIComponent(granularity)}`,
+        cameraQuery(cameraCode),
+        rangeQuery(range),
+      )}`,
+    ),
 
   /** Which trucks are inside the mining area right now, and on what evidence. */
   getPitOccupancy: (): Promise<PitOccupancy> =>

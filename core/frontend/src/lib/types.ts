@@ -298,7 +298,62 @@ export interface RitaseReport {
   unpairedCount: number;
   perHull: TruckRitase[];
   perGate: GateDirectionBreakdown[];
+  /**
+   * The CP 01–CP 04 breakdown the site plans and reports by.
+   *
+   * Not the same cut as `perGate`, which groups by area — two checkpoints can
+   * share one area, so that grouping merges them. A ritase pair is credited to
+   * the checkpoint of its inbound leg, which is what makes these rows sum to
+   * `totalRitase`.
+   */
+  perCheckpoint: CheckpointBreakdown[];
   unpaired: UnpairedCrossing[];
+}
+
+/** One checkpoint's share of the haulage, and the traffic it saw. */
+export interface CheckpointBreakdown {
+  checkpoint: string;
+  ritase: number;
+  inbound: number;
+  outbound: number;
+  /** Crossings the gate could not orient. Real traffic, not yet a direction. */
+  undirected: number;
+  crossings: number;
+  unidentified: number;
+}
+
+/** How finely the trend page slices time. */
+export type TrendGranularity = "day" | "week" | "month" | "year";
+
+/** One point on the trend: a mining day, week, month, or year. */
+export interface TrendBucket {
+  /** Sortable label, also the x-axis tick: "2026-08-16", "2026-W33", "2026-08", "2026". */
+  bucket: string;
+  ritase: number;
+  crossings: number;
+  /** Ritase split by checkpoint. Absent keys mean zero for that bucket. */
+  perCheckpoint: Record<string, number>;
+}
+
+/**
+ * Ritase over time, bucketed by mining day (06:00–06:00).
+ *
+ * Empty buckets are present with zeroes — a day the site hauled nothing is a
+ * fact worth plotting, and omitting it would draw the line straight over a
+ * stoppage.
+ */
+export interface RitaseTrend {
+  granularity: TrendGranularity;
+  startDate: string | null;
+  endDate: string | null;
+  /** The hour the mining day rolls over. 6 — carried so the UI can say so. */
+  dayStartHour: number;
+  totalRitase: number;
+  totalCrossings: number;
+  /** Crossings with no recorded time; they cannot be placed on the timeline. */
+  undatedCrossings: number;
+  checkpoints: string[];
+  series: TrendBucket[];
 }
 
 /** One truck's whereabouts, decided by its most recent crossing. */

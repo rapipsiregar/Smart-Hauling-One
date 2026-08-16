@@ -160,3 +160,30 @@ def test_an_unknown_granularity_falls_back_to_day(monkeypatch):
 
 def test_an_empty_range_yields_an_empty_series():
     assert _fill_buckets([], {}, "day") == []
+
+
+def test_a_requested_window_is_shown_in_full(monkeypatch):
+    """Asking for a week and getting one bar hides the six idle days.
+
+    The idle days are the more useful half of that answer, so an explicit
+    window wins even where it is wider than the data.
+    """
+    rows = _one_cycle(1, "HD 2152", "2026-08-16", CP1, AREA_SOUTH)
+    monkeypatch.setattr("app.services.reference.build_crossings", lambda **k: rows)
+
+    trend = build_ritase_trend(
+        granularity="day", start_date="2026-08-14", end_date="2026-08-18"
+    )
+    assert [b["bucket"] for b in trend["series"]] == [
+        "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18",
+    ]
+    assert [b["ritase"] for b in trend["series"]] == [0, 0, 1, 0, 0]
+
+
+def test_a_window_with_no_data_at_all_still_draws_its_days(monkeypatch):
+    monkeypatch.setattr("app.services.reference.build_crossings", lambda **k: [])
+    trend = build_ritase_trend(
+        granularity="day", start_date="2026-08-14", end_date="2026-08-16"
+    )
+    assert len(trend["series"]) == 3
+    assert trend["totalRitase"] == 0

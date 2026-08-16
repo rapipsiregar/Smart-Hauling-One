@@ -340,7 +340,17 @@ def build_ritase_trend(
             checkpoint = pair["in"].get("checkpoint") or UNASSIGNED_CHECKPOINT
             entry["perCheckpoint"][checkpoint] = entry["perCheckpoint"].get(checkpoint, 0) + 1
 
-    series = _fill_buckets(days_seen, dated, granularity)
+    # When the caller named a window, the series spans THAT window -- asking for
+    # 30 days and getting one bar because only one day had haulage hides the
+    # 29 days of nothing, which is the more important half of the answer.
+    # Without a window, fall back to the observed extent.
+    requested_from = mining_day.parse_dt(start_date)
+    requested_to = mining_day.parse_dt(end_date)
+    series = _fill_buckets(
+        days_seen, dated, granularity,
+        first=requested_from.date() if requested_from else None,
+        last=requested_to.date() if requested_to else None,
+    )
     return {
         "granularity": granularity,
         "startDate": start_date,
@@ -364,12 +374,26 @@ def _by_hull(crossings: list[dict]) -> dict[str, list[dict]]:
     return grouped
 
 
-def _fill_buckets(days_seen: list, dated: dict[str, dict], granularity: str) -> list[dict]:
-    """The observed buckets in order, with the empty ones in between filled in."""
-    if not days_seen:
+def _fill_buckets(
+    days_seen: list,
+    dated: dict[str, dict],
+    granularity: str,
+    first=None,
+    last=None,
+) -> list[dict]:
+    """Every bucket in the range, in order, empty ones included.
+
+    ``first``/``last`` are the window the caller asked for; either falling back
+    to the observed extent when not given. An explicit window wins even where it
+    is wider than the data, because "we hauled nothing those days" is an answer
+    and a missing bar is not.
+    """
+    bounds = [d for d in (first, last) if d is not None]
+    if not days_seen and not bounds:
         return []
-    cursor = mining_day.bucket_start(min(days_seen), granularity)
-    last = mining_day.bucket_start(max(days_seen), granularity)
+    known = days_seen + bounds
+    cursor = mining_day.bucket_start(first if first is not None else min(known), granularity)
+    last = mining_day.bucket_start(last if last is not None else max(known), granularity)
     series: list[dict] = []
     while cursor <= last:
         label = mining_day.bucket_label(cursor, granularity)
