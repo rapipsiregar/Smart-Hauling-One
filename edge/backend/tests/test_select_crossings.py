@@ -93,11 +93,30 @@ def test_no_windows_at_all_is_not_an_error() -> None:
     assert select_crossings([]) == []
 
 
-def test_an_identified_truck_wins_over_a_longer_unresolved_window() -> None:
-    """Read count breaks ties between equals, not between a match and a miss."""
+def test_truk_tak_terdaftar_tercatat_di_samping_yang_terdaftar() -> None:
+    """Dulu truk terdaftar menutup jalan bagi yang tidak terdaftar.
+
+    Aturan itu masuk akal ketika satu klip berarti satu jendela: bacaan tak
+    dikenal kemungkinan besar salah baca dari truk yang sama. Sejak jendela
+    dipisah per truk, jendela berbeda memang truk berbeda -- dan pada satu
+    rekaman antrean aturan lama menelan dua truk dengan 106 dan 74 bacaan.
+
+    9999 berjarak jauh dari 2221, jadi bukan salah baca darinya. Pusat yang
+    memutuskan bagaimana menampilkannya; gerbang berhenti membuang buktinya.
+    """
     selected = select_crossings([
         _window("HD 2221", reads=3),
         _window("UNKNOWN", outcome=UNREGISTERED, reads=30, raw="9999"),
+    ])
+
+    assert _hulls(selected) == ["HD 2221", "UNKNOWN"]
+
+
+def test_bacaan_tak_yakin_tetap_dibuang() -> None:
+    """Ambangnya sama dengan yang dipakai pusat: keyakinan 0,70."""
+    selected = select_crossings([
+        _window("HD 2221", reads=3),
+        _window("UNKNOWN", outcome=UNREGISTERED, reads=30, conf=0.4, raw="9999"),
     ])
 
     assert _hulls(selected) == ["HD 2221"]

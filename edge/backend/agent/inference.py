@@ -26,7 +26,8 @@ from collections.abc import Callable
 from agent.config import DETECT_TRIGGER_CONF, Settings, TunableStore
 from agent.live_state import LIVE
 from agent.ocr_worker import OcrJob, OcrPool
-from agent.pipeline import ACTIVE, LTR, DetectionWindow, encode_jpeg
+from agent.pipeline import ACTIVE, LTR, DetectionWindow, encode_jpeg  # noqa: F401
+from agent.tracking import TrackedWindows
 
 # How long a finished window will wait for OCR still in flight before closing
 # without it. Without a wait, a slow recogniser means every window closes with
@@ -118,7 +119,10 @@ class InferenceLoop(threading.Thread):
     ) -> None:
         super().__init__(name="inference", daemon=True)
         self.ring = ring
-        self.window = DetectionWindow(
+        # One window per truck. A single shared window merged queued trucks into
+        # one vote and recorded only the majority -- measured on a 45-second clip
+        # of a truck queue, four to five trucks became two crossings.
+        self.tracker = TrackedWindows(
             tunables,
             finalizer_queue,
             # getattr, not settings.inbound_axis: the loop is constructed with
@@ -138,7 +142,9 @@ class InferenceLoop(threading.Thread):
         self._track_id = 0
         self._crop_index = 0
         self._inflight: dict[int, int] = {}
-        self._defer_since: float | None = None
+        # Per jejak: satu truk yang OCR-nya lambat tidak boleh menahan
+        # penutupan jendela truk lain di frame yang sama.
+        self._defer_since: dict[int, float] = {}
 
     def stop(self) -> None:
         self._stop.set()
@@ -212,11 +218,12 @@ class InferenceLoop(threading.Thread):
             # A reading that landed after its window closed has nowhere to go.
             # It is still shown on the HUD above -- the sample was real -- but it
             # cannot join a vote that has already been counted.
-            if result.text is None or job.track_id != self._track_id:
+            if result.text is None:
                 continue
-            if self.window.state != ACTIVE:
-                continue
-            self.window.record_read(
+            # Routed by the track that produced the crop, so two trucks in frame
+            # together never pool their readings.
+            self.tracker.record_read(
+                job.track_id,
                 text=result.text,
                 # The exact weight formula the batch pipeline uses (SRS §3.2).
                 weight=job.det_conf * (result.ocr_conf or 0.5),
@@ -227,17 +234,18 @@ class InferenceLoop(threading.Thread):
                 now=job.ts,
                 crop_jpeg=result.crop_jpeg,
             )
-            self._publish_votes()
+            self._publish_votes(job.track_id)
 
-    def _publish_votes(self) -> None:
-        """Push the vote as it currently stands, so the HUD shows it converging."""
+    def _publish_votes(self, track_id: int) -> None:
+        """Push one track's vote as it stands, so the HUD shows it converging."""
         from vendor.ocr_utils import fuzzy_vote_distribution
 
-        reads = [(r["text"], r["weight"]) for r in self.window.reads]
+        stored = self.tracker.reads_for(track_id)
+        reads = [(r["text"], r["weight"]) for r in stored]
         if not reads:
             return
         voted, share, distribution = fuzzy_vote_distribution(reads)
-        LIVE.update_votes(self._track_id, voted, share, distribution)
+        LIVE.update_votes(track_id, voted, share, distribution)
 
     def _end_frame(self, now: float) -> None:
         """Close the window, but not while its own OCR is still in flight.
@@ -245,21 +253,26 @@ class InferenceLoop(threading.Thread):
         ``end_frame`` is what finalises a window, so deferring the call defers the
         close. With nothing in flight this is exactly the old behaviour.
         """
-        pending = self._inflight.get(self._track_id, 0)
-        if pending <= 0:
-            self._defer_since = None
-            if self.window.end_frame(now):
-                LIVE.close_track(self._track_id)
-            return
-        if self._defer_since is None:
-            self._defer_since = now
-        elif now - self._defer_since >= OCR_DRAIN_GRACE_SEC:
-            print(f"inference: closing T#{self._track_id} with {pending} crops "
+        def can_close(track_id: int) -> bool:
+            pending = self._inflight.get(track_id, 0)
+            if pending <= 0:
+                self._defer_since.pop(track_id, None)
+                return True
+            since = self._defer_since.get(track_id)
+            if since is None:
+                self._defer_since[track_id] = now
+                return False
+            if now - since < OCR_DRAIN_GRACE_SEC:
+                return False
+            print(f"inference: closing T#{track_id} with {pending} crops "
                   f"still in OCR after {OCR_DRAIN_GRACE_SEC}s")
-            self._inflight[self._track_id] = 0
-            self._defer_since = None
-            if self.window.end_frame(now):
-                LIVE.close_track(self._track_id)
+            self._inflight[track_id] = 0
+            self._defer_since.pop(track_id, None)
+            return True
+
+        for track_id in self.tracker.end_frame(now, can_close=can_close):
+            LIVE.close_track(track_id)
+            self._inflight.pop(track_id, None)
 
     def run(self) -> None:
         try:
@@ -289,22 +302,22 @@ class InferenceLoop(threading.Thread):
             last_seq = seq
             now = time.monotonic()
 
-            if not self.window.should_run_yolo(now):
+            if not self.tracker.should_run_yolo(now):
                 continue
 
-            was_idle = self.window.state != ACTIVE
             boxes = self._detect(frame)
+            known = {t.id for t in self.tracker.active}
+            # Each box is matched to the truck it belongs to; a box that matches
+            # nothing opens a new track. One truck per track, so a queue of
+            # trucks no longer collapses into a single vote.
+            tracked = self.tracker.begin_frame(boxes, now, frame.shape[1])
+            for t in tracked:
+                if t.id not in known:
+                    LIVE.open_track(t.id)
 
-            if was_idle and boxes:
-                # A new truck. Open the track before begin_frame so the very first
-                # frame of the window is already labelled with the right id.
-                self._track_id += 1
-                self._crop_index = 0
-                LIVE.open_track(self._track_id)
-
-            # Published before any OCR is even queued -- this is the change the
-            # gate console exists to show: boxes appear the moment YOLO finds
-            # them, and the reading catches up afterwards.
+            # The HUD shows one track at a time; the newest is the one a
+            # technician is watching arrive.
+            self._track_id = tracked[-1].id if tracked else self._track_id
             track = self._track_id if boxes else None
             LIVE.publish_frame(
                 annotated_jpeg(frame, boxes, detail=False),
@@ -318,18 +331,13 @@ class InferenceLoop(threading.Thread):
                 ),
             )
 
-            if not self.window.begin_frame(bool(boxes), now):
-                continue
-
-            if boxes:
-                self.window.note_position(_primary_box(boxes), frame.shape[1])
-
-            # Every qualifying box is processed independently, matching the batch
-            # pipeline's `for box in results.boxes` loop -- not just the best one.
-            for box in boxes:
-                if not self.window.wants_ocr(box, now):
+            # Every tracked truck is processed independently: the crop, the vote
+            # and the evidence photo all stay with the truck they came from.
+            for tracked_truck in tracked:
+                box = tracked_truck.current_box
+                if not tracked_truck.window.wants_ocr(box, now):
                     continue
-                self.window.note_ocr(box, now)
+                tracked_truck.window.note_ocr(box, now)
                 crop = pad_crop(
                     frame, int(box["x0"]), int(box["y0"]), int(box["x1"]), int(box["y1"])
                 )
@@ -337,7 +345,7 @@ class InferenceLoop(threading.Thread):
                     continue
                 self._crop_index += 1
                 queued = self._pool.submit(OcrJob(
-                    track_id=self._track_id,
+                    track_id=tracked_truck.id,
                     crop_index=self._crop_index,
                     # Copied: the ring reuses its buffers, and a worker reading
                     # this crop several frames later would otherwise see whatever
@@ -348,7 +356,8 @@ class InferenceLoop(threading.Thread):
                     ts=now,
                 ))
                 if queued:
-                    self._inflight[self._track_id] = self._inflight.get(self._track_id, 0) + 1
-                    LIVE.note_ocr_queued(self._track_id)
+                    tid = tracked_truck.id
+                    self._inflight[tid] = self._inflight.get(tid, 0) + 1
+                    LIVE.note_ocr_queued(tid)
 
             self._end_frame(now)

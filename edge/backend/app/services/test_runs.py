@@ -35,6 +35,11 @@ from pathlib import Path
 from app import store
 from app.services import clip_sources, local_matcher
 
+# Ambang yang sama dengan pusat untuk truk tak terdaftar
+# (core/backend/app/services/edge_ingest.py). Disalin, bukan diimpor: perangkat
+# tidak boleh bergantung pada kode pusat.
+UNREGISTERED_MIN_CONFIDENCE = 0.70
+
 ACTIVE_STATUSES = ("queued", "running")
 
 # How many recent OCR attempts the live feed carries. Enough to show the reading
@@ -230,7 +235,7 @@ def _process_clip(run_id: str, clip: Path, tunables) -> tuple[list[tuple], int, 
     from agent.live_state import LIVE
     from agent.ocr_worker import OcrJob
     from agent.config import inbound_axis_from_env
-    from agent.pipeline import DetectionWindow
+    from agent.tracking import TrackedWindows
     from vendor.ocr_utils import fuzzy_vote_distribution, pad_crop
 
     engine = _engine()
@@ -240,12 +245,12 @@ def _process_clip(run_id: str, clip: Path, tunables) -> tuple[list[tuple], int, 
     # default axis would report every replayed clip's direction backwards on a
     # right-to-left gate, which is exactly the discrepancy this bench exists to
     # catch rather than introduce.
-    window = DetectionWindow(
-        tunables, queuelib.Queue(), inbound_axis=inbound_axis_from_env()
+    # One window PER TRUCK, not one per quiet period. A clip of queued trucks
+    # used to collapse into a single window and a single vote -- measured on the
+    # sample footage, four to five trucks became two crossings.
+    tracker = TrackedWindows(
+        tunables, None, inbound_axis=inbound_axis_from_env()
     )
-
-    closed: list = []
-    window._queue.put = closed.append   # collect instead of handing to a thread
 
     capture = cv2.VideoCapture(str(clip))
     fps = capture.get(cv2.CAP_PROP_FPS) or 24.0
@@ -290,7 +295,8 @@ def _process_clip(run_id: str, clip: Path, tunables) -> tuple[list[tuple], int, 
                 continue
             weight = job.det_conf * (result.ocr_conf or 0.5)
             reads.append((result.text, weight))
-            window.record_read(
+            tracker.record_read(
+                job.track_id,
                 text=result.text, weight=weight, det_conf=job.det_conf,
                 ocr_conf=result.ocr_conf or 0.0, now=job.ts, crop_jpeg=result.crop_jpeg,
             )
@@ -319,7 +325,7 @@ def _process_clip(run_id: str, clip: Path, tunables) -> tuple[list[tuple], int, 
         if frame_index % 2 == 0 or frame_index == frames_total:
             _publish(run_id, frame_index, frames_total, reads, ocr_reads, feed)
 
-        if not window.should_run_yolo(now):
+        if not tracker.should_run_yolo(now):
             continue
         boxes = loop._detect(frame)
         # Published before OCR is queued: boxes must never wait on a reading.
@@ -332,20 +338,13 @@ def _process_clip(run_id: str, clip: Path, tunables) -> tuple[list[tuple], int, 
                 if LIVE.detail_wanted() else None
             ),
         )
-        if not window.begin_frame(bool(boxes), now):
-            continue
-
-        if boxes:
-            # The virtual-center-line trajectory this bench has to exercise too
-            # (module docstring: "shipped code, not a rehearsal of it") --
-            # without this every window here reports direction=None regardless
-            # of which way the truck actually crossed in the clip.
-            window.note_position(_primary_box(boxes), frame.shape[1])
-
-        for box in boxes:
-            if not window.wants_ocr(box, now):
+        # Position and OCR are recorded against the track that owns the box, so
+        # two trucks in frame together never pool their readings.
+        for tracked in tracker.begin_frame(boxes, now, frame.shape[1]):
+            box = tracked.current_box
+            if not tracked.window.wants_ocr(box, now):
                 continue
-            window.note_ocr(box, now)
+            tracked.window.note_ocr(box, now)
             crop = pad_crop(
                 frame, int(box["x0"]), int(box["y0"]), int(box["x1"]), int(box["y1"])
             )
@@ -353,13 +352,13 @@ def _process_clip(run_id: str, clip: Path, tunables) -> tuple[list[tuple], int, 
                 continue
             crop_index += 1
             if pool.submit(OcrJob(
-                track_id=track_id, crop_index=crop_index, crop=crop.copy(),
+                track_id=tracked.id, crop_index=crop_index, crop=crop.copy(),
                 det_conf=box["conf"], frame_index=frame_index, ts=now,
             )):
                 inflight += 1
                 LIVE.note_ocr_queued(track_id)
 
-        window.end_frame(now)
+        tracker.end_frame(now)
 
     capture.release()
     # Let the queue empty before the vote is counted. Without this the clip ends,
@@ -371,12 +370,13 @@ def _process_clip(run_id: str, clip: Path, tunables) -> tuple[list[tuple], int, 
             time.sleep(0.05)
 
     # The clip ran out; close whatever is still open, as the grace period would.
-    if window.state != "IDLE" and window.window_start_ts is not None:
-        window._close_window(frame_index / fps)
+    tracker.close_all(frame_index / fps)
     # The track is left open here on purpose: the caller resolves the vote
     # against the master and closes it with the hull id, so the HUD's card goes
     # straight from "scanning" to a named truck rather than blanking in between.
-    return closed, len(reads), ocr_reads, track_id
+    # Windows carry their track id here so two trucks closing on the same frame
+    # stay apart; the caller only needs the windows themselves.
+    return [w for _, w in tracker.finished], len(reads), ocr_reads, track_id
 
 
 def _publish(run_id: str, scanned: int, total: int, reads, ocr_reads: int, feed=()) -> None:
@@ -478,11 +478,47 @@ def select_crossings(resolved: list[dict]) -> list[dict]:
         current = identified.get(entry["hull_id"])
         if current is None or rank(entry) > rank(current):
             identified[entry["hull_id"]] = entry
-    if identified:
-        return [
-            _with_observed_direction(entry, resolved)
-            for entry in identified.values()
-        ]
+    # Truk yang tidak ada di master, tetapi terbaca cukup meyakinkan.
+    #
+    # Aturan lama membuang seluruhnya begitu klip mengenali satu truk terdaftar,
+    # dengan alasan bacaan tak dikenal tidak bisa dibedakan dari salah baca truk
+    # yang sudah dihitung. Alasan itu berlaku ketika satu klip berarti satu
+    # jendela. Sejak jendela dipisah per truk, jendela yang berbeda memang truk
+    # yang berbeda -- dan pada satu rekaman antrean, aturan lama menelan dua truk
+    # dengan 106 dan 74 bacaan.
+    #
+    # Ambangnya sama dengan yang dipakai pusat untuk truk tak terdaftar
+    # (app/services/edge_ingest.py::UNREGISTERED_MIN_CONFIDENCE): empat digit
+    # bersih dengan keyakinan >= 0,70. Keputusan akhirnya tetap di pusat; gerbang
+    # hanya berhenti membuang bukti sebelum pusat sempat melihatnya.
+    from vendor.ocr_utils import _levenshtein
+
+    counted = [h.replace("HD ", "") for h in identified]
+    unknown: dict[str, dict] = {}
+    for entry in resolved:
+        code = (entry["match"].raw_code or "").strip()
+        if entry["hull_id"] != "UNKNOWN" or not code.isdigit() or len(code) != 4:
+            continue
+        if entry["result"]["confidence"] < UNREGISTERED_MIN_CONFIDENCE:
+            continue
+        # Satu huruf dari truk yang SUDAH dihitung di klip ini adalah salah baca,
+        # bukan truk lain. Inilah kasus 2254: jendela pertama membaca 2264 dengan
+        # benar, jendela kedua salah membacanya, dan tanpa penjagaan ini sebuah
+        # truk hantu tercatat dengan keyakinan penuh.
+        #
+        # Truk yang benar-benar berbeda tidak sedekat itu: pada rekaman antrean,
+        # 4540 berjarak dua dari 4529 dan 4641 berjarak empat dari 4173.
+        if any(_levenshtein(code, seen) <= 1 for seen in counted):
+            continue
+        current = unknown.get(code)
+        if current is None or rank(entry) > rank(current):
+            unknown[code] = entry
+    # Keduanya dikembalikan bersama. Sebelumnya truk terdaftar menutup jalan
+    # bagi yang tak terdaftar, sehingga satu rekaman antrean hanya menyisakan
+    # truk yang kebetulan ada di master.
+    picked = list(identified.values()) + list(unknown.values())
+    if picked:
+        return [_with_observed_direction(e, resolved) for e in picked]
 
     unresolved = [e for e in resolved if e["result"]["read_count"] > 0]
     if not unresolved:
