@@ -28,8 +28,19 @@ def _box(x0=0, y0=0, x1=100, y1=100, conf=0.9):
 
 @pytest.fixture
 def window():
-    store = TunableStore(Tunables(yolo_fps=20, ocr_fps=4, detect_window_sec=6))
-    return DetectionWindow(store, queue.Queue())
+    """A window pinned to the left-to-right axis.
+
+    Stated explicitly, not left to the default. The axis now follows the
+    device's own SMART_GATE_INBOUND_AXIS -- which is right, because a gate
+    provisioned as rtl must not silently run as ltr -- and that made these
+    assertions depend on whichever .env happened to be loaded. A test about
+    which way "left to right" reads has to name the axis it assumes, or it is
+    testing the deployment rather than the behaviour.
+    """
+    store = TunableStore(Tunables(
+        yolo_fps=20, ocr_fps=4, detect_window_sec=6, inbound_axis="ltr",
+    ))
+    return DetectionWindow(store, queue.Queue(), inbound_axis="ltr")
 
 
 def test_iou_identical_boxes_is_one():

@@ -34,6 +34,13 @@ services:
       # its own database, so clearing only the centre leaves the gates holding
       # readings the centre no longer has.
       - DEV_GATE_RESET_URLS=${DEV_GATE_RESET_URLS:-}
+      # The centre's address AS A GATE DEVICE must dial it. Display-only on the
+      # dashboard, so a technician can copy it into the device's .env -- the
+      # device needs this value before it can reach the centre at all.
+      - SMART_GATE_CORE_PUBLIC_URL=${SMART_GATE_CORE_PUBLIC_URL:-http://localhost:8000}
+      # Backups run unattended every six hours. Set true only where they are
+      # handled outside the app (managed database, volume snapshots).
+      - SMART_GATE_DISABLE_BACKUP=${SMART_GATE_DISABLE_BACKUP:-false}
     volumes:
       - ./core/backend/data:/app/data
       - ./core/backend/ai-model:/app/ai-model

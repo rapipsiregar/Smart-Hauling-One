@@ -49,7 +49,8 @@ tombol **Jalankan Uji** di konsol gerbang, mulai dari basis data kosong:
 | Nomor lambung terbaca benar | **10 / 10** |
 | Cocok persis ke master 276 unit | **10 / 10** |
 | Lintasan tercatat | **10** — satu rekaman = satu lintasan |
-| Ritase terbentuk | **5**, tanpa sisa |
+| Arah masuk/keluar benar | **10 / 10** |
+| Ritase terbentuk | **4**, dengan 2 lintasan ditandai |
 | Potongan plat tersimpan | **10 / 10** |
 | Terkirim ke pusat | **10 / 10** (HTTP 201) |
 
@@ -71,6 +72,35 @@ Lama siklus diambil dari **jam yang tercetak di rekaman**, bukan waktu pemrosesa
 ---
 
 ## Menjalankan
+
+### Di mesin baru — tiga perintah
+
+Repositori ini **sudah lengkap**: berkas `.env`, basis data awal, berkas model
+deteksi, dan sepuluh rekaman uji semuanya ikut ter-commit. Tidak ada langkah
+penyiapan manual.
+
+```bash
+git clone <repo> smart-hauling && cd smart-hauling
+make up          # bangun + jalankan keempat layanan, lalu isi master truk
+make urls        # tampilkan semua alamatnya
+```
+
+Selesai. Buka **Konsol Pusat** di `http://localhost:3000`, dan **Konsol Gerbang**
+di `http://localhost:3100`.
+
+Untuk mencobanya langsung: di Konsol Gerbang tekan **Jalankan Uji**, pilih
+rekaman, lalu lihat hasilnya muncul di Konsol Pusat.
+
+| Perintah | Kegunaan |
+| :--- | :--- |
+| `make up` | Bangun dan jalankan semuanya |
+| `make urls` | Alamat setiap konsol dan API |
+| `make logs` | Ikuti log seluruh layanan |
+| `make test` | Jalankan kedua suite pengujian |
+| `make down` | Hentikan semuanya |
+
+> **Port bentrok?** Ubah `CORE_UI_PORT`, `CORE_API_PORT`, `EDGE_UI_PORT`, atau
+> `EDGE_API_PORT` di berkas `.env` di root, lalu `make up` lagi.
 
 ### Cara yang dipakai untuk demo — pusat + gerbang, dengan OCR sungguhan
 
@@ -166,9 +196,9 @@ contoh), `make provision GATE=CAM-GATE-A` (terbitkan kunci API perangkat).
 > CORE_API_PORT=8001 make dev
 > ```
 
-> **GPU.** `pyproject.toml` menunjuk index CUDA PyTorch. Kalau venv terlanjur
-> memasang wheel CPU, deteksi tetap berjalan tapi jauh lebih lambat. Periksa
-> dengan `python -c "import torch; print(torch.cuda.is_available())"`.
+> **GPU.** Deteksi berjalan di CPU bila CUDA tidak tersedia — tetap benar, hanya
+> jauh lebih lambat. Periksa dengan
+> `python -c "import torch; print(torch.cuda.is_available())"`.
 
 ---
 
