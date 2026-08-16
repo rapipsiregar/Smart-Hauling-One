@@ -61,6 +61,20 @@ CREATE INDEX IF NOT EXISTS idx_det_vr ON detections(video_result_id);
 CREATE INDEX IF NOT EXISTS idx_vr_hull ON video_results(voted_hull_id);
 """
 
+# Indexes over columns that arrive by ALTER TABLE, so they cannot live in SCHEMA
+# above: on a fresh database that script runs BEFORE the columns exist and the
+# CREATE INDEX would fail with "no such column". Applied at the end of
+# ensure_schema instead, once every migration has run.
+WINDOW_INDEXES = (
+    # Every windowed read filters on crossed_at (the mining-day cut), so this is
+    # the index that decides whether a report costs the window or the whole table.
+    "CREATE INDEX IF NOT EXISTS idx_vr_crossed_at ON video_results(crossed_at)",
+    # One checkpoint's log over a window: the composite lets SQLite seek straight
+    # to that camera's slice instead of scanning every gate's crossings.
+    "CREATE INDEX IF NOT EXISTS idx_vr_camera_crossed "
+    "ON video_results(camera_id, crossed_at)",
+)
+
 # Additive edge-ingestion columns (docs/edge-system/SRS.md §9). Edge crossings
 # are a new producer into this same table, not a parallel data model.
 VIDEO_RESULT_EDGE_COLUMNS = {
@@ -99,6 +113,15 @@ def ensure_schema() -> None:
         conn.close()
     ensure_camera_schema()  # cameras table + video_results.camera_id
     ensure_time_schema()  # video_results.source_started_at / crossed_at
+
+    # Now that every column exists, index the ones the windowed reads filter on.
+    conn = connect()
+    try:
+        for statement in WINDOW_INDEXES:
+            conn.execute(statement)
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def start_run(model: str | None = None, input_directory: str | None = None) -> int:

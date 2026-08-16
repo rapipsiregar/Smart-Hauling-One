@@ -47,8 +47,9 @@ def fleet_master():
 
 
 @router.get("/performance-kpis")
-def performance_kpis():
-    return reference.build_performance_kpis()
+def performance_kpis(start_date: str | None = None, end_date: str | None = None):
+    """Headline counters, optionally scoped to a mining-day window."""
+    return reference.build_performance_kpis(start_date=start_date, end_date=end_date)
 
 
 @router.get("/shift-report")

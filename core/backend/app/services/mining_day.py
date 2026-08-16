@@ -25,6 +25,13 @@ DAY_START_HOUR = 6
 
 GRANULARITIES = ("day", "week", "month", "year")
 
+# How a moment is written when it is handed to SQL. Must match exactly what the
+# writers store (``app/services/edge_ingest.py::normalize_crossed_at``), because
+# the window predicate compares these as TEXT — zero-padded ISO sorts
+# lexicographically in the same order it sorts chronologically, which is what
+# lets the index on ``crossed_at`` do the work.
+SQL_TIME = "%Y-%m-%dT%H:%M:%S"
+
 
 def parse_dt(value: str | None) -> datetime | None:
     """Parse a stored/queried timestamp into a naive datetime, or None.

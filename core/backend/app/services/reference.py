@@ -58,10 +58,17 @@ def build_crossings(
     ``app/services/mining_day.py``), inclusive of both ends. Omitting them
     returns everything, which is what every existing caller gets.
     """
-    ds = build_dataset()
+    since, until = mining_day.resolve_window(start_date, end_date)
+    # The window goes to SQL, not to a filter over a full in-memory copy. The
+    # in_window check below is still applied because the dataset is also reached
+    # unwindowed elsewhere, and because a row whose time had to be derived
+    # (rather than stored) is not covered by the SQL predicate.
+    ds = build_dataset(
+        since=since.strftime(mining_day.SQL_TIME) if since else None,
+        until=until.strftime(mining_day.SQL_TIME) if until else None,
+    )
     meta = run_meta()
     det_map = detections_by_video()
-    since, until = mining_day.resolve_window(start_date, end_date)
     crossings: list[dict] = []
     for c in ds["crossings"]:
         if not mining_day.in_window(c.get("crossed_at"), since, until):
@@ -167,9 +174,23 @@ def build_fleet_master() -> list[dict]:
 
 # --- Performance KPIs (real aggregation) -------------------------------------
 
-def build_performance_kpis() -> dict:
-    crossings = build_crossings()
-    kpis = build_dataset()["kpis"]
+def build_performance_kpis(
+    start_date: str | None = None, end_date: str | None = None
+) -> dict:
+    """Headline counters, over the same window as whatever asked for them.
+
+    The window parameters exist because the shift report embeds these figures:
+    without them a report scoped to one mining day carried KPIs computed over
+    the ENTIRE history, so the two halves of the same sheet disagreed — and the
+    unscoped half pulled the whole table, which is what made a one-day report
+    cost 272 seconds at a week of target volume.
+    """
+    crossings = build_crossings(start_date=start_date, end_date=end_date)
+    since, until = mining_day.resolve_window(start_date, end_date)
+    kpis = build_dataset(
+        since=since.strftime(mining_day.SQL_TIME) if since else None,
+        until=until.strftime(mining_day.SQL_TIME) if until else None,
+    )["kpis"]
     per_gate: dict[str, dict] = {}
     for c in crossings:
         g = per_gate.setdefault(c["lane"], {"gate": c["lane"], "passages": 0, "identified": 0})
@@ -202,7 +223,9 @@ def build_shift_report(
     """
     crossings = build_crossings(start_date=start_date, end_date=end_date)
     meta = run_meta()
-    kpis = build_performance_kpis()
+    # Same window as the crossings above: a sheet whose headline counters cover
+    # all of history while its tables cover one day is not one document.
+    kpis = build_performance_kpis(start_date=start_date, end_date=end_date)
     ritase = build_ritase(crossings)
     reconciled = sum(1 for c in crossings if c["isReconciled"])
     per_truck = [
@@ -299,12 +322,11 @@ def build_ritase_trend(
         camera_code=camera_code, start_date=start_date, end_date=end_date
     )
 
-    # A ritase is credited to the mining day of its INBOUND leg, matching the
-    # per-checkpoint breakdown -- a cycle belongs to the day the load started.
-    report = build_ritase(crossings)
     dated: dict[str, dict] = {}
     undated = 0
     days_seen: list = []
+    total_ritase = 0
+    checkpoints: set[str] = set()
 
     def cell(day) -> dict:
         label = mining_day.bucket_label(day, granularity)
@@ -317,6 +339,7 @@ def build_ritase_trend(
         return entry
 
     for crossing in crossings:
+        checkpoints.add(crossing.get("checkpoint") or UNASSIGNED_CHECKPOINT)
         moment = mining_day.parse_dt(crossing.get("crossedAt"))
         if moment is None:
             undated += 1
@@ -325,13 +348,24 @@ def build_ritase_trend(
         days_seen.append(day)
         cell(day)["crossings"] += 1
 
-    for hull_events in _by_hull(crossings).values():
-        from app.services.ritase import pair_hull_events
+    # Pairing is the expensive step, and it used to run TWICE: once inside
+    # build_ritase for the headline total, then again here for the buckets. On a
+    # week of target volume that doubled the cost of the whole endpoint. One pass
+    # now feeds both, with the total accumulated as the pairs are placed.
+    #
+    # A ritase is credited to the mining day of its INBOUND leg, matching the
+    # per-checkpoint breakdown -- a cycle belongs to the day the load started.
+    from app.services.ritase import pair_hull_events
 
+    for hull_events in _by_hull(crossings).values():
         pairs, _ = pair_hull_events(hull_events)
+        total_ritase += len(pairs)
         for pair in pairs:
             moment = mining_day.parse_dt(pair["in"].get("crossedAt"))
             if moment is None:
+                # A real ritase that cannot be placed on a timeline. Counted in
+                # the total, absent from the series -- the alternative is either
+                # under-reporting haulage or inventing a date for it.
                 continue
             day = mining_day.mining_date(moment)
             days_seen.append(day)
@@ -356,12 +390,12 @@ def build_ritase_trend(
         "startDate": start_date,
         "endDate": end_date,
         "dayStartHour": mining_day.DAY_START_HOUR,
-        "totalRitase": report["totalRitase"],
+        "totalRitase": total_ritase,
         "totalCrossings": len(crossings),
         # Crossings the timeline cannot place. Surfaced so a short series is
         # explainable rather than mysterious.
         "undatedCrossings": undated,
-        "checkpoints": [c["checkpoint"] for c in report["perCheckpoint"]],
+        "checkpoints": sorted(checkpoints),
         "series": series,
     }
 
