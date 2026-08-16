@@ -49,6 +49,19 @@ def _agent(request: Request):
     return getattr(request.app.state, "agent", None)
 
 
+@router.get("/preflight")
+def preflight():
+    """Is this device configured correctly, and if not, exactly what is wrong.
+
+    Separate from /status, which answers "is it working". This answers "what is
+    stopping it" -- the question actually being asked while someone stands at
+    the gate during commissioning.
+    """
+    from app.services import preflight as preflight_service
+
+    return preflight_service.run()
+
+
 @router.get("/status")
 def status(request: Request):
     """Everything the technician standing at the gate needs in one call."""

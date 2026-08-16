@@ -9,6 +9,7 @@ import { CrossingRail } from "@/components/crossing-rail";
 import { LiveView } from "@/components/live-view";
 import { SettingsDrawer } from "@/components/settings-drawer";
 import { StatusBar } from "@/components/status-bar";
+import { PreflightPanel } from "@/components/preflight-panel";
 import { TopBar } from "@/components/top-bar";
 import { TrackPanel } from "@/components/track-panel";
 
@@ -178,6 +179,9 @@ export default function GatePage() {
        be seen might as well not be on it. Below xl the columns stack and the
        page does scroll -- that is the phone-at-the-gate case. */
     <main className="p-3 flex flex-col gap-3 min-h-screen xl:h-screen xl:overflow-hidden">
+      {/* Renders itself away once the device checks out, so a commissioned gate
+          gets its whole console back. */}
+      <PreflightPanel />
       <TopBar
         cameraCode={status?.camera_code ?? "…"}
         direction={status?.direction ?? null}

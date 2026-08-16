@@ -251,8 +251,30 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/** One commissioning check: did it pass, what was seen, and what to do. */
+export interface PreflightCheck {
+  name: string;
+  ok: boolean;
+  detail: string;
+  /** Empty when the check passed. The specific next action when it did not. */
+  fix: string;
+}
+
+/**
+ * Whether this device is configured correctly, and if not, precisely what is
+ * wrong. Distinct from `status`, which answers "is it working" — this answers
+ * "what is stopping it", the question actually asked during commissioning.
+ */
+export interface Preflight {
+  ready: boolean;
+  cameraCode: string | null;
+  coreUrl: string | null;
+  checks: PreflightCheck[];
+}
+
 export const api = {
   status: () => req<GateStatus>("/api/status"),
+  preflight: () => req<Preflight>("/api/preflight"),
   crossings: (limit = 50) => req<Crossing[]>(`/api/crossings?limit=${limit}`),
   settings: () => req<Settings>("/api/settings"),
   saveSettings: (patch: Partial<Settings>) =>

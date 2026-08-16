@@ -1,0 +1,68 @@
+# One gate. This is what runs on a Jetson at the checkpoint.
+#
+#     cd edge && ./install.sh          # first time: writes .env, checks, starts
+#     docker compose up -d             # afterwards
+#
+#     Konsol Gerbang  http://<device>:3100
+#     API perangkat   http://<device>:8100
+#
+# Deliberately separate from the repository-root compose file, which brings up
+# the core as well. A gate device has no business running the centre: it would
+# start a second database that nothing writes to, hold ports, and give a
+# technician two dashboards where only one is real.
+#
+# Every value comes from .env — see .env.example. Nothing here is site-specific,
+# so this file is the same on all four gates.
+
+name: smart-gate-edge
+
+services:
+  edge-backend:
+    build:
+      context: ./backend
+    container_name: sg-edge-backend
+    ports:
+      - "${EDGE_API_PORT:-8100}:8100"
+    environment:
+      - SMART_GATE_CAMERA_CODE=${SMART_GATE_CAMERA_CODE}
+      - SMART_GATE_INDUK_URL=${SMART_GATE_INDUK_URL}
+      - SMART_GATE_API_KEY=${SMART_GATE_API_KEY}
+      - SMART_GATE_RTSP_URL=${SMART_GATE_RTSP_URL}
+      # Which way an ARRIVING truck crosses this camera's frame. Normally left
+      # unset: the core owns it per device and pushes it on the next heartbeat,
+      # so it can be corrected from the dashboard. This is only the value used
+      # before the first config fetch lands.
+      - SMART_GATE_INBOUND_AXIS=${SMART_GATE_INBOUND_AXIS:-ltr}
+      - SMART_GATE_EDGE_DB=/srv/data/edge.db
+      - SMART_GATE_OUTBOX_DB=/srv/data/outbox.db
+      - SMART_GATE_SNAPSHOT_DIR=/srv/data/snapshots
+      - SMART_GATE_VIDEO_DIR=/srv/data/video
+      - SMART_GATE_CLIP_DIR=/srv/video-sources
+      - SMART_GATE_MODEL_PATH=${SMART_GATE_MODEL_PATH:-/srv/model/model.pt}
+      - SMART_GATE_OCR_BACKEND=${SMART_GATE_OCR_BACKEND:-ppocrv6-tiny}
+      # Detection needs a camera, a GPU and the weights. Off by default so a
+      # device can be commissioned and verified before any of that is in place.
+      - SMART_GATE_RUN_AGENT=${SMART_GATE_RUN_AGENT:-false}
+    volumes:
+      # The device's own database and outbox. Named per camera so two gates
+      # cannot share one by accident — a crossing detected at gate A appearing
+      # in gate B's history is precisely the confusion separate consoles exist
+      # to prevent.
+      - ./data/${SMART_GATE_CAMERA_CODE}:/srv/data
+      - ./backend/video-sources:/srv/video-sources:ro
+      - ./model:/srv/model:ro
+    restart: unless-stopped
+
+  edge-frontend:
+    build:
+      context: ./frontend
+      args:
+        # Baked at build time: Next.js resolves rewrites during the build, so a
+        # runtime variable here would have no effect.
+        EDGE_BACKEND_ORIGIN: http://edge-backend:8100
+    container_name: sg-edge-frontend
+    ports:
+      - "${EDGE_UI_PORT:-3100}:3100"
+    depends_on:
+      - edge-backend
+    restart: unless-stopped
