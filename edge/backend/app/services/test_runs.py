@@ -265,10 +265,15 @@ def _process_clip(run_id: str, clip: Path, tunables) -> tuple[list[tuple], int, 
     # publish, and nobody reads more than the last handful.
     feed: deque[dict] = deque(maxlen=FEED_LENGTH)
 
-    track_id = _next_track_id()
+    # Satu jejak HUD per truk, memakai id dari penjejak. Sempat tidak begitu:
+    # HUD membuka satu jejak untuk seluruh klip sementara crop dikirim dengan id
+    # penjejak, sehingga potongan gambar dan hasil bacaan mendarat pada jejak
+    # yang tidak pernah dibuka -- di layar tampak hanya kotak deteksi, tanpa
+    # potongan plat dan tanpa angka.
+    track_id = _next_track_id()          # dipakai untuk pesan status per klip
     crop_index = 0
     inflight = 0
-    LIVE.open_track(track_id)
+    opened_tracks: set[int] = set()
     wall_start = time.time()
 
     def drain() -> int:
@@ -300,8 +305,14 @@ def _process_clip(run_id: str, clip: Path, tunables) -> tuple[list[tuple], int, 
                 text=result.text, weight=weight, det_conf=job.det_conf,
                 ocr_conf=result.ocr_conf or 0.0, now=job.ts, crop_jpeg=result.crop_jpeg,
             )
-            voted, share, distribution = fuzzy_vote_distribution(list(reads))
-            LIVE.update_votes(job.track_id, voted, share, distribution)
+            # Suara jejak ini sendiri, bukan suara seluruh klip. Sempat memakai
+            # daftar klip-lebar: setiap kartu di HUD lalu memperlihatkan angka
+            # yang sama -- mayoritas seluruh rekaman -- di samping potongan plat
+            # truk yang jelas berbeda. Angka dan fotonya bertentangan di layar.
+            own = [(r["text"], r["weight"]) for r in tracker.reads_for(job.track_id)]
+            if own:
+                voted, share, distribution = fuzzy_vote_distribution(own)
+                LIVE.update_votes(job.track_id, voted, share, distribution)
         if results:
             _publish(run_id, frame_index, frames_total, reads, ocr_reads, feed)
         return len(results)
@@ -341,6 +352,9 @@ def _process_clip(run_id: str, clip: Path, tunables) -> tuple[list[tuple], int, 
         # Position and OCR are recorded against the track that owns the box, so
         # two trucks in frame together never pool their readings.
         for tracked in tracker.begin_frame(boxes, now, frame.shape[1]):
+            if tracked.id not in opened_tracks:
+                LIVE.open_track(tracked.id)
+                opened_tracks.add(tracked.id)
             box = tracked.current_box
             if not tracked.window.wants_ocr(box, now):
                 continue
@@ -356,7 +370,7 @@ def _process_clip(run_id: str, clip: Path, tunables) -> tuple[list[tuple], int, 
                 det_conf=box["conf"], frame_index=frame_index, ts=now,
             )):
                 inflight += 1
-                LIVE.note_ocr_queued(track_id)
+                LIVE.note_ocr_queued(tracked.id)
 
         tracker.end_frame(now)
 
@@ -374,9 +388,9 @@ def _process_clip(run_id: str, clip: Path, tunables) -> tuple[list[tuple], int, 
     # The track is left open here on purpose: the caller resolves the vote
     # against the master and closes it with the hull id, so the HUD's card goes
     # straight from "scanning" to a named truck rather than blanking in between.
-    # Windows carry their track id here so two trucks closing on the same frame
-    # stay apart; the caller only needs the windows themselves.
-    return [w for _, w in tracker.finished], len(reads), ocr_reads, track_id
+    # Jendela dibawa BESERTA id jejaknya: kartu HUD ditutup per truk, dengan
+    # nomor lambung truk itu sendiri. Tanpa id, kartu menggantung di "memindai".
+    return tracker.finished, len(reads), ocr_reads, sorted(opened_tracks)
 
 
 def _publish(run_id: str, scanned: int, total: int, reads, ocr_reads: int, feed=()) -> None:
@@ -428,7 +442,7 @@ def _resolve(window: tuple) -> dict:
     """
     from agent.consensus import finalize_window
 
-    start_ts, end_ts, window_reads, direction = window
+    track_id, (start_ts, end_ts, window_reads, direction) = window
     result = finalize_window(start_ts, end_ts, window_reads)
     match = local_matcher.match_reading(result["hull_id"])
     return {
@@ -436,6 +450,7 @@ def _resolve(window: tuple) -> dict:
         "match": match,
         "hull_id": match.hull_id if (match.is_registered and match.hull_id) else "UNKNOWN",
         "direction": direction,
+        "track_id": track_id,
     }
 
 
@@ -634,10 +649,11 @@ def _worker(run_id: str, clips: list[Path], camera_code: str) -> None:
                  message=f"Memproses {clip.name}")
         _set_item(run_id, index, status="processing")
         try:
-            windows, clip_reads, clip_ocr, track_id = _process_clip(run_id, clip, tunables)
+            windows, clip_reads, clip_ocr, opened = _process_clip(run_id, clip, tunables)
             _bank_clip_totals(run_id, clip_reads, clip_ocr)
             if not windows:
-                LIVE.close_track(track_id)
+                for tid in opened:
+                    LIVE.close_track(tid)
                 _set_item(run_id, index, status="unread", reads=0,
                           message="Tidak ada truk terdeteksi.")
             else:
@@ -662,7 +678,8 @@ def _worker(run_id: str, clips: list[Path], camera_code: str) -> None:
                 detected_at = None
                 selected = select_crossings([_resolve(w) for w in windows])
                 if not selected:
-                    LIVE.close_track(track_id)
+                    for tid in opened:
+                        LIVE.close_track(tid)
                     _set_item(run_id, index, status="unread", reads=0,
                               message=f"Terdeteksi tapi tidak terbaca "
                                       f"({len(windows)} window)")
@@ -670,16 +687,30 @@ def _worker(run_id: str, clips: list[Path], camera_code: str) -> None:
                     _set_run(run_id, completed=completed, failed=failed)
                     continue
                 best = None
+                outcomes = []
                 for entry in selected:
                     outcome = _record(entry, camera_code, detected_at)
+                    outcomes.append(outcome)
                     rank = (outcome["outcome"] in ("exact", "fuzzy"), outcome["reads"])
                     if best is None or rank > best[0]:
                         best = (rank, outcome)
                 result = best[1]
-                LIVE.close_track(
-                    track_id, hull_id=result["hullId"], outcome=result["outcome"],
-                    confidence=result["confidence"],
-                )
+                # Tiap kartu ditutup dengan hasil truknya sendiri; sisanya --
+                # jendela yang kalah suara -- ditutup tanpa nomor lambung
+                # daripada dibiarkan menggantung di "memindai".
+                named = {
+                    e["track_id"]: o for e, o in zip(selected, outcomes)
+                    if e.get("track_id") is not None
+                }
+                for tid in opened:
+                    hit = named.get(tid)
+                    if hit is None:
+                        LIVE.close_track(tid)
+                    else:
+                        LIVE.close_track(
+                            tid, hull_id=hit["hullId"], outcome=hit["outcome"],
+                            confidence=hit["confidence"],
+                        )
                 _set_item(
                     run_id, index,
                     status="done" if result["hullId"] != "UNKNOWN" else "unread",
