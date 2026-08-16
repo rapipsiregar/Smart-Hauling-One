@@ -290,8 +290,16 @@ export interface ShiftReport {
   totalReads: number;
   avgConfidence: number;
   perGate: GateDirectionBreakdown[];
+  /** The CP 01–CP 04 cut the sheet is reconciled by. Optional: a backend that
+   *  predates it simply omits the section rather than breaking the page. */
+  perCheckpoint?: CheckpointBreakdown[];
   perTruck: TruckRitase[];
   unpaired: UnpairedCrossing[];
+  /** The hour the mining day rolls over (6), so the export can print the cut. */
+  miningDayStartHour?: number;
+  /** The window the server actually applied; null when unbounded. */
+  startDate?: string | null;
+  endDate?: string | null;
 }
 
 export interface RitaseReport {

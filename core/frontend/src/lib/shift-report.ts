@@ -1,4 +1,4 @@
-import { GateDirectionBreakdown, PairingBasis, ShiftReport, TruckRitase, UnpairedCrossing } from "./types";
+import { CheckpointBreakdown, GateDirectionBreakdown, PairingBasis, ShiftReport, TruckRitase, UnpairedCrossing } from "./types";
 
 /** Fully-formed empty report, so the reporting UI still renders with no data. */
 export const EMPTY_SHIFT_REPORT: ShiftReport = {
@@ -111,6 +111,23 @@ export function normalizeShiftReport(raw: unknown): NormalizedShiftReport {
     }),
   );
 
+  // Absent on a backend that predates the checkpoint cut. Left undefined rather
+  // than defaulted to [], so the sheet omits the section instead of printing an
+  // empty table that reads as "no haulage anywhere".
+  const perCheckpoint = Array.isArray(r.perCheckpoint)
+    ? arr<Record<string, unknown>>(r.perCheckpoint).map(
+        (c): CheckpointBreakdown => ({
+          checkpoint: String(c.checkpoint ?? "—"),
+          ritase: num(c.ritase),
+          inbound: num(c.inbound),
+          outbound: num(c.outbound),
+          undirected: num(c.undirected),
+          crossings: num(c.crossings),
+          unidentified: num(c.unidentified),
+        }),
+      )
+    : undefined;
+
   const unpaired = arr<Record<string, unknown>>(r.unpaired).map(
     (u): UnpairedCrossing => ({
       id: num(u.id),
@@ -150,6 +167,10 @@ export function normalizeShiftReport(raw: unknown): NormalizedShiftReport {
       totalReads: num(r.totalReads),
       avgConfidence: num(r.avgConfidence),
       perGate,
+      perCheckpoint,
+      miningDayStartHour: typeof r.miningDayStartHour === "number" ? r.miningDayStartHour : 6,
+      startDate: typeof r.startDate === "string" ? r.startDate : null,
+      endDate: typeof r.endDate === "string" ? r.endDate : null,
       perTruck,
       unpaired,
     },

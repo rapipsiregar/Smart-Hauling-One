@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api-client";
 import { ShiftReport } from "@/lib/types";
 import { EMPTY_SHIFT_REPORT, normalizeShiftReport } from "@/lib/shift-report";
 import { ShiftReportModule } from "@/components/reports/shift-report-module";
+import { MiningDayWindow, todayWindow } from "@/lib/shift-metrics";
 import { RitaseMetricCards } from "@/components/ritase-metric-cards";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GuideSwap } from "@/components/ui/guide-note";
@@ -16,21 +17,38 @@ export default function ReportsPage() {
   const [report, setReport] = useState<ShiftReport>(EMPTY_SHIFT_REPORT);
   const [health, setHealth] = useState<Health>("ok");
   const [loading, setLoading] = useState(true);
+  const [refetching, setRefetching] = useState(false);
+  // The reporting window lives here, not in the module: changing it refetches,
+  // because the server is what resolves a mining day into real moments.
+  const [win, setWin] = useState<MiningDayWindow>(() => todayWindow());
+
+  const patchWindow = useCallback((patch: Partial<MiningDayWindow>) => {
+    setWin((prev) => ({ ...prev, ...patch }));
+  }, []);
 
   useEffect(() => {
-    api.getShiftReport()
+    let cancelled = false;
+    setRefetching(true);
+    api.getShiftReport(win)
       .then((raw) => {
+        if (cancelled) return;
         const { report: normalized, current } = normalizeShiftReport(raw);
         setReport(normalized);
         setHealth(current ? "ok" : "stale");
       })
       .catch((err) => {
+        if (cancelled) return;
         console.warn("Data laporan shift backend gagal dimuat:", err);
         setReport(EMPTY_SHIFT_REPORT);
         setHealth("offline");
       })
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(() => {
+        if (cancelled) return;
+        setLoading(false);
+        setRefetching(false);
+      });
+    return () => { cancelled = true; };
+  }, [win]);
 
   if (loading) {
     return (
@@ -65,7 +83,12 @@ export default function ReportsPage() {
       {health === "stale" && <StaleBackendNotice />}
 
       <div className="max-w-6xl" data-print="shell">
-        <ShiftReportModule report={report} />
+        <ShiftReportModule
+          report={report}
+          win={win}
+          onWindowChange={patchWindow}
+          loading={refetching}
+        />
       </div>
     </div>
   );

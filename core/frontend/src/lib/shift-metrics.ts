@@ -1,74 +1,91 @@
 import { ShiftReport } from "./types";
 
-export type ShiftPreset = "day" | "night" | "custom";
-
-/** The reporting window the operator scoped the sheet to. */
-export interface ShiftWindow {
-  date: string; // yyyy-mm-dd
-  startTime: string; // HH:mm
-  endTime: string; // HH:mm
-  preset: ShiftPreset;
+/**
+ * The reporting window, in MINING days.
+ *
+ * A mining day runs 06:00 to 06:00 the next morning — the site's own cut, and
+ * the one BIB's reports use. The 12-hour day/night shift presets that used to
+ * live here are gone: a sheet cut per shift splits each night's haulage across
+ * two documents and reconciles against neither.
+ *
+ * Both ends are inclusive mining dates. One date on both sides is one full
+ * working day, which is the common case.
+ *
+ * The window is now sent to the server, which resolves it against the single
+ * definition in `app/services/mining_day.py`. It used to be applied client-side
+ * as a label over an unfiltered total — the numbers did not actually change
+ * when the window did.
+ */
+export interface MiningDayWindow {
+  startDate: string; // yyyy-mm-dd
+  endDate: string; // yyyy-mm-dd
 }
 
-export const PRESET_HOURS: Record<"day" | "night", [string, string]> = {
-  day: ["06:00", "18:00"],
-  night: ["18:00", "06:00"],
-};
+/** The hour a mining day rolls over. Mirrors the server constant. */
+export const MINING_DAY_START_HOUR = 6;
 
-export const PRESET_LABEL: Record<ShiftPreset, string> = {
-  day: "Shift Siang",
-  night: "Shift Malam",
-  custom: "Kustom",
-};
-
-export function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function addDays(iso: string, days: number): string {
+export function addDays(iso: string, days: number): string {
   const d = new Date(`${iso}T00:00:00Z`);
   if (Number.isNaN(d.getTime())) return iso;
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 }
 
-function minutesOfDay(time: string): number {
-  const [h, m] = time.split(":");
-  const hh = Number(h);
-  const mm = Number(m);
-  if (!Number.isFinite(hh) || !Number.isFinite(mm)) return 0;
-  return hh * 60 + mm;
+/**
+ * Today's MINING date.
+ *
+ * Before 06:00 the working day is still yesterday's — a supervisor closing out
+ * at 03:00 is finishing the shift that began the previous evening, and opening
+ * the sheet on a day that has not started yet would show them zeros.
+ */
+export function todayIso(now: Date = new Date()): string {
+  const d = new Date(now);
+  if (d.getHours() < MINING_DAY_START_HOUR) d.setDate(d.getDate() - 1);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-/** Night shifts roll past midnight, so the window can end on the following day. */
-export function crossesMidnight(w: ShiftWindow): boolean {
-  return minutesOfDay(w.endTime) <= minutesOfDay(w.startTime);
+/** The default sheet: today's mining day. */
+export function todayWindow(now: Date = new Date()): MiningDayWindow {
+  const today = todayIso(now);
+  return { startDate: today, endDate: today };
 }
 
-export function windowEndDate(w: ShiftWindow): string {
-  return crossesMidnight(w) ? addDays(w.date, 1) : w.date;
+/** How many mining days the window spans; at least one. */
+export function windowDays(w: MiningDayWindow): number {
+  const start = Date.parse(`${w.startDate}T00:00:00Z`);
+  const end = Date.parse(`${w.endDate}T00:00:00Z`);
+  if (Number.isNaN(start) || Number.isNaN(end) || end < start) return 1;
+  return Math.round((end - start) / 86_400_000) + 1;
 }
 
-export function windowStart(w: ShiftWindow): string {
-  return `${w.date} ${w.startTime}`;
+/** Window length in hours — a mining day is a full 24. */
+export function windowHours(w: MiningDayWindow): number {
+  return windowDays(w) * 24;
 }
 
-export function windowEnd(w: ShiftWindow): string {
-  return `${windowEndDate(w)} ${w.endTime}`;
+export function windowStart(w: MiningDayWindow): string {
+  return `${w.startDate} 06:00`;
 }
 
-/** Human-readable window, collapsing the end date when it stays on the same day. */
-export function formatWindow(w: ShiftWindow): string {
-  return crossesMidnight(w)
-    ? `${windowStart(w)} → ${windowEnd(w)}`
-    : `${w.date} ${w.startTime} → ${w.endTime}`;
+/** Exclusive end: 06:00 the morning AFTER the last day in the window. */
+export function windowEnd(w: MiningDayWindow): string {
+  return `${addDays(w.endDate, 1)} 06:00`;
 }
 
-/** Window length in hours, wrapping around midnight for night shifts. */
-export function windowHours(w: ShiftWindow): number {
-  let mins = minutesOfDay(w.endTime) - minutesOfDay(w.startTime);
-  if (mins <= 0) mins += 24 * 60;
-  return Math.round((mins / 60) * 100) / 100;
+/** Human-readable window, collapsing the dates when it is a single day. */
+export function formatWindow(w: MiningDayWindow): string {
+  if (w.startDate === w.endDate) {
+    return `${w.startDate} 06:00 → ${addDays(w.startDate, 1)} 06:00`;
+  }
+  return `${windowStart(w)} → ${windowEnd(w)}`;
+}
+
+/** Short caption for the sheet header. */
+export function windowLabel(w: MiningDayWindow): string {
+  const days = windowDays(w);
+  if (days === 1) return `Hari Tambang ${w.startDate}`;
+  return `${w.startDate} s/d ${w.endDate} (${days} hari tambang)`;
 }
 
 export interface ShiftMetrics {
@@ -105,11 +122,10 @@ export function hasReportData(report: ShiftReport): boolean {
 
 /**
  * Shared filename stem for the Excel and PDF exports, e.g.
- * `LAPORAN_RITASE_2026-07-19_MALAM_1900-0700`. Callers append the extension.
+ * `LAPORAN_RITASE_HARITAMBANG_2026-08-16`. Callers append the extension.
  */
-export function shiftReportFileStem(w: ShiftWindow): string {
-  const shift = w.preset === "day" ? "SIANG" : w.preset === "night" ? "MALAM" : "KUSTOM";
-  const hhmm = (t: string) => t.replace(":", "");
-  const stem = `LAPORAN_RITASE_${w.date}_${shift}_${hhmm(w.startTime)}-${hhmm(w.endTime)}`;
+export function shiftReportFileStem(w: MiningDayWindow): string {
+  const span = w.startDate === w.endDate ? w.startDate : `${w.startDate}_sd_${w.endDate}`;
+  const stem = `LAPORAN_RITASE_HARITAMBANG_${span}`;
   return stem.replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
 }

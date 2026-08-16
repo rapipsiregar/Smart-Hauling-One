@@ -1,7 +1,7 @@
 import { ShiftReport, UnpairedCrossing } from "./types";
 import { downloadBlob } from "./download";
 import {
-  PRESET_LABEL, ShiftWindow, deriveShiftMetrics, formatWindow,
+  MiningDayWindow, windowLabel, deriveShiftMetrics, formatWindow,
   shiftReportFileStem, windowEnd, windowHours, windowStart,
 } from "./shift-metrics";
 
@@ -15,7 +15,7 @@ const REASON_LABEL: Record<UnpairedCrossing["reason"], string> = {
 const HEADER_FILL = "FF0F172A";
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
-export function shiftReportXlsxFilename(win: ShiftWindow): string {
+export function shiftReportXlsxFilename(win: MiningDayWindow): string {
   return `${shiftReportFileStem(win)}.xlsx`;
 }
 
@@ -32,7 +32,7 @@ export function shiftReportXlsxFilename(win: ShiftWindow): string {
  */
 export async function downloadShiftReportXlsx(
   report: ShiftReport,
-  win: ShiftWindow,
+  win: MiningDayWindow,
   generatedAt: Date = new Date(),
 ): Promise<string> {
   const ExcelJS = (await import("exceljs")).default;
@@ -51,7 +51,7 @@ export async function downloadShiftReportXlsx(
     { header: "Dasar", key: "d", width: 30 },
   ];
   const meta: [string, string | number, string][] = [
-    ["Shift", PRESET_LABEL[win.preset], "dipilih operator"],
+    ["Hari Tambang", windowLabel(win), "06:00 ke 06:00, siklus pelaporan tambang"],
     ["Awal jendela", windowStart(win), "dipilih operator"],
     ["Akhir jendela", windowEnd(win), "dipilih operator"],
     ["Panjang jendela (jam)", hours, "turunan"],
@@ -93,6 +93,27 @@ export async function downloadShiftReportXlsx(
     perGate.addRow({
       gate: g.gate, in: g.inbound, out: g.outbound, none: g.undirected, total,
       share: report.totalCrossings > 0 ? Math.round((total / report.totalCrossings) * 100) : 0,
+    });
+  }
+
+  // --- Per Pos Cek -----------------------------------------------------------
+  // The cut the site actually reconciles by. "Per Gate" above groups by area,
+  // where two checkpoints can share a row — fine for the map, useless for
+  // checking a per-checkpoint tally against BIB's.
+  const perCheckpoint = wb.addWorksheet("Per Pos Cek");
+  perCheckpoint.columns = [
+    { header: "Pos Cek", key: "cp", width: 22 },
+    { header: "Ritase", key: "ritase", width: 10 },
+    { header: "Masuk", key: "in", width: 10 },
+    { header: "Keluar", key: "out", width: 10 },
+    { header: "Tanpa arah", key: "none", width: 12 },
+    { header: "Lintasan", key: "crossings", width: 12 },
+    { header: "Tidak terbaca", key: "unknown", width: 14 },
+  ];
+  for (const cp of report.perCheckpoint ?? []) {
+    perCheckpoint.addRow({
+      cp: cp.checkpoint, ritase: cp.ritase, in: cp.inbound, out: cp.outbound,
+      none: cp.undirected, crossings: cp.crossings, unknown: cp.unidentified,
     });
   }
 
@@ -148,7 +169,7 @@ export async function downloadShiftReportXlsx(
     });
   }
 
-  for (const sheet of [ringkasan, perGate, perTruck, unpaired]) {
+  for (const sheet of [ringkasan, perCheckpoint, perGate, perTruck, unpaired]) {
     const header = sheet.getRow(1);
     header.font = { bold: true, color: { argb: "FFFFFFFF" } };
     header.fill = { type: "pattern", pattern: "solid", fgColor: { argb: HEADER_FILL } };
@@ -168,6 +189,6 @@ export async function downloadShiftReportXlsx(
 }
 
 /** Used by the PDF sheet header too, so both exports state the same window. */
-export function shiftWindowCaption(win: ShiftWindow): string {
+export function shiftWindowCaption(win: MiningDayWindow): string {
   return formatWindow(win);
 }

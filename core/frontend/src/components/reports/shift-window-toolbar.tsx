@@ -3,7 +3,7 @@
 import React from "react";
 import { Calendar, CheckCircle2, Clock, FileDown, FileSpreadsheet, Loader2, TriangleAlert } from "lucide-react";
 import { GuideSwap } from "@/components/ui/guide-note";
-import { ShiftWindow, windowHours } from "@/lib/shift-metrics";
+import { MiningDayWindow, windowDays } from "@/lib/shift-metrics";
 
 export interface ExportStatus {
   kind: "idle" | "ok" | "error";
@@ -11,8 +11,8 @@ export interface ExportStatus {
 }
 
 interface Props {
-  value: ShiftWindow;
-  onChange: (patch: Partial<ShiftWindow>) => void;
+  value: MiningDayWindow;
+  onChange: (patch: Partial<MiningDayWindow>) => void;
   onExportXlsx: () => void;
   onExportPdf: () => void;
   canExport: boolean;
@@ -23,39 +23,39 @@ interface Props {
 export function ShiftWindowToolbar({
   value, onChange, onExportXlsx, onExportPdf, canExport, building, status,
 }: Props) {
-  const hours = windowHours(value);
+  const days = windowDays(value);
   const blockedTitle = "Tidak ada data untuk diekspor — backend mengembalikan laporan kosong.";
 
   return (
     <GuideSwap
-      title="Jendela Shift & Ekspor"
-      note="Atur tanggal dan jam awal-akhir shift yang ingin dilaporkan, lalu unduh hasilnya sebagai Excel untuk diolah lagi, atau PDF untuk lampiran resmi. Isi laporannya mengikuti jendela waktu yang Anda pilih di sini."
+      title="Hari Tambang & Ekspor"
+      note="Pilih hari tambang yang ingin dilaporkan. Satu hari tambang dihitung pukul 06:00 pagi sampai 06:00 pagi berikutnya, mengikuti siklus pelaporan di lapangan. Angka pada laporan diambil ulang dari server sesuai rentang yang Anda pilih, lalu bisa diunduh sebagai Excel atau PDF."
     >
       <div className="space-y-2" data-print="hide">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl p-4">
-          <Field label="Tanggal Shift" icon={<Calendar size={13} />}>
+          <Field label="Dari Hari Tambang" icon={<Calendar size={13} />}>
             <input
               type="date"
-              value={value.date}
-              onChange={(e) => onChange({ date: e.target.value })}
+              value={value.startDate}
+              onChange={(e) => onChange({ startDate: e.target.value })}
               className={inputClass}
             />
           </Field>
-          <Field label="Jam Mulai" icon={<Clock size={13} />}>
+          <Field label="Sampai Hari Tambang" icon={<Calendar size={13} />}>
             <input
-              type="time"
-              value={value.startTime}
-              onChange={(e) => onChange({ startTime: e.target.value, preset: "custom" })}
+              type="date"
+              value={value.endDate}
+              onChange={(e) => onChange({ endDate: e.target.value })}
               className={inputClass}
             />
           </Field>
-          <Field label="Jam Selesai" icon={<Clock size={13} />}>
-            <input
-              type="time"
-              value={value.endTime}
-              onChange={(e) => onChange({ endTime: e.target.value, preset: "custom" })}
-              className={inputClass}
-            />
+          <Field label="Cakupan" icon={<Clock size={13} />}>
+            <p className="text-xs font-mono text-[var(--text-secondary)] py-1.5">
+              {days} hari &times; 24 jam
+              <span className="block text-[10px] text-[var(--text-dim)]">
+                mulai 06:00 tiap hari
+              </span>
+            </p>
           </Field>
           <div className="flex items-end gap-2">
             <button
@@ -83,7 +83,7 @@ export function ShiftWindowToolbar({
 
         <div className="flex items-center justify-between gap-3 px-1 min-h-[18px]">
           <span className="text-[10px] font-mono text-[var(--text-dim)]">
-            Panjang jendela: {hours} jam
+            Panjang jendela: {days * 24} jam ({days} hari tambang)
           </span>
           <span
             role="status"

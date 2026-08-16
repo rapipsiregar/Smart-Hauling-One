@@ -5,7 +5,7 @@ import {
   numericFrom, pdfSafe, stampPageFooters, titledTable,
 } from "./pdf-kit";
 import {
-  PRESET_LABEL, ShiftWindow,
+  MiningDayWindow, windowLabel,
   deriveShiftMetrics, formatWindow, shiftReportFileStem, windowHours,
 } from "./shift-metrics";
 
@@ -18,7 +18,7 @@ const REASON_LABEL: Record<UnpairedCrossing["reason"], string> = {
   "unidentified-hull": "Nomor lambung tidak terbaca",
 };
 
-export function shiftReportPdfFilename(win: ShiftWindow): string {
+export function shiftReportPdfFilename(win: MiningDayWindow): string {
   return `${shiftReportFileStem(win)}.pdf`;
 }
 
@@ -28,7 +28,7 @@ export function shiftReportPdfFilename(win: ShiftWindow): string {
  */
 export async function downloadShiftReportPdf(
   report: ShiftReport,
-  win: ShiftWindow,
+  win: MiningDayWindow,
   generatedAt: Date = new Date(),
 ): Promise<string> {
   const filename = shiftReportPdfFilename(win);
@@ -46,7 +46,7 @@ export async function downloadShiftReportPdf(
  */
 export async function renderShiftReportPdf(
   report: ShiftReport,
-  win: ShiftWindow,
+  win: MiningDayWindow,
   generatedAt: Date = new Date(),
 ): Promise<Blob> {
   const [{ jsPDF }, { autoTable }] = await Promise.all([
@@ -83,7 +83,20 @@ export async function renderShiftReportPdf(
     columnStyles: { 1: { halign: "right" }, 3: { textColor: MUTED } },
   });
 
-  y = titledTable(doc, autoTable, y, "Lalu Lintas per Pintu Gerbang", {
+  // Checkpoint first: it is the cut the site plans by and the one this sheet
+  // gets reconciled against. The per-area table below merges checkpoints that
+  // share an area, so it cannot serve that purpose.
+  if (report.perCheckpoint?.length) {
+    y = titledTable(doc, autoTable, y, "Ritase per Pos Cek", {
+      head: [["Pos Cek", "Ritase", "Masuk (IN)", "Keluar (OUT)", "Tanpa Arah", "Total Melintas"]],
+      body: report.perCheckpoint.map((cp) => [
+        cp.checkpoint, cp.ritase, cp.inbound, cp.outbound, cp.undirected, cp.crossings,
+      ]),
+      columnStyles: numericFrom(1),
+    });
+  }
+
+  y = titledTable(doc, autoTable, y, "Lalu Lintas per Area Gerbang", {
     head: [["Nama Gerbang", "Masuk (IN)", "Keluar (OUT)", "Tanpa Arah", "Total Melintas", "Porsi Trafik"]],
     body: report.perGate.map((g) => {
       const total = g.inbound + g.outbound + g.undirected;
@@ -146,7 +159,7 @@ export async function renderShiftReportPdf(
 
 /** Document header carrying the provenance an audit sheet needs. */
 function drawMasthead(
-  doc: Doc, report: ShiftReport, win: ShiftWindow, trips: number, generatedAt: Date,
+  doc: Doc, report: ShiftReport, win: MiningDayWindow, trips: number, generatedAt: Date,
 ): number {
   doc.setFont("helvetica", "normal").setFontSize(7.5).setTextColor(...MUTED);
   doc.text("SISTEM PINTAR PEMANTAUAN RITASE (ISHS)", MARGIN, MARGIN + 2);
@@ -154,7 +167,7 @@ function drawMasthead(
   doc.setFont("helvetica", "bold").setFontSize(18).setTextColor(...INK);
   doc.text("Laporan Ritase Shift Tambang", MARGIN, MARGIN + 10);
 
-  const badge = pdfSafe(PRESET_LABEL[win.preset].toUpperCase());
+  const badge = pdfSafe(windowLabel(win).toUpperCase());
   doc.setFontSize(9);
   const badgeW = doc.getTextWidth(badge) + 8;
   doc.setDrawColor(...INK).setLineWidth(0.3);
