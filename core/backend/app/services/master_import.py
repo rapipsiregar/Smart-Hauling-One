@@ -1,14 +1,14 @@
-"""Import the operator's fleet spreadsheet into the ``trucks`` master table.
+"""Import an operator's fleet spreadsheet into the ``trucks`` master table.
 
-Source: ``sources/*.xlsx`` -- the "DAFTAR KENDARAAN / UNIT" sheet PT. CK - BIB
-maintains. Layout as received:
-
-* row 9 holds the headers,
-* data starts at row 12,
-* ``No. Lambung Kend. / Unit`` (column H) carries the hull, always ``"HD" + 4 digits``.
-
-The header row is located by content rather than hardcoded, so a sheet with extra
-title rows still imports; only the column *names* are relied upon.
+Default source: ``sources/*.xlsx`` -- the "DAFTAR KENDARAAN / UNIT" sheet
+PT. CK - BIB maintains (header on row 9, data from row 12, hull always
+``"HD" + 4 digits`` in ``No. Lambung Kend. / Unit``). Other contractors'
+sheets pass their own path explicitly; each contractor's fleet is added
+alongside what's already imported rather than replacing it (see
+``import_master``'s ``replace`` flag). The header row is located by content
+rather than hardcoded, so extra title rows or a contractor's own column
+wording ("Tahun" vs "Tahun Kend. / Unit", "Keterangan" vs "Status") still
+import; only ``COLUMN_HINTS`` needs to know the label.
 
     uv run python -m app.services.master_import                 # default sources/ file
     uv run python -m app.services.master_import path/to.xlsx    # explicit
@@ -27,18 +27,27 @@ from app.repositories import truck_master_repo
 SOURCES_DIR = ROOT / "sources"
 
 # Header label -> our field. Matched case-insensitively on a prefix, because the
-# sheet's labels carry trailing units and slashes that vary between revisions.
+# sheet's labels carry trailing units and slashes that vary between revisions
+# -- and, across contractors, entirely different wording ("Tahun" vs "Tahun
+# Kend. / Unit", "Keterangan" vs "Status"). Where a sheet has both a generic and
+# a specific column for the same field (CK-BIB has both "Keterangan" and a
+# separate "Status"), the later column in reading order wins -- see
+# `parse_workbook`'s record assembly.
 COLUMN_HINTS = {
     "perusahaan": "contractor",
     "jenis kendaraan": "unit_type",
     "merek": "brand",
     "type": "model_type",
     "no. lambung": "hull_id",
-    "tahun kend": "year",
+    "tahun": "year",
+    "keterangan": "status",
     "status": "status",
 }
 
-_HULL_DIGITS = re.compile(r"(\d{4})")
+# The hull's digits, whatever their length -- CK-BIB always paints exactly 4,
+# but other contractors' sheets (e.g. PPA) mix 2-5 digit unit numbers. A hull_id
+# with anything other than exactly one digit run is unparseable, not guessed.
+_HULL_DIGITS = re.compile(r"(\d+)")
 
 
 def _clean(value) -> str | None:
@@ -95,7 +104,7 @@ def parse_workbook(path: Path, sheet: str | None = None) -> tuple[list[dict], li
         if len(digits) != 1:
             warnings.append(
                 f"row {excel_row}: hull {hull_id!r} has "
-                f"{'no' if not digits else 'more than one'} 4-digit code -- skipped"
+                f"{'no digits' if not digits else 'more than one digit run'} -- skipped"
             )
             continue
         hull_code = digits[0]
@@ -141,7 +150,15 @@ def default_source() -> Path | None:
 
 
 def import_master(path: Path | None = None, *, replace: bool = False) -> dict:
-    """Parse and persist the master registry. Returns a summary."""
+    """Parse and persist the master registry. Returns a summary.
+
+    Without ``replace``, this adds to whatever is already in ``trucks`` --
+    multiple contractors' fleets coexist in one table. Because ``hull_code``
+    must stay globally unique to match OCR, a parsed row whose code already
+    belongs to a *different* hull_id is skipped (not overwritten, not allowed
+    to abort the whole import) with a warning; the same code re-imported for
+    the same hull_id is treated as an update, same as within one sheet.
+    """
     source = path or default_source()
     if source is None or not source.is_file():
         raise SystemExit(f"no spreadsheet found (looked in {SOURCES_DIR})")
@@ -152,6 +169,20 @@ def import_master(path: Path | None = None, *, replace: bool = False) -> dict:
 
     if replace:
         truck_master_repo.clear()
+    else:
+        existing = {t["hull_code"]: t["hull_id"] for t in truck_master_repo.list_all()}
+        kept = []
+        for r in rows:
+            clash = existing.get(r["hull_code"])
+            if clash is not None and clash != r["hull_id"]:
+                warnings.append(
+                    f"hull code {r['hull_code']} ({r['hull_id']}) is already registered "
+                    f"as {clash} -- skipped, the code must be unique to match OCR"
+                )
+                continue
+            kept.append(r)
+        rows = kept
+
     result = truck_master_repo.upsert_many(rows)
     return {"source": source.name, "parsed": len(rows), "warnings": warnings, **result}
 

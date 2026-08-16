@@ -22,6 +22,7 @@ JPEG_QUALITY = 72
 _BOX_BGR = (120, 255, 90)      # detection box: green, as in the reference UI
 _LABEL_BGR = (16, 20, 24)
 _TEXT_BGR = (245, 250, 240)
+_CENTER_LINE_BGR = (0, 200, 255)  # amber: the line direction is judged against
 
 
 def annotate(frame, boxes, *, track_id: int | None = None, label: str | None = None,
@@ -46,6 +47,13 @@ def annotate(frame, boxes, *, track_id: int | None = None, label: str | None = N
         cv2.resize(frame, (int(width * factor), int(height * factor)))
         if factor < 1.0 else frame.copy()
     )
+
+    # The virtual line every gate now judges direction against (agent/pipeline.py
+    # DetectionWindow.direction): left->right of this line is inbound, the
+    # reverse is outbound. Drawn first so a box always renders on top of it.
+    canvas_height, canvas_width = canvas.shape[:2]
+    line_x = canvas_width // 2
+    cv2.line(canvas, (line_x, 0), (line_x, canvas_height), _CENTER_LINE_BGR, 1, cv2.LINE_AA)
 
     for box in boxes or ():
         x0 = int(box["x0"] * factor)

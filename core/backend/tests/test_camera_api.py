@@ -44,7 +44,7 @@ def test_camera_crud_roundtrip():
     # create
     r = client.post("/api/cameras", json={
         "camera_code": TEST_CODE, "name": "API Gate", "folder": "",
-        "direction": "outbound", "status": "online",
+        "status": "online",
         "rtsp_url": "rtsp://host/stream",
     })
     assert r.status_code == 200
@@ -53,7 +53,7 @@ def test_camera_crud_roundtrip():
     # get
     r = client.get(f"/api/cameras/{TEST_CODE}")
     assert r.status_code == 200
-    assert r.json()["direction"] == "outbound"
+    assert r.json()["name"] == "API Gate"
 
     # update
     r = client.put(f"/api/cameras/{TEST_CODE}", json={"status": "maintenance"})

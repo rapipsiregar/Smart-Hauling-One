@@ -28,18 +28,21 @@ from app.core.config import ALLOWED_VIDEO_EXTS, PLAYLIST_DIR
 from app.services import cameras as cam
 from app.services.dataset import invalidate_cache
 
+# No "direction" here anymore -- every gate accepts and detects both inbound
+# and outbound traffic, decided per truck by its virtual center line
+# (edge/backend/agent/pipeline.py), not by which gate it crossed.
 GATES = [
-    {"camera_code": "CAM-GATE-A", "name": "CK Gate A", "gate_location": "CK Gate A",
-     "folder": "gate-a", "direction": "inbound", "status": "online",
+    {"camera_code": "CAM-GATE-A", "name": "CP 01", "gate_location": "Area Selatan",
+     "folder": "gate-a", "status": "online",
      "rtsp_url": "rtsp://10.20.0.11:554/gate-a"},
-    {"camera_code": "CAM-GATE-B", "name": "CK Gate B", "gate_location": "CK Gate B",
-     "folder": "gate-b", "direction": "outbound", "status": "online",
+    {"camera_code": "CAM-GATE-B", "name": "CP 02", "gate_location": "Area Utara",
+     "folder": "gate-b", "status": "online",
      "rtsp_url": "rtsp://10.20.0.12:554/gate-b"},
-    {"camera_code": "CAM-GATE-C", "name": "CK Gate C", "gate_location": "CK Gate C",
-     "folder": "gate-c", "direction": "inbound", "status": "online",
+    {"camera_code": "CAM-GATE-C", "name": "CP 03", "gate_location": "Area Utara",
+     "folder": "gate-c", "status": "online",
      "rtsp_url": "rtsp://10.20.0.13:554/gate-c"},
-    {"camera_code": "CAM-GATE-D", "name": "CK Gate D", "gate_location": "CK Gate D",
-     "folder": "gate-d", "direction": "outbound", "status": "maintenance",
+    {"camera_code": "CAM-GATE-D", "name": "CP 04", "gate_location": "Area Selatan",
+     "folder": "gate-d", "status": "maintenance",
      "rtsp_url": "rtsp://10.20.0.14:554/gate-d"},
 ]
 

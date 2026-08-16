@@ -40,7 +40,7 @@ class WindowFinalizer(threading.Thread):
     def run(self) -> None:
         while not self._stop.is_set():
             try:
-                start_ts, end_ts, reads = self.queue.get(timeout=1.0)
+                start_ts, end_ts, reads, direction = self.queue.get(timeout=1.0)
             except queue.Empty:
                 continue
             result = finalize_window(start_ts, end_ts, reads)
@@ -52,6 +52,11 @@ class WindowFinalizer(threading.Thread):
                 "confidence": result["confidence"],
                 "read_count": result["read_count"],
                 "votes": result["votes"],
+                # Which way the truck crossed the virtual center line, decided on
+                # the device that actually has the frames (agent/pipeline.py
+                # DetectionWindow.direction). None when it never crossed inside
+                # this window -- stored as-is rather than guessed.
+                "direction": direction,
             }
             key = self.outbox.enqueue(
                 camera_code=self.camera_code,

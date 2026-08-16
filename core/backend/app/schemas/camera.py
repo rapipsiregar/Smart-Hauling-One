@@ -16,7 +16,6 @@ class CameraBase(BaseModel):
     camera_code: str | None = None
     name: str | None = None
     gate_location: str | None = None
-    direction: str | None = None
     status: str | None = None
     rtsp_url: str | None = None
     ip_host: str | None = None

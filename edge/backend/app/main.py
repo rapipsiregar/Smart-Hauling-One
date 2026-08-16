@@ -25,26 +25,20 @@ AGENT_ENABLED = os.environ.get("SMART_GATE_RUN_AGENT", "true").lower() in ("1", 
 
 
 def _sync_from_core() -> None:
-    """Ask the core who this gate is and which trucks exist, once, at boot.
+    """Ask the core which trucks exist, once, at boot.
 
-    Two things, because both are needed before the first detection and neither
-    can be worked out on the device:
-
-    * **direction** -- whether this lane is an arrival or a departure. A camera
-      code says nothing about it, it decides how every crossing this gate reports
-      is filed, and it filters the clip list a technician is offered.
-    * **the truck master** -- a device that has never synced holds no trucks, so
-      every reading resolves to UNKNOWN however well the OCR did. The pipeline
-      then looks broken when only the roster is missing.
+    A device that has never synced holds no trucks, so every reading resolves
+    to UNKNOWN however well the OCR did -- the pipeline then looks broken when
+    only the roster is missing.
 
     With the agent running, MasterSync pulls the roster anyway; this covers the
     case where it is not (SMART_GATE_RUN_AGENT=false), which is how the console
     is run on a machine with no camera. The pull is version-gated, so doing it in
     both places costs one cheap request rather than a second copy of the roster.
 
-    Deliberately not fatal and deliberately not retried here: both answers are
-    cached from last time, and a gate that refuses to start because the centre is
-    unreachable defeats the point of running a stack at the gate at all.
+    Deliberately not fatal and deliberately not retried here: the master is
+    cached from last time, and a gate that refuses to start because the centre
+    is unreachable defeats the point of running a stack at the gate at all.
     """
     from agent.config import Settings
     from agent.induk_client import IndukClient
@@ -55,14 +49,6 @@ def _sync_from_core() -> None:
     except Exception as err:
         print(f"edge: not configured to reach the core ({err})")
         return
-
-    try:
-        config = client.get_config()
-        clip_sources.remember_direction(config.get("direction"))
-        clip_sources.remember_core_contact()
-        print(f"edge: gate direction from core -> {config.get('direction')!r}")
-    except Exception as err:
-        print(f"edge: gate direction not fetched ({err}); using the cached value")
 
     try:
         payload = client.get_master(known_version=store.master_version())

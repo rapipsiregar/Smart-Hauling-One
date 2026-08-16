@@ -40,7 +40,7 @@ WEB_RESULTS_DIR = DATA_DIR / "web-results"
 # --- Model -------------------------------------------------------------------
 
 AI_MODEL_DIR = ROOT / "ai-model"
-PREFERRED_MODEL_NAME = "smart-hauling-ai-v2.pt"
+PREFERRED_MODEL_NAME = "pak-shomad-v2.pt"
 
 
 def resolve_model_path() -> Path:
@@ -96,12 +96,19 @@ RECONCILE_THRESHOLD = 95.0
 UNIDENTIFIED_HULLS = {"UNKNOWN", "ERROR", ""}
 
 # Operator-managed camera columns (identity + connection + ops metadata).
+#
+# No "direction" here: a gate is not pinned to inbound or outbound at the
+# registry level anymore. Direction is decided per truck by the device's own
+# virtual center line (edge/backend/agent/pipeline.py) and reported with each
+# crossing instead -- see app/repositories/run_write_repo.py's
+# video_results.direction column. The DB still carries a legacy
+# cameras.direction column (always 'both' going forward) for old batch-run
+# rows that predate that per-crossing column; see app/services/dataset.py.
 CAMERA_FIELDS = (
-    "camera_code", "name", "gate_location", "direction", "status",
+    "camera_code", "name", "gate_location", "status",
     "rtsp_url", "ip_host", "username", "resolution", "fps",
     "folder", "install_date", "last_seen", "notes",
 )
-VALID_CAMERA_DIRECTION = {"inbound", "outbound", "both"}
 VALID_CAMERA_STATUS = {"online", "offline", "maintenance"}
 
 # --- Edge device tunables (docs/edge-system/PRD.md §9) ------------------------

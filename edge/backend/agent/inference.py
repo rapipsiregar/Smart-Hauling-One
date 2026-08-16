@@ -86,6 +86,18 @@ def build_ocr_pipeline(device: str = "cuda", backend: str | None = None):
     return ocr_backends.build(backend, device=device)
 
 
+def _primary_box(boxes: list[dict]) -> dict:
+    """The box that stands in for 'the truck' this frame, for direction tracking.
+
+    Largest area, matching the single-track-per-window assumption the rest of
+    this loop already makes (one ``_track_id`` per open window). Multiple boxes
+    in the same frame are usually the same truck at different YOLO confidences
+    or a partial second detection at the frame's edge, not two trucks sharing a
+    lane -- the biggest box is the one most likely to be the whole vehicle.
+    """
+    return max(boxes, key=lambda b: (b["x1"] - b["x0"]) * (b["y1"] - b["y0"]))
+
+
 class DummyYOLO:
     def predict(self, frame, conf=0.5, verbose=False):
         return []
@@ -302,6 +314,9 @@ class InferenceLoop(threading.Thread):
 
             if not self.window.begin_frame(bool(boxes), now):
                 continue
+
+            if boxes:
+                self.window.note_position(_primary_box(boxes), frame.shape[1])
 
             # Every qualifying box is processed independently, matching the batch
             # pipeline's `for box in results.boxes` loop -- not just the best one.

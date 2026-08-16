@@ -58,6 +58,15 @@ class CrossingPayload(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
     read_count: int = Field(ge=0)
     votes: list[VoteEntry]
+    # 'inbound' (left->right across the gate's virtual center line) or
+    # 'outbound' (right->left), decided on the device from the truck's own
+    # path through the frame (edge/backend/agent/pipeline.py
+    # DetectionWindow.direction) -- no gate is pinned to a fixed direction
+    # anymore. None when the truck never crossed the line inside this window;
+    # stored as-is rather than guessed, same precedent as hull_id=UNKNOWN.
+    #
+    # Optional so a device running older firmware still submits successfully.
+    direction: Literal["inbound", "outbound"] | None = None
 
 
 class LiveSessionRef(BaseModel):

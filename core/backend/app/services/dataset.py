@@ -165,17 +165,29 @@ def _build_crossing(
     cam = by_id.get(stored_camera_id) if stored_camera_id is not None else None
     if cam is None:
         cam = _resolve_camera(vid, by_folder, folder_map)
-    if cam is not None:
-        lane = cam.get("gate_location") or cam.get("name") or "Unassigned Gate"
-        cam_dir = cam.get("direction")
-        # Only a camera pinned to a single direction tells us which way the
-        # truck went. A 'both' camera, or no camera at all, does not — such a
-        # crossing stays undirected instead of being given an invented
-        # direction, and is excluded from ritase pairing.
-        direction = cam_dir if cam_dir in ("inbound", "outbound") else None
-    else:
-        lane = "Unassigned Gate"
+    lane = (
+        cam.get("gate_location") or cam.get("name") or "Unassigned Gate"
+        if cam is not None else "Unassigned Gate"
+    )
+    own_direction = r.get("direction")
+    if own_direction in ("inbound", "outbound"):
+        direction = own_direction
+    elif r.get("source") == "edge":
+        # An edge crossing always reports its own reading (device's virtual
+        # center line, edge/backend/agent/pipeline.py) -- there is no gate-level
+        # direction left to fall back to, and there must not be: a camera row's
+        # `direction` column is a historical leftover from before every gate
+        # detected both ways, and honouring it here would silently resurrect
+        # the "gate is fixed inbound/outbound" behaviour for every edge
+        # crossing whose truck genuinely never crossed the line. None is the
+        # correct, final answer for those -- not something to paper over.
         direction = None
+    else:
+        # Batch rows predate the per-crossing column entirely and were really
+        # filmed at a camera pinned to one direction at the time, so the
+        # camera's own value is the honest answer for them.
+        cam_dir = cam.get("direction") if cam is not None else None
+        direction = cam_dir if cam_dir in ("inbound", "outbound") else None
 
     return {
         "id": idx + 1,

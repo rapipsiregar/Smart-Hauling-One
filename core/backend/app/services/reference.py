@@ -9,6 +9,7 @@ to match the frontend's TypeScript contract exactly.
 from __future__ import annotations
 
 from app.core.config import RECONCILE_THRESHOLD
+from app.repositories import truck_master_repo
 from app.repositories.video_results_repo import detections_by_video, run_meta
 from app.services.cctv import build_cctv_detections  # re-exported; see routers
 from app.services.dataset import build_dataset, filter_by_camera
@@ -17,6 +18,7 @@ from app.services.ritase import build_ritase
 __all__ = [
     "build_crossings",
     "build_fleet",
+    "build_fleet_master",
     "build_performance_kpis",
     "build_shift_report",
     "build_ritase_report",
@@ -107,6 +109,25 @@ def build_fleet(
         }
         fleet = [f for f in fleet if f["hullId"] in seen_at]
     return fleet
+
+
+def build_fleet_master() -> list[dict]:
+    """The full ``trucks`` registry, as-is — every field the operator's own
+    spreadsheet carries, for manual verification rather than activity analysis.
+    """
+    return [
+        {
+            "hullId": t["hull_id"],
+            "hullCode": t["hull_code"],
+            "contractor": t.get("contractor"),
+            "unitType": t.get("unit_type"),
+            "brand": t.get("brand"),
+            "modelType": t.get("model_type"),
+            "year": t.get("year"),
+            "status": t.get("status"),
+        }
+        for t in truck_master_repo.list_all()
+    ]
 
 
 # --- Performance KPIs (real aggregation) -------------------------------------

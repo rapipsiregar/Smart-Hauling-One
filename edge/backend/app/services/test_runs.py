@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import json
 import queue as queuelib
-import re
 import threading
 import time
 import uuid
@@ -170,7 +169,7 @@ def _engine():
         sender = OutboxSender(outbox, client, on_delivered=store.mark_synced)
         sender.start()
         _sync_master(client)
-        _sync_direction(client)
+        _sync_core_contact(client)
         _ENGINE.update(loop=loop, settings=settings, outbox=outbox, sender=sender,
                        ocr_pool=ocr_pool)
         return _ENGINE
@@ -197,19 +196,18 @@ def _sync_master(client) -> None:
         print(f"test-run: master sync failed ({err}); using the local replica")
 
 
-def _sync_direction(client) -> None:
-    """Learn from the core whether this gate is inbound or outbound.
+def _sync_core_contact(client) -> None:
+    """Note that the core answered, for /status's core_reachable fallback.
 
-    The device has no way to know on its own -- a camera code like CAM-GATE-A
-    says nothing about direction -- and it decides which clips the technician is
-    offered. Cached locally, so an unreachable core leaves the last known answer
-    in place rather than reverting to "unknown".
+    A run started from the UI is the same round trip the agent's own boot-time
+    config fetch makes, so it doubles as a reachability probe when the agent
+    itself is not running.
     """
     try:
-        clip_sources.remember_direction(client.get_config().get("direction"))
+        client.get_config()
         clip_sources.remember_core_contact()
     except Exception as err:
-        print(f"test-run: could not fetch gate direction ({err}); using cached")
+        print(f"test-run: could not reach the core ({err})")
 
 
 def engine_ready() -> bool:
@@ -228,6 +226,7 @@ def _process_clip(run_id: str, clip: Path, tunables) -> tuple[list[tuple], int, 
     import cv2
 
     from agent.annotate import annotated_jpeg
+    from agent.inference import _primary_box
     from agent.live_state import LIVE
     from agent.ocr_worker import OcrJob
     from agent.pipeline import DetectionWindow
@@ -329,6 +328,13 @@ def _process_clip(run_id: str, clip: Path, tunables) -> tuple[list[tuple], int, 
         if not window.begin_frame(bool(boxes), now):
             continue
 
+        if boxes:
+            # The virtual-center-line trajectory this bench has to exercise too
+            # (module docstring: "shipped code, not a rehearsal of it") --
+            # without this every window here reports direction=None regardless
+            # of which way the truck actually crossed in the clip.
+            window.note_position(_primary_box(boxes), frame.shape[1])
+
         for box in boxes:
             if not window.wants_ocr(box, now):
                 continue
@@ -415,13 +421,14 @@ def _resolve(window: tuple) -> dict:
     """
     from agent.consensus import finalize_window
 
-    start_ts, end_ts, window_reads = window
+    start_ts, end_ts, window_reads, direction = window
     result = finalize_window(start_ts, end_ts, window_reads)
     match = local_matcher.match_reading(result["hull_id"])
     return {
         "result": result,
         "match": match,
         "hull_id": match.hull_id if (match.is_registered and match.hull_id) else "UNKNOWN",
+        "direction": direction,
     }
 
 
@@ -495,6 +502,10 @@ def _record(resolved: dict, camera_code: str, detected_at: str | None = None) ->
         "confidence": result["confidence"],
         "read_count": result["read_count"],
         "votes": result["votes"],
+        # Same field the live loop reports (agent/pipeline.py
+        # DetectionWindow.direction) -- this bench runs the shipped code, not a
+        # rehearsal of it, so a test run has to exercise this too.
+        "direction": resolved.get("direction"),
     }
     # The outbox mints the idempotency key, so the gate's own row and the one the
     # core stores are the same crossing rather than two records of one truck.
@@ -553,11 +564,23 @@ def _worker(run_id: str, clips: list[Path], camera_code: str) -> None:
             else:
                 # A clip is one truck passing; its windows are repeat views of
                 # that pass, so the strongest one is what the clip produced.
-                stamp = re.search(r"(\d{8})_(\d{6})", clip.name)
-                detected_at = (
-                    f"{stamp.group(1)[:4]}-{stamp.group(1)[4:6]}-{stamp.group(1)[6:]}"
-                    f"T{stamp.group(2)[:2]}:{stamp.group(2)[2:4]}:{stamp.group(2)[4:]}Z"
-                ) if stamp else None
+                #
+                # The crossing is stamped with the time this gate actually read
+                # it -- `_record` defaults to now -- not with the timestamp in
+                # the clip's filename.
+                #
+                # The filename stamp was the honest-looking choice and it was
+                # wrong. Replaying the same clip produced crossings identical in
+                # time to the first run, so: two INs at the same instant paired
+                # as one ritase and one orphan, and a truck read inbound a moment
+                # ago still counted as outside because an OUT dated 2023 was
+                # "more recent". Cycle time measured the gap between two
+                # recordings from 2023 rather than between two readings.
+                #
+                # Now a run at 10:00 through the IN gate and 11:00 through the
+                # OUT gate yields a one-hour cycle, which is what actually
+                # happened here.
+                detected_at = None
                 selected = select_crossings([_resolve(w) for w in windows])
                 if not selected:
                     LIVE.close_track(track_id)

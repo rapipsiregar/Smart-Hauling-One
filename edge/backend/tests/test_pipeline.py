@@ -12,7 +12,7 @@ import pytest
 
 from agent.config import Tunables, TunableStore
 from agent.config import NO_DETECTION_GRACE_SEC, POST_WINDOW_COOLDOWN_SEC
-from agent.pipeline import ACTIVE, IDLE, DetectionWindow, iou
+from agent.pipeline import ACTIVE, IDLE, DetectionWindow, centroid_side, iou
 
 # Derived from the constants rather than written as literals: the grace period
 # is tuned against real footage (see agent/config.py), and a test that hardcodes
@@ -90,9 +90,10 @@ def test_closed_window_is_handed_to_the_finalizer(window):
         now=100.5, crop_jpeg=b"x",
     )
     window.end_frame(GAP_CLOSES)
-    start, end, reads = window._queue.get_nowait()
+    start, end, reads, direction = window._queue.get_nowait()
     assert start == 100.0 and end == GAP_CLOSES
     assert len(reads) == 1 and reads[0]["text"] == "DT-118"
+    assert direction is None
 
 
 def test_yolo_fps_throttle(window):
@@ -143,3 +144,80 @@ def test_dedup_reference_resets_between_windows(window):
     # window's dedup reference (SRS §3.2 -- "always starts clean per window").
     window.begin_frame(True, now=AFTER_COOLDOWN)
     assert window.wants_ocr(box, now=AFTER_COOLDOWN) is True
+
+
+# --- direction: the virtual center line ---------------------------------------
+# Every gate now judges inbound/outbound from a truck's own path through the
+# frame instead of a fixed per-gate setting. FRAME_W/2 is the line; a truck
+# whose centroid starts left of it and ends right of it is inbound, and the
+# mirror image is outbound.
+
+FRAME_W = 1000
+
+
+def test_centroid_side_left_and_right():
+    assert centroid_side(_box(x0=0, x1=100), FRAME_W) == "left"       # cx=50
+    assert centroid_side(_box(x0=900, x1=1000), FRAME_W) == "right"   # cx=950
+
+
+def test_centroid_exactly_on_the_line_is_right():
+    assert centroid_side(_box(x0=400, x1=600), FRAME_W) == "right"    # cx=500
+
+
+def test_left_to_right_is_inbound(window):
+    window.begin_frame(True, now=100.0)
+    window.note_position(_box(x0=0, x1=100), FRAME_W)          # left
+    window.note_position(_box(x0=850, x1=950), FRAME_W)        # right
+    assert window.direction == "inbound"
+
+
+def test_right_to_left_is_outbound(window):
+    window.begin_frame(True, now=100.0)
+    window.note_position(_box(x0=850, x1=950), FRAME_W)        # right
+    window.note_position(_box(x0=0, x1=100), FRAME_W)          # left
+    assert window.direction == "outbound"
+
+
+def test_staying_on_one_side_has_no_direction(window):
+    """Seen, but never crossed the line -- a real 'unknown', not a guess."""
+    window.begin_frame(True, now=100.0)
+    window.note_position(_box(x0=0, x1=100), FRAME_W)
+    window.note_position(_box(x0=50, x1=150), FRAME_W)
+    assert window.direction is None
+
+
+def test_a_single_qualifying_frame_has_no_direction(window):
+    window.begin_frame(True, now=100.0)
+    window.note_position(_box(x0=0, x1=100), FRAME_W)
+    assert window.direction is None
+
+
+def test_no_frames_at_all_has_no_direction(window):
+    window.begin_frame(True, now=100.0)
+    assert window.direction is None
+
+
+def test_position_is_ignored_while_idle(window):
+    """A box seen before a window opens must not seed the next one's trajectory."""
+    window.note_position(_box(x0=0, x1=100), FRAME_W)
+    assert window.direction is None
+
+
+def test_direction_is_handed_to_the_finalizer_with_the_window(window):
+    window.begin_frame(True, now=100.0)
+    window.note_position(_box(x0=0, x1=100), FRAME_W)
+    window.note_position(_box(x0=900, x1=1000), FRAME_W)
+    window.end_frame(GAP_CLOSES)
+    *_, direction = window._queue.get_nowait()
+    assert direction == "inbound"
+
+
+def test_direction_resets_between_windows(window):
+    """A truck that went inbound must not leave a stale answer for the next one."""
+    window.begin_frame(True, now=100.0)
+    window.note_position(_box(x0=0, x1=100), FRAME_W)
+    window.note_position(_box(x0=900, x1=1000), FRAME_W)
+    window.end_frame(GAP_CLOSES)
+
+    window.begin_frame(True, now=AFTER_COOLDOWN)
+    assert window.direction is None

@@ -62,25 +62,6 @@ def test_status_serves_without_the_agent(client):
     }
 
 
-def test_status_reports_which_way_the_gate_faces(client, monkeypatch):
-    """The console shows this instead of a detector tile, so it has to be there.
-
-    Direction decides whether a crossing is an arrival or a departure. A camera
-    code carries no hint of it, so the value comes from the core.
-    """
-    from app.services import clip_sources
-
-    monkeypatch.setattr(clip_sources, "get_gate_direction", lambda: "outbound")
-    assert client.get("/api/status").json()["direction"] == "outbound"
-
-
-def test_unknown_direction_is_null_not_guessed(client, monkeypatch):
-    """Guessing would mislabel every crossing this gate records."""
-    from app.services import clip_sources
-
-    monkeypatch.setattr(clip_sources, "get_gate_direction", lambda: None)
-    assert client.get("/api/status").json()["direction"] is None
-
 
 def test_master_replica_is_readable(client):
     body = client.get("/api/master").json()

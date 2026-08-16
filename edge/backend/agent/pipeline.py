@@ -22,6 +22,21 @@ from agent.config import (
 IDLE = "IDLE"
 ACTIVE = "ACTIVE"
 
+LEFT = "left"
+RIGHT = "right"
+
+
+def centroid_side(box, frame_width: float) -> str:
+    """Which half of the frame a box's centroid sits in.
+
+    The virtual center line every gate now judges direction against -- a fixed
+    frame_width/2, not a per-gate calibration. A truck's box straddling the line
+    exactly falls on the RIGHT side; that only matters for a single frame and
+    never decides a window on its own (see ``DetectionWindow.direction``).
+    """
+    cx = (box["x0"] + box["x1"]) / 2.0
+    return LEFT if cx < frame_width / 2.0 else RIGHT
+
 
 def iou(box_a, box_b) -> float:
     """Intersection-over-union of two ``(x0, y0, x1, y1)`` boxes."""
@@ -65,6 +80,10 @@ class DetectionWindow:
         self.last_ocr_box = None
         self.last_yolo_ts = 0.0
         self.last_ocr_ts = 0.0
+        # One side per qualifying frame this window has seen, in order. Not
+        # deduplicated -- only the first and last entries are ever read (see
+        # ``direction``), so a truck sitting still on one side costs nothing.
+        self.sides: list[str] = []
 
     # -- throttles ------------------------------------------------------------
 
@@ -120,6 +139,38 @@ class DetectionWindow:
         self.last_ocr_ts = now
         self.last_ocr_box = (box["x0"], box["y0"], box["x1"], box["y1"])
 
+    def note_position(self, box, frame_width: float) -> None:
+        """Record which side of the virtual center line the truck is on.
+
+        Called for every qualifying frame while the window is ACTIVE, not just
+        the ones that trigger OCR -- direction needs the box's whole path
+        through the frame, and OCR is throttled and deduped for a different
+        reason (SRS §3.2 step 3) that would starve this of samples.
+        """
+        if self.state != ACTIVE or frame_width <= 0:
+            return
+        self.sides.append(centroid_side(box, frame_width))
+
+    @property
+    def direction(self) -> str | None:
+        """'inbound' (left->right), 'outbound' (right->left), or None.
+
+        None when the truck never crossed the line inside this window -- seen
+        on only one side, or fewer than two qualifying frames. That is a real
+        third answer (SRS-style: an unresolved reading is stored as UNKNOWN
+        rather than guessed), not an error: a gate framed so the lane sits
+        entirely left or right of center, or a truck caught only at the very
+        edge of a window, should not have a direction invented for it.
+        """
+        if len(self.sides) < 2:
+            return None
+        first, last = self.sides[0], self.sides[-1]
+        if first == LEFT and last == RIGHT:
+            return "inbound"
+        if first == RIGHT and last == LEFT:
+            return "outbound"
+        return None
+
     # -- state transitions ----------------------------------------------------
 
     def _open_window(self, now: float) -> None:
@@ -127,16 +178,18 @@ class DetectionWindow:
         self.window_start_ts = now
         self.last_qualifying_ts = now
         self.reads = []
+        self.sides = []
         self.last_ocr_box = None      # dedup reference always starts clean per window
 
     def _close_window(self, now: float) -> None:
         # Hand off and return immediately -- consensus and JPEG encoding must
         # never block frame capture (SRS §3.1 Window Finalizer).
-        self._queue.put((self.window_start_ts, now, self.reads))
+        self._queue.put((self.window_start_ts, now, self.reads, self.direction))
         self.state = IDLE
         self.window_start_ts = None
         self.last_qualifying_ts = None
         self.reads = []
+        self.sides = []
         self.cooldown_until = now + POST_WINDOW_COOLDOWN_SEC
 
     def begin_frame(self, has_boxes: bool, now: float) -> bool:

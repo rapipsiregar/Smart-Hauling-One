@@ -198,7 +198,7 @@ class LocalFinalizer(threading.Thread):
 
         while not self._stop.is_set():
             try:
-                start_ts, end_ts, reads = self.queue.get(timeout=1.0)
+                start_ts, end_ts, reads, direction = self.queue.get(timeout=1.0)
             except queue.Empty:
                 continue
 
@@ -222,6 +222,10 @@ class LocalFinalizer(threading.Thread):
                 "confidence": result["confidence"],
                 "read_count": result["read_count"],
                 "votes": result["votes"],
+                # Which way the truck crossed the virtual center line
+                # (agent/pipeline.py DetectionWindow.direction). None when it
+                # never crossed inside this window.
+                "direction": direction,
             }
             key = self.outbox.enqueue(
                 camera_code=self.camera_code,

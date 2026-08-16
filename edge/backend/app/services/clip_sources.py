@@ -3,6 +3,23 @@
 A gate keeps a folder of recorded clips so a technician can prove the detection
 chain works without waiting for a truck. In production the same chain runs on
 the live RTSP stream; these files exercise it on demand.
+
+Two folders, deliberately kept apart:
+
+``CLIP_DIR``
+    This gate's own operational footage -- real trucks from this site, named with
+    the direction they were filmed in. Direction-filtered, because replaying an
+    outbound clip at an inbound gate files the crossing as an arrival.
+
+``SAMPLE_DIR``
+    Reference footage (``docs/sample-references/``), for showing the detector
+    working on trucks that are not this fleet. Read-only, offered at every gate
+    regardless of direction, and never merged into ``CLIP_DIR``: mixing them
+    would put unrelated video into the folder a gate treats as its own record,
+    and there is no undo for that.
+
+A name collision between the two resolves to the gate's own clip. The gate's
+footage is the real thing; sample material must never shadow it.
 """
 
 from __future__ import annotations
@@ -13,25 +30,19 @@ from pathlib import Path
 from app import store
 
 CLIP_DIR = Path(os.environ.get("SMART_GATE_CLIP_DIR", "./video-sources"))
+# Unset by default: a device in the field has no reason to carry reference
+# footage, and an absent folder simply yields no sample clips.
+SAMPLE_DIR = Path(os.environ.get("SMART_GATE_SAMPLE_CLIP_DIR", "")) \
+    if os.environ.get("SMART_GATE_SAMPLE_CLIP_DIR") else None
 EXTENSIONS = (".mp4", ".mkv", ".avi", ".mov")
 
+GATE_SOURCE, SAMPLE_SOURCE = "gate", "contoh"
 
-DIRECTION_META = "gate_direction"
+
 # When the core last answered, whoever asked. Recorded here because the config
 # fetch is the one call every path makes -- boot, test run, agent -- so it is the
 # honest evidence of reachability even when the agent threads are not running.
 LAST_CONTACT_META = "core_last_contact"
-
-
-def remember_direction(direction: str | None) -> None:
-    """Cache the direction the core reported for this gate.
-
-    Written whenever the device fetches its config. Cached rather than asked for
-    every time so the gate still knows which way it faces when the core is
-    unreachable -- which is the state this whole device exists to survive.
-    """
-    if direction in ("inbound", "outbound"):
-        store.set_meta(DIRECTION_META, direction)
 
 
 def remember_core_contact() -> None:
@@ -45,44 +56,17 @@ def core_last_contact() -> str | None:
     return store.get_meta(LAST_CONTACT_META)
 
 
-def get_gate_direction(override_dir: str | None = None) -> str | None:
-    """Which way this gate faces: 'inbound', 'outbound', or None if unknown.
-
-    Order: an explicit override, then what the core last told us, then the
-    camera code as a last resort. The core is the owner -- a gate registered
-    inbound at the centre but guessed outbound here would offer the technician
-    exactly the wrong clips.
-    """
-    dir_str = (override_dir or os.environ.get("SMART_GATE_DIRECTION") or "").lower()
-    if dir_str in ("in", "inbound"):
-        return "inbound"
-    if dir_str in ("out", "outbound"):
-        return "outbound"
-
-    remembered = store.get_meta(DIRECTION_META)
-    if remembered in ("inbound", "outbound"):
-        return remembered
-
-    # Last resort. Codes like CAM-GATE-A carry no direction, so this usually
-    # answers None -- and None means "show everything" rather than guess wrong.
-    code = os.environ.get("SMART_GATE_CAMERA_CODE", "").upper()
-    if any(k in code for k in ("-IN", "_IN", "INBOUND", "MASUK")):
-        return "inbound"
-    if any(k in code for k in ("-OUT", "_OUT", "OUTBOUND", "KELUAR")):
-        return "outbound"
-    return None
-
-
 _INBOUND_MARKERS = (" - IN - ", " IN ", "_IN_", "INBOUND", " MASUK ")
 _OUTBOUND_MARKERS = (" - OUT - ", " OUT ", "_OUT_", "OUTBOUND", " KELUAR ")
 
 
 def clip_direction(filename: str) -> str | None:
-    """Which way a clip was filmed, if its name says so. None when it does not.
+    """Which way a clip's name claims it was filmed, if it says so at all.
 
-    None is a real third answer, not a synonym for "wrong". Operational clips are
-    named ``2152 - In - 20231027_081402.mp4`` and carry the claim; a folder of
-    reference footage generally does not.
+    Informational only -- a gate no longer has a fixed direction to filter
+    against (agent/pipeline.py's virtual center line decides that per truck
+    from the video itself), so this is just a label the console can show next
+    to a clip, e.g. "sudah diberi label: masuk".
     """
     name = filename.upper()
     if any(marker in name for marker in _INBOUND_MARKERS):
@@ -92,62 +76,81 @@ def clip_direction(filename: str) -> str | None:
     return None
 
 
-def list_clips(direction: str | None = None) -> list[dict]:
-    """Playable clips in the device's test folder, filtered by direction.
-
-    A clip is hidden only when its name **claims the opposite direction** to this
-    gate. Running an outbound clip on an inbound gate files the crossing as an
-    arrival, which is worse than offering fewer choices -- that is what the
-    filter is for.
-
-    A clip whose name says nothing is offered. It makes no claim to contradict,
-    and treating silence as a mismatch meant a folder of unmarked footage showed
-    up as "Semua klip (0)" with nothing on screen to explain why -- the test
-    feature simply appeared broken once a gate learned its direction.
-    """
-    if not CLIP_DIR.exists():
+def _video_files(directory: Path | None) -> list[Path]:
+    if directory is None or not directory.exists():
         return []
+    return sorted(
+        p for p in directory.iterdir()
+        if p.is_file() and p.suffix.lower() in EXTENSIONS
+    )
 
-    target_dir = get_gate_direction(direction)
+
+def list_clips(direction: str | None = None) -> list[dict]:
+    """Playable clips for this device: the gate's own, then the reference set.
+
+    Every clip is offered regardless of direction -- a gate no longer has a
+    fixed direction to filter against, since the virtual center line decides
+    inbound vs. outbound per truck from the video itself (agent/pipeline.py).
+    ``direction`` is accepted and ignored rather than removed from the
+    signature: existing callers (the /video-sources?direction= query param)
+    keep working, they just no longer narrow anything.
+    """
     clips = []
-    for path in sorted(CLIP_DIR.iterdir()):
-        if not (path.is_file() and path.suffix.lower() in EXTENSIONS):
-            continue
+
+    for path in _video_files(CLIP_DIR):
         own = clip_direction(path.name)
-        if target_dir is not None and own is not None and own != target_dir:
-            continue
         clips.append({
             "name": path.name,
             "size_bytes": path.stat().st_size,
             # So the console can say which clips are direction-matched and which
             # are simply unlabelled, rather than presenting them as equivalent.
             "direction": own,
+            "source": GATE_SOURCE,
+        })
+
+    taken = {c["name"] for c in clips}
+    for path in _video_files(SAMPLE_DIR):
+        # A gate clip of the same name wins: this device's own footage is the
+        # real record, and reference material must never shadow it.
+        if path.name in taken:
+            continue
+        clips.append({
+            "name": path.name,
+            "size_bytes": path.stat().st_size,
+            "direction": None,
+            "source": SAMPLE_SOURCE,
         })
     return clips
 
 
-def resolve(names: list[str] | None) -> list[Path]:
-    """Turn requested clip names into paths, rejecting anything outside CLIP_DIR.
+def clip_path(name: str) -> Path | None:
+    """Resolve one clip name to a real file inside one of the two folders.
 
-    The name is used as a filename, so it is resolved and re-checked against the
-    clip directory: a request for ``../../etc/passwd`` must not read it.
+    The name arrives from a request and is used as a filename, so each candidate
+    is resolved and re-checked against its own directory: ``../../etc/passwd``
+    must not read it. The gate's own folder is searched first, so a sample file
+    can never stand in for a gate clip of the same name.
     """
-    if not CLIP_DIR.exists():
-        return []
-    all_available = {
-        path.name: (CLIP_DIR / path.name).resolve()
-        for path in CLIP_DIR.iterdir()
-        if path.is_file() and path.suffix.lower() in EXTENSIONS
-    }
+    for directory in (CLIP_DIR, SAMPLE_DIR):
+        if directory is None or not directory.exists():
+            continue
+        base = directory.resolve()
+        candidate = (directory / name).resolve()
+        if candidate.is_file() and candidate.parent == base:
+            return candidate
+    return None
+
+
+def resolve(names: list[str] | None) -> list[Path]:
+    """Turn requested clip names into paths, rejecting anything outside the folders."""
     # With no names given ("run everything"), default to the clips this gate
-    # would actually see. Running an outbound clip on an inbound gate files the
-    # crossing as an arrival, which is worse than offering fewer choices.
-    # An explicitly named clip is still honoured: the technician asked for it.
-    default = [c["name"] for c in list_clips()]
-    wanted = [n for n in (names or default) if n in all_available]
+    # would actually see -- which is the gate's own footage only. Sweeping the
+    # reference set into a bare "run everything" would file other people's trucks
+    # as crossings at this gate; a sample has to be asked for by name.
+    default = [c["name"] for c in list_clips() if c["source"] == GATE_SOURCE]
     paths = []
-    for name in wanted:
-        path = all_available[name]
-        if path.is_file() and path.parent == CLIP_DIR.resolve():
+    for name in (names or default):
+        path = clip_path(name)
+        if path is not None:
             paths.append(path)
     return paths

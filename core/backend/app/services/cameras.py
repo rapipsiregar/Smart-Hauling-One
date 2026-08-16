@@ -15,7 +15,6 @@ from app.core.config import (
     ALLOWED_VIDEO_EXTS,
     CAMERA_FIELDS,
     PLAYLIST_DIR,
-    VALID_CAMERA_DIRECTION,
     VALID_CAMERA_STATUS,
 )
 from app.repositories import camera_repo
@@ -116,8 +115,6 @@ def get_camera(camera_code: str) -> dict | None:
 def _clean(payload: dict) -> dict:
     """Keep only known fields; validate enums; normalise folder and identifiers."""
     data = {k: payload.get(k) for k in CAMERA_FIELDS if k in payload}
-    if "direction" in data and data["direction"] not in VALID_CAMERA_DIRECTION:
-        data["direction"] = "both"
     if "status" in data and data["status"] not in VALID_CAMERA_STATUS:
         data["status"] = "offline"
     if "folder" in data:

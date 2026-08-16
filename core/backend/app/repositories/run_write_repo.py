@@ -68,6 +68,11 @@ VIDEO_RESULT_EDGE_COLUMNS = {
     "source": "TEXT NOT NULL DEFAULT 'batch'",  # 'batch' | 'edge'
     "votes_json": "TEXT",                       # JSON array of the consensus vote breakdown
     "window_sec": "REAL",                       # actual Detection Window duration; NULL for batch
+    # 'inbound' | 'outbound' | NULL, decided per-crossing by the edge device's
+    # virtual center line (agent/pipeline.py DetectionWindow.direction), not by
+    # which gate submitted it. NULL for batch rows and for a window where the
+    # truck never crossed the line.
+    "direction": "TEXT",
 }
 
 
@@ -229,6 +234,7 @@ def insert_edge_crossing(
     window_sec: float,
     votes_json: str,
     detected_at_iso: str,
+    direction: str | None = None,
 ) -> tuple[int, bool]:
     """Insert one edge-submitted crossing.
 
@@ -245,8 +251,9 @@ def insert_edge_crossing(
         cur = conn.execute(
             "INSERT INTO video_results (run_id, video, voted_hull_id, vote_confidence, "
             "total_detections, frames_with_detections, snapshot_path, camera_id, "
-            "source_started_at, crossed_at, idempotency_key, source, votes_json, window_sec) "
-            "VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'edge', ?, ?)",
+            "source_started_at, crossed_at, idempotency_key, source, votes_json, "
+            "window_sec, direction) "
+            "VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'edge', ?, ?, ?)",
             (
                 video,
                 hull_id,
@@ -262,6 +269,7 @@ def insert_edge_crossing(
                 idempotency_key,
                 votes_json,
                 float(window_sec),
+                direction,
             ),
         )
         conn.commit()

@@ -144,11 +144,11 @@ def record_crossing(
     # guess -- see app/services/hull_matcher.py for why correction is refused
     # when two real trucks are equally close.
     #
-    # At an OUT gate the candidate set narrows to the trucks currently in the
-    # pit before falling back to the master: a truck can only leave if it came
-    # in. That knowledge exists only here -- a device sees its own gate, not who
-    # entered through the other three -- which is why this is not done on the
-    # edge alongside the rest of the matching.
+    # When this crossing reads as outbound, the candidate set narrows to the
+    # trucks currently in the pit before falling back to the master: a truck
+    # can only leave if it came in. That knowledge exists only here -- a device
+    # sees its own gate, not who entered through the other three -- which is
+    # why this is not done on the edge alongside the rest of the matching.
     #
     # Match on the raw digits when the device could not name the unit itself.
     # ``hull_id`` is "UNKNOWN" then, and matching on that string can only ever
@@ -180,6 +180,9 @@ def record_crossing(
         window_sec=payload.window_sec,
         votes_json=json.dumps([v.model_dump() for v in payload.votes]),
         detected_at_iso=normalize_crossed_at(payload.detected_at),
+        # The device's own reading of which way the truck crossed its virtual
+        # center line -- not derived from which gate submitted it.
+        direction=direction,
     )
     if created:
         # build_dataset() is memoised; without this the new crossing would not

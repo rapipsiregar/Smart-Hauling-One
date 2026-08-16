@@ -53,16 +53,13 @@ def _is_canonical_uuid4(value: str) -> bool:
 def get_edge_config(device: dict = Depends(authenticate_device)):
     """Current authoritative settings for the calling device.
 
-    ``direction`` is included so a device can learn whether it watches an
-    inbound or outbound gate. It is registry data, owned here -- asking an
-    installer to also set it in the device's environment would mean two places
-    to keep in step, and a gate configured inbound at the centre but outbound on
-    the device would silently mis-file every crossing it reports.
+    No ``direction`` here anymore: a gate is not pinned to inbound or outbound
+    at the registry level, it decides per truck from its own virtual center
+    line (agent/pipeline.py) and reports that with each crossing instead.
     """
     config = {field: device[field] for field in _CONFIG_FIELDS}
     return {
         "camera_code": device["camera_code"],
-        "direction": device.get("direction"),
         **config,
         "config_version": device["config_version"],
     }
@@ -150,9 +147,11 @@ async def post_crossing(
         camera_id=int(device["id"]),
         idempotency_key=idempotency_key,
         snapshot=raw,
-        # The gate's direction selects the matching strategy: an OUT gate tries
-        # the trucks currently in the pit before the full master.
-        direction=device.get("direction"),
+        # The device's own per-crossing reading, from its virtual center line --
+        # no gate is pinned to a fixed direction anymore. Selects the matching
+        # strategy too: an outbound reading tries the trucks currently in the
+        # pit before the full master.
+        direction=parsed.direction,
     )
 
     if created:

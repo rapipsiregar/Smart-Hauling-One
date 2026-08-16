@@ -58,18 +58,16 @@ def test_schema_adds_cameras_table_and_camera_id_column():
 def test_create_and_get_camera():
     created = cam.create_camera({
         "camera_code": TEST_CODE,
-        "name": "CK Gate A — Inbound",
+        "name": "CK Gate A",
         "gate_location": "CK Gate A",
-        "direction": "inbound",
         "status": "online",
         "rtsp_url": "rtsp://10.0.0.5:554/stream1",
         "folder": "",
     })
     assert created is not None
     assert created["camera_code"] == TEST_CODE
-    assert created["direction"] == "inbound"
     fetched = cam.get_camera(TEST_CODE)
-    assert fetched["name"] == "CK Gate A — Inbound"
+    assert fetched["name"] == "CK Gate A"
 
 
 def test_create_requires_code_and_name():

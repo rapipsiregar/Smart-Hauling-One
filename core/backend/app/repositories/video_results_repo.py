@@ -22,7 +22,8 @@ def load_video_results() -> list[dict]:
             cursor.execute(
                 """
                 SELECT video, voted_hull_id, vote_confidence, total_detections,
-                       frames_with_detections, snapshot_path, camera_id
+                       frames_with_detections, snapshot_path, camera_id, direction,
+                       source
                 FROM video_results
                 ORDER BY id ASC
                 """
@@ -41,6 +42,15 @@ def load_video_results() -> list[dict]:
                         # Authoritative when set. Edge crossings have no playlist
                         # file, so folder guessing cannot attribute them.
                         "camera_id": row[6],
+                        # Set by an edge device from its own virtual center line
+                        # (agent/pipeline.py); NULL for batch rows and undirected
+                        # windows.
+                        "direction": row[7],
+                        # 'edge' | 'batch' -- which pipeline produced this row.
+                        # app/services/dataset.py needs this to know whether a
+                        # missing direction means "ask the camera" (batch) or
+                        # "this truck genuinely never crossed the line" (edge).
+                        "source": row[8],
                     }
                     for row in rows
                 ]

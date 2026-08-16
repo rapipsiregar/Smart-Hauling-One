@@ -21,15 +21,13 @@ def _beat(client, headers, *, applied=1, status="online", queue=0, version="1.0.
 
 def test_config_returns_the_contract_shape(client, edge_camera, auth_headers):
     body = client.get("/api/edge/config", headers=auth_headers).json()
+    # No `direction` anymore: a gate is not pinned to inbound or outbound at
+    # the registry level, it reports its own per-crossing reading instead
+    # (agent/pipeline.py's virtual center line).
     assert set(body) == {
-        # `direction` is registry data the device cannot know on its own, and it
-        # decides whether a crossing counts as an arrival or a departure. Sending
-        # it here keeps one owner for it; the alternative was a second copy in
-        # each device's environment, free to drift out of step with the centre.
-        "camera_code", "direction", "yolo_fps", "ocr_fps", "detect_window_sec",
+        "camera_code", "yolo_fps", "ocr_fps", "detect_window_sec",
         "ocr_min_conf", "dedup_iou", "config_version",
     }
-    assert body["direction"] in ("inbound", "outbound", "both", None)
     assert body["yolo_fps"] == 20      # PRD §9 defaults
     assert body["ocr_fps"] == 4
     assert body["detect_window_sec"] == 6

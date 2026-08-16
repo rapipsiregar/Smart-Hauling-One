@@ -56,11 +56,6 @@ def status(request: Request):
     counts = store.crossing_counts()
     return {
         "camera_code": os.environ.get("SMART_GATE_CAMERA_CODE", "UNCONFIGURED"),
-        # Which way this lane faces, learned from the core. A camera code says
-        # nothing about it, and it is what decides whether a crossing counts as
-        # an arrival or a departure -- so the person at the gate should be able
-        # to read it off the screen rather than infer it from the gate's name.
-        "direction": clip_sources.get_gate_direction(),
         "agent_running": agent is not None and agent.is_alive(),
         # Reported separately from agent_running on purpose: the inference thread
         # can die (no CUDA, missing weights) while every other thread carries on,
@@ -192,9 +187,14 @@ def video_sources(direction: str | None = None):
 
 @router.get("/video-sources/{filename}")
 def get_video_source_file(filename: str):
-    """Serve a recorded clip video file directly for preview."""
-    file_path = (clip_sources.CLIP_DIR / filename).resolve()
-    if not file_path.is_file() or file_path.parent != clip_sources.CLIP_DIR.resolve():
+    """Serve a recorded clip video file directly for preview.
+
+    Resolution goes through clip_sources so both folders are reachable and the
+    traversal guard lives in one place -- a second copy of that check here is a
+    second place for it to be got wrong.
+    """
+    file_path = clip_sources.clip_path(filename)
+    if file_path is None:
         return JSONResponse({"error": "File not found"}, 404)
     return FileResponse(file_path, media_type="video/mp4")
 

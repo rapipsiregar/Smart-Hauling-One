@@ -113,6 +113,60 @@ def test_crossing_is_attributed_to_the_submitting_camera(client, edge_camera, au
     assert match[0]["lane"] == "Pytest North"
 
 
+def test_the_devices_own_direction_reading_is_stored_and_returned(
+    client, edge_camera, auth_headers
+):
+    """The crossing's direction comes from the device's virtual center line, not
+    from a fixed direction on the camera -- the camera has none anymore."""
+    r, key = _submit(client, auth_headers, payload=_payload(direction="outbound"))
+    assert r.status_code == 201
+    invalidate_cache()
+
+    video = f"edge-{EDGE_TEST_CODE}-{key}.jpg"
+    match = [c for c in build_dataset()["crossings"] if c["video"] == video]
+    assert len(match) == 1
+    assert match[0]["direction"] == "outbound"
+
+
+def test_a_window_that_never_crossed_the_line_stores_no_direction(
+    client, edge_camera, auth_headers
+):
+    """Omitted (or null) direction is a real answer -- the truck was seen but
+    never crossed the line -- not something to guess from the camera."""
+    r, key = _submit(client, auth_headers, payload=_payload())
+    assert r.status_code == 201
+    invalidate_cache()
+
+    video = f"edge-{EDGE_TEST_CODE}-{key}.jpg"
+    match = [c for c in build_dataset()["crossings"] if c["video"] == video]
+    assert len(match) == 1
+    assert match[0]["direction"] is None
+
+
+def test_a_stale_camera_direction_never_leaks_into_an_edge_crossing(
+    client, edge_camera, auth_headers
+):
+    """Regression: cameras.direction is a legacy column (batch-pipeline only,
+    app/services/dataset.py) surviving only because ADD COLUMN never drops one.
+    A camera provisioned before every gate detected both ways can still carry
+    an old 'inbound'/'outbound' value in that column -- and if an edge crossing
+    with no direction of its own ever fell back to it, every truck a gate saw
+    would silently resolve to that one fixed direction again, exactly the
+    per-gate behaviour this whole feature replaced."""
+    from app.repositories import camera_repo
+
+    camera_repo.update_row(EDGE_TEST_CODE, {"direction": "inbound"})
+
+    r, key = _submit(client, auth_headers, payload=_payload())
+    assert r.status_code == 201
+    invalidate_cache()
+
+    video = f"edge-{EDGE_TEST_CODE}-{key}.jpg"
+    match = [c for c in build_dataset()["crossings"] if c["video"] == video]
+    assert len(match) == 1
+    assert match[0]["direction"] is None
+
+
 # --- Timestamp compatibility with the batch pipeline --------------------------
 # The device sends ISO 8601 UTC with a `Z` (API_CONTRACT §0); the batch pipeline
 # writes `video_results.crossed_at` naive (crossing_time.ISO). Both land in the

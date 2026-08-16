@@ -64,7 +64,6 @@ def edge_camera():
         "camera_code": EDGE_TEST_CODE,
         "name": "Pytest Edge Gate",
         "gate_location": "Pytest North",
-        "direction": "inbound",
         "status": "offline",
         "folder": "pytest-edge-gate",
     })
