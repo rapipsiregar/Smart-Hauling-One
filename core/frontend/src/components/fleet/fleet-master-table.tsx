@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FleetMasterUnit } from "@/lib/types";
-import { Truck, Search, CheckCircle2, XCircle } from "lucide-react";
+import { Truck, Search, CheckCircle2, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { GlassCard } from "@/components/ui/glass-card";
 
 interface FleetMasterTableProps {
@@ -10,21 +10,28 @@ interface FleetMasterTableProps {
 }
 
 const STATUS_LAYAK = "Layak";
+const PAGE_SIZE = 15;
 
 export function FleetMasterTable({ units }: FleetMasterTableProps) {
   const [query, setQuery] = useState("");
   const [contractor, setContractor] = useState<string>("all");
   const [unitType, setUnitType] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset ke halaman 1 jika filter berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, contractor, unitType, status]);
 
   const contractors = useMemo(
     () => Array.from(new Set(units.map((u) => u.contractor).filter(Boolean))).sort() as string[],
     [units]
   );
-  const unitTypes = useMemo(
-    () => Array.from(new Set(units.map((u) => u.unitType).filter(Boolean))).sort() as string[],
-    [units]
-  );
+  const unitTypes = useMemo(() => {
+    const types = units.map((u) => u.unitType?.trim().toUpperCase()).filter(Boolean);
+    return Array.from(new Set(types)).sort() as string[];
+  }, [units]);
   const statuses = useMemo(
     () => Array.from(new Set(units.map((u) => u.status).filter(Boolean))).sort() as string[],
     [units]
@@ -34,7 +41,7 @@ export function FleetMasterTable({ units }: FleetMasterTableProps) {
     const q = query.trim().toLowerCase();
     return units.filter((u) => {
       if (contractor !== "all" && u.contractor !== contractor) return false;
-      if (unitType !== "all" && u.unitType !== unitType) return false;
+      if (unitType !== "all" && (u.unitType ?? "").trim().toUpperCase() !== unitType) return false;
       if (status !== "all" && u.status !== status) return false;
       if (!q) return true;
       return (
@@ -46,6 +53,13 @@ export function FleetMasterTable({ units }: FleetMasterTableProps) {
       );
     });
   }, [units, query, contractor, unitType, status]);
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, currentPage]);
 
   return (
     <GlassCard className="p-5 space-y-4">
@@ -198,7 +212,7 @@ export function FleetMasterTable({ units }: FleetMasterTableProps) {
                 </td>
               </tr>
             )}
-            {filtered.map((u) => {
+            {paginated.map((u) => {
               const layak = u.status === STATUS_LAYAK;
               return (
                 <tr key={u.hullId} className="hover:bg-white/[0.02] transition-colors">
@@ -244,6 +258,36 @@ export function FleetMasterTable({ units }: FleetMasterTableProps) {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between border-t border-[var(--border)] pt-4 gap-3 text-xs">
+          <div className="text-[var(--text-secondary)] font-sans">
+            Menampilkan <span className="font-semibold text-[var(--text-primary)] font-mono">{Math.min(filtered.length, (currentPage - 1) * PAGE_SIZE + 1)}</span> sampai{" "}
+            <span className="font-semibold text-[var(--text-primary)] font-mono">{Math.min(filtered.length, currentPage * PAGE_SIZE)}</span> dari{" "}
+            <span className="font-semibold text-[var(--text-primary)] font-mono">{filtered.length}</span> unit
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] hover:text-amber-500 hover:border-amber-500/40 transition-colors disabled:opacity-50 disabled:pointer-events-none cursor-pointer font-sans font-semibold"
+            >
+              <ChevronLeft className="w-4 h-4" /> Sebelumnya
+            </button>
+            <div className="font-mono text-[var(--text-primary)] px-3 py-1 bg-[var(--bg-elevated)] rounded-md border border-[var(--border)]">
+              {currentPage} / {totalPages}
+            </div>
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] hover:text-amber-500 hover:border-amber-500/40 transition-colors disabled:opacity-50 disabled:pointer-events-none cursor-pointer font-sans font-semibold"
+            >
+              Berikutnya <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </GlassCard>
   );
 }

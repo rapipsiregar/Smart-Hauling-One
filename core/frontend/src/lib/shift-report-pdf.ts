@@ -60,7 +60,7 @@ export async function renderShiftReportPdf(
 
   let y = drawMasthead(doc, report, win, m.ritase, generatedAt);
 
-  y = titledTable(doc, autoTable, y, "Ringkasan Kinerja Shift", {
+  y = titledTable(doc, autoTable, y, "Ringkasan Kinerja Harian & Periodik", {
     head: [["Keterangan", "Nilai", "Satuan", "Dasar"]],
     body: [
       ["Total Ritase Selesai (Masuk + Keluar)", m.ritase, "siklus", "terukur"],
@@ -165,7 +165,7 @@ function drawMasthead(
   doc.text("SISTEM PINTAR PEMANTAUAN RITASE (ISHS)", MARGIN, MARGIN + 2);
 
   doc.setFont("helvetica", "bold").setFontSize(18).setTextColor(...INK);
-  doc.text("Laporan Ritase Shift Tambang", MARGIN, MARGIN + 10);
+  doc.text("Laporan Ritase Harian & Periodik", MARGIN, MARGIN + 10);
 
   const badge = pdfSafe(windowLabel(win).toUpperCase());
   doc.setFontSize(9);

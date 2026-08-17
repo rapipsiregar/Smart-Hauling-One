@@ -9,11 +9,8 @@ const nextConfig: NextConfig = {
   // Standalone build lets the Docker image ship only the compiled server and
   // its pruned node_modules, instead of the full source tree.
   output: "standalone",
-  // Move the dev tools indicator out of the bottom-left corner, where it
-  // overlapped the sidebar's Online status / collapse controls.
-  devIndicators: {
-    position: "bottom-right",
-  },
+  // Disable the dev tools indicator completely to keep screenshots clean.
+  devIndicators: false,
   // This app is the workspace root; pin it so Turbopack stops warning about
   // the parent-directory lockfile it would otherwise infer.
   turbopack: {

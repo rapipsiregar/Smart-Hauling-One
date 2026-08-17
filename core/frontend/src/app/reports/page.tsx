@@ -66,15 +66,15 @@ export default function ReportsPage() {
       {/* Screen-only intro; the exported sheet carries its own masthead. */}
       <GlassCard className="p-4" data-print="hide">
         <GuideSwap
-          title="Modul Laporan Shift & Ritase"
-          note="Halaman laporan shift. Pilih jendela waktunya di atas, lalu halaman ini merangkum: berapa truk melintas, berapa yang berhasil dikenali, berapa ritase yang terbentuk, sebarannya per gate, dan lintasan mana yang belum berpasangan. Semua angkanya dihitung dari lintasan yang benar-benar tercatat, bukan perkiraan."
+          title="Modul Laporan Harian &amp; Periodik"
+          note="Halaman laporan ritase harian dan berkala. Pilih jendela waktunya di atas, lalu halaman ini merangkum: berapa truk melintas, berapa yang berhasil dikenali, berapa ritase yang terbentuk, sebarannya per gate, dan lintasan mana yang belum berpasangan. Semua angkanya dihitung dari lintasan yang benar-benar tercatat, bukan perkiraan."
         >
           <h2 className="text-lg font-bold tracking-tight uppercase flex items-center gap-2 text-[var(--text-primary)]">
             <ClipboardList className="text-amber-500" size={20} />
-            Laporan Ritase Harian &amp; Shift
+            Laporan Ritase Harian &amp; Periodik
           </h2>
           <p className="text-xs text-[var(--text-secondary)] font-mono mt-0.5">
-            Susun laporan akhir shift, tinjau lintasan yang belum berpasangan, dan ekspor ke Excel
+            Susun laporan akhir hari atau periode, tinjau lintasan yang belum berpasangan, dan ekspor ke Excel
             atau PDF untuk audit ritase.
           </p>
         </GuideSwap>

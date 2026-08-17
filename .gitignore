@@ -54,3 +54,7 @@ backups/
 Thumbs.db
 .idea/
 .vscode/
+
+# --- Folder data root untuk data unduhan/generasi ---
+/data/
+

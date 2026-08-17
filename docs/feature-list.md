@@ -329,9 +329,9 @@ This document lists all active and implemented features of the Smart Gate (Integ
 
 ## 3. Analytics & Reporting Features
 
-### 3.1 Shift Summary & Reporting Engine
-* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.1)
-* **Description**: A productivity computation engine that auto-identifies haulage cycles, categorizes gate movements into shifts, and audits contractor compliance.
+### 3.1 Daily & Periodic Reporting Engine
+* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.1 and ad-hoc request)
+* **Description**: A productivity computation engine that auto-identifies haulage cycles, categorizes gate movements into daily periods, and audits contractor compliance.
 * **Key Capabilities**:
   - **Completed Ritase Cycles**: Computes OHT loading/dumping rotations by analyzing consecutive inbound-outbound passage sequences.
   - **4-Hour Productivity shifts**: Groups crossings into six daily 4-hour slots to trace peak passage periods and skid activity.
@@ -343,6 +343,7 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Contractor Compliance Warning Email Dispatch**: Exposes endpoint `POST /api/reports/contractor-performance/send-warning` to log and broadcast warning emails to subcontractor supervisors detailing current hourly capacities, targets, and compliance percentages. Provides a form inside the Shift-Target Compliance Gauge card to specify the recipient.
   - **Subcontractor Utilization Score & Targets**: Exposes configured minimum active fleet thresholds inside the targets dialog box. Calculates contractor fleet utilization dynamically as the percentage of active registered trucks logged crossing in the last 24 hours against the configured threshold, and displays a dedicated utilization progress bar in the compliance gauges list.
   - **Visual Print-Friendly Shift Slots Summary Cards**: Displays 4-hour block shift distributions as grid-based visual summary cards instead of simple bars. Each card contains shift block hours, passage counts, relative progress, and print directive rules (`break-inside: avoid; page-break-inside: avoid;`) to prevent layout splitting across PDF pages.
+  - **Dynamic Range Presets (Harian, Mingguan, Bulanan)**: Organises quick-range selectors on the report module into Daily (Hari Ini, Kemarin), Weekly (7 Hari), and Monthly (Bulan Ini, 30 Hari) groups to facilitate clean and flexible reporting audits.
 
 
 ### 3.2 Data Reconciliation, CSV Export, & Cloud Sync Mockup

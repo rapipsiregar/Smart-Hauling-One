@@ -77,32 +77,50 @@ export function ShiftReportModule({
           <div className="flex items-center gap-2 text-amber-500">
             <FileText size={16} />
             <span className="font-mono text-xs font-black tracking-wider uppercase">
-              Laporan Ritase
+              Laporan Harian &amp; Periodik
             </span>
           </div>
           <h3 className="text-base font-bold tracking-tight uppercase text-[var(--text-primary)]">
-            Laporan Akhir Shift
+            Rekapitulasi Harian &amp; Periodik
           </h3>
         </div>
-        <div className="flex flex-wrap gap-2 items-center">
+        <div className="flex flex-wrap gap-3 items-center text-xs">
           <span className="text-[10px] font-mono text-[var(--text-dim)] mr-1">
             {windowLabel(win)}
           </span>
-          {/* Quick jumps, in mining days. No 12-hour shift presets: the sheet is
-              cut 06:00-to-06:00 now, and offering a half-day here would produce
-              a document that reconciles against nothing. */}
-          <QuickRange label="Hari Ini" onClick={() => {
-            const t = todayIso();
-            onWindowChange({ startDate: t, endDate: t });
-          }} />
-          <QuickRange label="Kemarin" onClick={() => {
-            const y = addDays(todayIso(), -1);
-            onWindowChange({ startDate: y, endDate: y });
-          }} />
-          <QuickRange label="7 Hari" onClick={() => {
-            const t = todayIso();
-            onWindowChange({ startDate: addDays(t, -6), endDate: t });
-          }} />
+          <div className="h-4 w-px bg-[var(--border)] hidden sm:block" />
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] text-[var(--text-dim)] font-medium">Harian:</span>
+            <QuickRange label="Hari Ini" onClick={() => {
+              const t = todayIso();
+              onWindowChange({ startDate: t, endDate: t });
+            }} />
+            <QuickRange label="Kemarin" onClick={() => {
+              const y = addDays(todayIso(), -1);
+              onWindowChange({ startDate: y, endDate: y });
+            }} />
+          </div>
+          <div className="h-4 w-px bg-[var(--border)]" />
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] text-[var(--text-dim)] font-medium">Mingguan:</span>
+            <QuickRange label="7 Hari" onClick={() => {
+              const t = todayIso();
+              onWindowChange({ startDate: addDays(t, -6), endDate: t });
+            }} />
+          </div>
+          <div className="h-4 w-px bg-[var(--border)]" />
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] text-[var(--text-dim)] font-medium">Bulanan:</span>
+            <QuickRange label="Bulan Ini" onClick={() => {
+              const t = todayIso();
+              const yearMonth = t.slice(0, 8);
+              onWindowChange({ startDate: `${yearMonth}01`, endDate: t });
+            }} />
+            <QuickRange label="30 Hari" onClick={() => {
+              const t = todayIso();
+              onWindowChange({ startDate: addDays(t, -29), endDate: t });
+            }} />
+          </div>
         </div>
       </div>
 

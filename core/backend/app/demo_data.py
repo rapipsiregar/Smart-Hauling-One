@@ -115,17 +115,17 @@ def _start_run(conn) -> int:
     return int(cur.lastrowid)
 
 
-def _insert_crossing(conn, *, run_id, camera_id, hull, video, crossed_at, confidence):
+def _insert_crossing(conn, *, run_id, camera_id, hull, video, crossed_at, confidence, direction):
     """One video_results row plus its per-frame detection reads."""
     reads = _read_variants(hull)
     cur = conn.execute(
         "INSERT INTO video_results (run_id, video, voted_hull_id, vote_confidence, "
         "total_detections, frames_with_detections, snapshot_path, camera_id, "
-        "source_started_at, crossed_at, source) "
-        "VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, 'batch')",
+        "source_started_at, crossed_at, source, direction) "
+        "VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, 'batch', ?)",
         (
             run_id, video, hull, confidence, len(reads), len(reads),
-            camera_id, crossed_at, crossed_at,
+            camera_id, crossed_at, crossed_at, direction
         ),
     )
     vr_id = int(cur.lastrowid)
@@ -161,9 +161,9 @@ def seed() -> dict:
             exited = entered + timedelta(minutes=CYCLE_MINUTES)
             # A high-confidence IN and a slightly lower OUT -- the outbound camera
             # sees a dusty, loaded truck, which is genuinely harder to read.
-            for gate_code, moment, conf in (
-                (in_gate, entered, 0.96),
-                (out_gate, exited, 0.91),
+            for gate_code, moment, conf, direction in (
+                (in_gate, entered, 0.96, "inbound"),
+                (out_gate, exited, 0.91, "outbound"),
             ):
                 video = f"{DEMO_PREFIX}{hull}-{gate_code}-{moment:%H%M}.mp4"
                 _insert_crossing(
@@ -174,6 +174,7 @@ def seed() -> dict:
                     video=video,
                     crossed_at=moment.strftime("%Y-%m-%dT%H:%M:%S"),
                     confidence=conf,
+                    direction=direction,
                 )
                 created += 1
         conn.commit()

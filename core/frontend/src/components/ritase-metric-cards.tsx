@@ -16,6 +16,7 @@ const ACCENTS: Record<string, string> = {
 
 const CARDS = [
   {
+    key: "passages",
     href: "/cctv-history",
     icon: <Layers className="w-5 h-5" />,
     label: "Lintasan Gate",
@@ -27,6 +28,7 @@ const CARDS = [
       "Setiap lintasan truk yang terbaca di gate. Satu lintasan bukan satu ritase — satu ritase terdiri dari lintasan masuk dan keluar.",
   },
   {
+    key: "trucks",
     href: "/ritase",
     icon: <Truck className="w-5 h-5" />,
     label: "Nomor Lambung Terbaca",
@@ -37,6 +39,7 @@ const CARDS = [
     guide: "Berapa banyak nomor lambung berbeda yang berhasil dikenali sistem.",
   },
   {
+    key: "unknown",
     href: "/cctv-history",
     icon: <AlertTriangle className="w-5 h-5" />,
     label: "Gagal Terbaca",
@@ -93,9 +96,9 @@ export function RitaseMetricCards({ currentHref }: { currentHref?: string }) {
           />
         );
         return card.href === currentHref ? (
-          <div key={card.href}>{tile}</div>
+          <div key={card.key}>{tile}</div>
         ) : (
-          <Link key={card.href} href={card.href}>
+          <Link key={card.key} href={card.href}>
             {tile}
           </Link>
         );

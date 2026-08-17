@@ -60,7 +60,7 @@ export function ShiftWindowToolbar({
             </select>
           </Field>
           <Field label="Cakupan" icon={<Clock size={13} />}>
-            <p className="text-xs font-mono text-[var(--text-secondary)] py-1.5">
+            <p className="text-xs font-mono text-[var(--text-secondary)] py-1.5 pl-8">
               {days} hari &times; 24 jam
               <span className="block text-[10px] text-[var(--text-dim)]">
                 mulai 06:00 tiap hari

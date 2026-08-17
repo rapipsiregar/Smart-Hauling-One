@@ -89,7 +89,7 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     key: "reports",
-    label: "Laporan Ritase Shift",
+    label: "Laporan Harian & Periodik",
     href: "/reports",
     icon: FileText,
     match: (p) => p.startsWith("/reports"),
@@ -123,7 +123,8 @@ export const HEADINGS: Record<string, string> = {
   "/ritase": "Status Ritase & Posisi Truk",
   "/cctv-history": "Riwayat Pembacaan Kamera Pos",
   "/fleet-master": "Data Master Armada",
-  "/reports": "Laporan Ritase Harian & Shift",
+  "/tren": "Tren Produksi Ritase",
+  "/reports": "Laporan Ritase Harian & Periodik",
   "/settings": "Pengaturan Pos Check Point & Kamera",
   "/settings/devices": "Pengaturan Kamera Per Pos Gerbang",
   "/live": "Tayangan Langsung Kamera Pos",
