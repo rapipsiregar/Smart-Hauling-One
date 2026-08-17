@@ -157,6 +157,9 @@ export interface CrossingEvent {
   /** When the truck crossed. Null until a real time source supplies it. */
   crossedAt: string | null;
   processedAt: string;
+  modelType?: string | null;
+  unitType?: string | null;
+  contractor?: string | null;
 }
 
 export interface CctvDetection {
@@ -194,6 +197,9 @@ export interface FleetUnit {
   snapshot: string | null;
   camerasSeen: string[];
   lastActive: string | null;
+  modelType?: string | null;
+  unitType?: string | null;
+  contractor?: string | null;
 }
 
 /** One row of the operator's own fleet registry, as-is — for manual review. */

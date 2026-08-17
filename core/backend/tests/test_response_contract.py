@@ -30,6 +30,8 @@ CROSSING_KEYS = {
     # reports by checkpoint, and `lane` holds the broader area -- two
     # checkpoints can share one, so it cannot stand in. Purely additive.
     "checkpoint",
+    # New metadata fields
+    "modelType", "unitType", "contractor",
 }
 CCTV_KEYS = {
     "id", "video", "towerId", "location", "camera", "cameraId", "cameraCode",
@@ -44,10 +46,12 @@ CCTV_KEYS = {
 FLEET_UNIT_KEYS = {
     "id", "hullId", "status", "passages", "reads", "bestConf", "snapshot",
     "camerasSeen", "lastActive",
+    # New metadata fields
+    "modelType", "unitType", "contractor",
 }
 KPI_KEYS = {
     "totalPassages", "identified", "unknown", "uniqueTrucks", "totalReads",
-    "avgConfidence", "perGate",
+    "avgConfidence", "perGate", "period", "periodLabel",
 }
 SHIFT_KEYS = {
     "date", "model", "totalPassages", "totalRitase", "totalCrossings",
@@ -110,9 +114,13 @@ DATASET_CROSSING_KEYS = {
     # number is a master unit. They differ for a confidently-read truck the
     # spreadsheet does not list.
     "registered",
+    # New metadata fields
+    "model_type", "unit_type", "contractor",
 }
 DATASET_FLEET_KEYS = {
     "hull_id", "passages", "reads", "best_conf", "snapshot", "status", "cameras_seen",
+    # New metadata fields
+    "model_type", "unit_type", "contractor",
 }
 DATASET_KPI_KEYS = {
     "total_videos", "identified", "unique_trucks", "total_reads",

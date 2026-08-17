@@ -1,5 +1,9 @@
 import { ShiftReport, UnpairedCrossing } from "./types";
 import { downloadBlob } from "./download";
+import { api } from "./api-client";
+import {
+  belongsToCompany, pairHullEvents, applyGlobalExcelStyle, buildObDariCompanySheet
+} from "./excel-recap-sheet";
 import {
   MiningDayWindow, windowLabel, deriveShiftMetrics, formatWindow,
   shiftReportFileStem, windowEnd, windowHours, windowStart,
@@ -12,24 +16,15 @@ const REASON_LABEL: Record<UnpairedCrossing["reason"], string> = {
   "unidentified-hull": "Nomor lambung tidak terbaca",
 };
 
-const HEADER_FILL = "FF0F172A";
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
-export function shiftReportXlsxFilename(win: MiningDayWindow): string {
-  return `${shiftReportFileStem(win)}.xlsx`;
+export function shiftReportXlsxFilename(win: MiningDayWindow, generatedAt: Date): string {
+  const company = win.company || "BIB";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const expTime = `${pad(generatedAt.getHours())}${pad(generatedAt.getMinutes())}`;
+  return `LAPORAN_RITASE_${company}_${span}_${expTime}.xlsx`;
 }
 
-/**
- * Build the shift sheet as a real .xlsx workbook and download it.
- *
- * Four sheets so each audience gets a flat table it can filter: Ringkasan,
- * Per Gate, Per Nomor Lambung, Belum Berpasangan. Numbers are written as
- * numbers (not strings) so Excel can sum them without retyping the column.
- *
- * exceljs is loaded lazily — like jsPDF — so it stays out of the initial bundle.
- * (SheetJS was rejected: the npm `xlsx` package is stale and carries
- * CVE-2023-30533.)
- */
 export async function downloadShiftReportXlsx(
   report: ShiftReport,
   win: MiningDayWindow,
@@ -40,8 +35,116 @@ export async function downloadShiftReportXlsx(
   wb.creator = "Integrated Smart Hauling System";
   wb.created = generatedAt;
 
+  // 1. Ambil data crossings dan lakukan penyaringan terpadu
+  let allCrossings: any[] = [];
+  try {
+    allCrossings = await api.getCrossingEvents();
+  } catch (err) {
+    console.warn("Gagal memuat crossings untuk laporan harian Excel:", err);
+  }
+
+  // Filter berdasarkan jendela waktu terpilih
+  const startMs = new Date(windowStart(win)).getTime();
+  const endMs = new Date(windowEnd(win)).getTime();
+  const crossingsInWindow = allCrossings.filter(c => {
+    const ts = c.crossedAt || c.processedAt;
+    if (!ts) return false;
+    const ms = new Date(ts).getTime();
+    return ms >= startMs && ms <= endMs;
+  });
+
+  // Filter berdasarkan perusahaan pilihan (BIB atau TIA)
+  const company = win.company || "BIB";
+  const filteredCrossings = crossingsInWindow.filter(c => belongsToCompany(c, company));
+
+  // --- 2. Bangun Sheet Rekapitulasi Harian ("OB DARI [COMPANY]") --------------
+  await buildObDariCompanySheet(wb, win);
+
+  // --- 3. Hitung metrik agregasi khusus perusahaan terpilih -------------------
+  const perTruckMap: Record<string, any[]> = {};
+  filteredCrossings.forEach(c => {
+    if (c.known && c.hullId) {
+      perTruckMap[c.hullId] = perTruckMap[c.hullId] || [];
+      perTruckMap[c.hullId].push(c);
+    }
+  });
+
+  const perTruckData: any[] = [];
+  const unpairedList: any[] = [];
+  let totalRitase = 0;
+  let unregisteredRitase = 0;
+  const unregisteredHulls = new Set<string>();
+
+  // Kumpulkan lintasan belum berpasangan dari truk yang teridentifikasi
+  Object.entries(perTruckMap).forEach(([hullId, events]) => {
+    const { pairs, unpaired } = pairHullEvents(events);
+    const inCount = events.filter(e => e.direction === "inbound").length;
+    const outCount = events.filter(e => e.direction === "outbound").length;
+    const reads = events.reduce((sum, e) => sum + (e.reads || 0), 0);
+    const bestConf = Math.max(...events.map(e => e.confidence || 0), 0);
+    const isRegistered = events.every(e => e.registered);
+
+    totalRitase += pairs.length;
+    if (!isRegistered) {
+      unregisteredRitase += pairs.length;
+      unregisteredHulls.add(hullId);
+    }
+
+    perTruckData.push({
+      hullId,
+      registered: isRegistered,
+      ritase: pairs.length,
+      inCount,
+      outCount,
+      unpaired: unpaired.length,
+      reads,
+      bestConf,
+      avgCycleSeconds: null,
+    });
+
+    unpaired.forEach(u => {
+      unpairedList.push({
+        hullId: u.hullId,
+        lane: u.lane,
+        direction: u.direction,
+        crossedAt: u.crossedAt,
+        reason: u.direction === "inbound" ? "missing-out" : u.direction === "outbound" ? "missing-in" : "no-direction",
+      });
+    });
+  });
+
+  // Urutkan perTruckData
+  perTruckData.sort((a, b) => b.ritase - a.ritase || a.hullId.localeCompare(b.hullId));
+
+  // Tambahkan lintasan dari nomor lambung tidak teridentifikasi
+  filteredCrossings.forEach(c => {
+    if (!c.known) {
+      unpairedList.push({
+        hullId: "UNIDENTIFIED",
+        lane: c.lane,
+        direction: c.direction,
+        crossedAt: c.crossedAt,
+        reason: "unidentified-hull",
+      });
+    }
+  });
+
+  // Hitung sebaran per gate
+  const gateMap: Record<string, { gate: string; inbound: number; outbound: number; undirected: number }> = {};
+  filteredCrossings.forEach(c => {
+    const gate = c.lane || "Unassigned Gate";
+    gateMap[gate] = gateMap[gate] || { gate, inbound: 0, outbound: 0, undirected: 0 };
+    if (c.direction === "inbound") gateMap[gate].inbound++;
+    else if (c.direction === "outbound") gateMap[gate].outbound++;
+    else gateMap[gate].undirected++;
+  });
+  const perGateData = Object.values(gateMap);
+
   const hours = windowHours(win);
-  const m = deriveShiftMetrics(report, hours);
+  const identifiedCrossings = filteredCrossings.filter(c => c.known);
+  const avgConf = identifiedCrossings.length > 0 
+    ? round1(identifiedCrossings.reduce((sum, c) => sum + (c.confidence || 0), 0) / identifiedCrossings.length)
+    : 0.0;
 
   // --- Ringkasan -------------------------------------------------------------
   const ringkasan = wb.addWorksheet("Ringkasan");
@@ -52,29 +155,19 @@ export async function downloadShiftReportXlsx(
   ];
   const meta: [string, string | number, string][] = [
     ["Hari Tambang", windowLabel(win), "06:00 ke 06:00, siklus pelaporan tambang"],
+    ["Perusahaan / Konsesi", company, "dipilih operator"],
     ["Awal jendela", windowStart(win), "dipilih operator"],
     ["Akhir jendela", windowEnd(win), "dipilih operator"],
     ["Panjang jendela (jam)", hours, "turunan"],
-    ["Tanggal run deteksi", report.date, "terukur"],
-    ["Model deteksi", report.model, "terukur"],
     ["Dibuat pada", generatedAt.toISOString(), "sistem"],
     ["", "", ""],
-    ["Ritase (IN + OUT)", report.totalRitase, "terukur"],
-    // Beside the headline rather than folded into it: haulage by units the
-    // master does not list is a registry gap somebody has to close.
-    ["Ritase belum terdaftar", report.unregisteredRitase, "terukur"],
-    ["Nomor belum terdaftar", report.unregisteredHulls.join(", ") || "—", "terukur"],
-    ["Total lintasan gate", report.totalCrossings, "terukur"],
-    ["Belum berpasangan", report.unpairedCount, "terukur"],
-    ["Metode pemasangan", report.pairingBasis === "chronological" ? "kronologis" : "hitungan IN/OUT", "sistem"],
-    ["Waktu lintasan tersedia", report.hasCrossingTimes ? "ya" : "belum", "sistem"],
-    ["Ritase per jam", m.ritasePerHour, "turunan atas jendela"],
-    ["Lintasan teridentifikasi", report.identified, "terukur"],
-    ["Lintasan tidak dikenal", report.unknown, "terukur"],
-    ["Lintasan terekonsiliasi", report.reconciled, "terukur"],
-    ["Nomor lambung unik", report.uniqueTrucks, "terukur"],
-    ["Total pembacaan nomor", report.totalReads, "terukur"],
-    ["Rata-rata keyakinan (%)", round1(report.avgConfidence), "terukur"],
+    ["Ritase (IN + OUT)", totalRitase, "terukur"],
+    ["Ritase belum terdaftar", unregisteredRitase, "terukur"],
+    ["Nomor belum terdaftar", Array.from(unregisteredHulls).join(", ") || "—", "terukur"],
+    ["Total lintasan gate", filteredCrossings.length, "terukur"],
+    ["Belum berpasangan", unpairedList.length, "terukur"],
+    ["Nomor lambung unik", perTruckData.length, "terukur"],
+    ["Rata-rata keyakinan (%)", avgConf, "terukur"],
   ];
   meta.forEach(([k, v, d]) => ringkasan.addRow({ k, v, d }));
 
@@ -88,11 +181,11 @@ export async function downloadShiftReportXlsx(
     { header: "Total", key: "total", width: 10 },
     { header: "Porsi (%)", key: "share", width: 12 },
   ];
-  for (const g of report.perGate) {
+  for (const g of perGateData) {
     const total = g.inbound + g.outbound + g.undirected;
     perGate.addRow({
       gate: g.gate, in: g.inbound, out: g.outbound, none: g.undirected, total,
-      share: report.totalCrossings > 0 ? Math.round((total / report.totalCrossings) * 100) : 0,
+      share: filteredCrossings.length > 0 ? Math.round((total / filteredCrossings.length) * 100) : 0,
     });
   }
 
@@ -121,8 +214,6 @@ export async function downloadShiftReportXlsx(
   const perTruck = wb.addWorksheet("Per Nomor Lambung");
   perTruck.columns = [
     { header: "Nomor Lambung", key: "hull", width: 20 },
-    // Its own column, so the hull id stays clean to sort, filter and copy into
-    // the master.
     { header: "Status", key: "status", width: 18 },
     { header: "Ritase", key: "ritase", width: 10 },
     { header: "Masuk", key: "in", width: 10 },
@@ -130,26 +221,23 @@ export async function downloadShiftReportXlsx(
     { header: "Belum berpasangan", key: "unpaired", width: 20 },
     { header: "Pembacaan Nomor", key: "reads", width: 16 },
     { header: "Keyakinan tertinggi (%)", key: "conf", width: 22 },
-    { header: "Rata-rata siklus (menit)", key: "cycle", width: 24 },
   ];
-  for (const t of report.perTruck) {
+  for (const t of perTruckData) {
     perTruck.addRow({
       hull: t.hullId,
       status: t.registered ? "terdaftar" : "BELUM TERDAFTAR",
       ritase: t.ritase, in: t.inCount, out: t.outCount,
       unpaired: t.unpaired, reads: t.reads, conf: round1(t.bestConf),
-      cycle: t.avgCycleSeconds === null ? "" : round1(t.avgCycleSeconds / 60),
     });
   }
-  const totalRow = perTruck.addRow({
+  perTruck.addRow({
     hull: "TOTAL",
-    ritase: report.perTruck.reduce((s, t) => s + t.ritase, 0),
-    in: report.perTruck.reduce((s, t) => s + t.inCount, 0),
-    out: report.perTruck.reduce((s, t) => s + t.outCount, 0),
-    unpaired: report.perTruck.reduce((s, t) => s + t.unpaired, 0),
-    reads: report.perTruck.reduce((s, t) => s + t.reads, 0),
+    ritase: perTruckData.reduce((s, t) => s + t.ritase, 0),
+    in: perTruckData.reduce((s, t) => s + t.inCount, 0),
+    out: perTruckData.reduce((s, t) => s + t.outCount, 0),
+    unpaired: perTruckData.reduce((s, t) => s + t.unpaired, 0),
+    reads: perTruckData.reduce((s, t) => s + t.reads, 0),
   });
-  totalRow.font = { bold: true };
 
   // --- Belum Berpasangan -----------------------------------------------------
   const unpaired = wb.addWorksheet("Belum Berpasangan");
@@ -160,25 +248,29 @@ export async function downloadShiftReportXlsx(
     { header: "Waktu lintasan", key: "at", width: 22 },
     { header: "Keterangan", key: "why", width: 30 },
   ];
-  for (const u of report.unpaired) {
+  for (const u of unpairedList) {
     unpaired.addRow({
       hull: u.hullId, gate: u.lane,
       dir: u.direction === "inbound" ? "Masuk" : u.direction === "outbound" ? "Keluar" : "—",
       at: u.crossedAt ?? "belum tersedia",
-      why: REASON_LABEL[u.reason],
+      why: REASON_LABEL[u.reason as UnpairedCrossing["reason"]] || u.reason,
     });
   }
 
+  // --- 4. Terapkan Gaya Visual Seragam ke Semua Sheet Pendukung ----------------
+  applyGlobalExcelStyle(ringkasan);
+  applyGlobalExcelStyle(perCheckpoint, [2]); // Kolom B (Ritase) kuning
+  applyGlobalExcelStyle(perGate, [5]); // Kolom E (Total) kuning
+  applyGlobalExcelStyle(perTruck, [3]); // Kolom C (Ritase) kuning
+  applyGlobalExcelStyle(unpaired);
+
+  // Freeze baris header pertama pada setiap sheet pendukung
   for (const sheet of [ringkasan, perCheckpoint, perGate, perTruck, unpaired]) {
-    const header = sheet.getRow(1);
-    header.font = { bold: true, color: { argb: "FFFFFFFF" } };
-    header.fill = { type: "pattern", pattern: "solid", fgColor: { argb: HEADER_FILL } };
     sheet.views = [{ state: "frozen", ySplit: 1 }];
-    sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: sheet.columnCount } };
   }
 
   const buffer = await wb.xlsx.writeBuffer();
-  const filename = shiftReportXlsxFilename(win);
+  const filename = shiftReportXlsxFilename(win, generatedAt);
   downloadBlob(
     filename,
     new Blob([buffer], {

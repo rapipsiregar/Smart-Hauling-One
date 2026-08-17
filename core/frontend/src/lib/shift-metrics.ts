@@ -19,6 +19,7 @@ import { ShiftReport } from "./types";
 export interface MiningDayWindow {
   startDate: string; // yyyy-mm-dd
   endDate: string; // yyyy-mm-dd
+  company?: "BIB" | "TIA";
 }
 
 /** The hour a mining day rolls over. Mirrors the server constant. */
@@ -125,7 +126,8 @@ export function hasReportData(report: ShiftReport): boolean {
  * `LAPORAN_RITASE_HARITAMBANG_2026-08-16`. Callers append the extension.
  */
 export function shiftReportFileStem(w: MiningDayWindow): string {
+  const company = w.company ? `_${w.company}` : "";
   const span = w.startDate === w.endDate ? w.startDate : `${w.startDate}_sd_${w.endDate}`;
-  const stem = `LAPORAN_RITASE_HARITAMBANG_${span}`;
+  const stem = `LAPORAN_RITASE_HARITAMBANG${company}_${span}`;
   return stem.replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
 }

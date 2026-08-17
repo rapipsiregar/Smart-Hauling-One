@@ -584,12 +584,13 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Quick Re-Filtering**: Clicking any suggestion term fills the search field and triggers live crossing card filtering instantly.
 
 ### 3.29 Automated Excel Reconciliation Exporter
-* **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.16)
-* **Description**: Multi-sheet structured Excel (.xlsx) reconciliation exporter aggregating active shift statistics.
+* **Implementation Status**: `[DONE]` (implemented in ad-hoc feature request)
+* **Description**: Multi-sheet structured Excel (.xlsx) reconciliation exporter aggregating active shift statistics, daily recap, and company-specific selection filters.
 * **Key Capabilities**:
-  - **Dynamic In-Memory openpyxl Generation**: Builds spreadsheets using openpyxl dynamically and streams the response directly to the supervisor client.
-  - **Multi-Sheet Classification Structure**: Generates structured worksheets detailing Shift Distribution + OHT Ritase volumes, Subcontractor Compliance rates, and Discrepancy Alerts logs.
-  - **Automated Column Auto-fitting and Styling**: Formats tables with clean headers, borders, Segoe UI typography, and severity color mappings.
+  - **Pilihan Perusahaan / Konsesi (BIB & TIA)**: Menyediakan dropdown selektor pada toolbar laporan untuk memilih ekspor data khusus perusahaan (misal BIB atau TIA). Header utama sheet disesuaikan dinamis berdasarkan perusahaan terpilih (contoh: "OB DARI BIB" atau "OB DARI TIA").
+  - **Penyaringan Data Terpadu Semua Sheet**: Seluruh data di semua sheet (Ringkasan, Per Gate, Per Nomor Lambung, Belum Berpasangan) otomatis disaring secara konsisten berdasarkan armada dan lintasan yang berasosiasi dengan perusahaan terpilih.
+  - **Penyelarasan Gaya Visual Seragam**: Menerapkan gaya visual biru-kuning-border ke seluruh lembar kerja di dalam buku kerja Excel (header biru steel `#B4C6E7`, border hitam tipis penuh untuk setiap sel data, dan warna kuning `#FFFF00` untuk kolom ritase/total).
+  - **Format Rekap Harian OB per Tanggal**: Menyusun lembar kerja pertama untuk merekap ritase harian dan unit OHT 777 dan 773 secara terpisah sepanjang bulan berjalan (*Month-to-Date*).
 
 ### 3.30 Customizable Discrepancy Alert Thresholds Modal
 * **Implementation Status**: `[DONE]` (implemented in [plans/next-enhancements.md](../plans/next-enhancements.md) task 3.17)
@@ -1346,15 +1347,48 @@ This document lists all active and implemented features of the Smart Gate (Integ
   - **Modularitas LOC**: Memisahkan panel informasi detail pos ke dalam sub-komponen `mine-map-detail.tsx` untuk menjaga ukuran file di bawah batas 256 baris.
 
 ### 3.48 Dashboard Statistik Operasional Periode (Harian, Mingguan, Bulanan)
-* **Implementation Status**: `[DONE]` (diimplementasikan di [plans/next-enhancements.md](../plans/next-enhancements.md))
-* **Description**: Modul analisis data operasional yang mengisolasi metrik lintasan, ritase, armada unik, dan rata-rata akurasi AI berdasarkan rentang waktu harian (*daily*), mingguan (*weekly*), bulanan (*monthly*), atau rentang tanggal kustom (*custom date range*).
+* **Implementation Status**: `[DONE]` (diimplementasikan di ad-hoc feature request)
+* **Description**: Modul analisis data operasional yang mengisolasi metrik lintasan, ritase, armada unik, dan rata-rata akurasi AI berdasarkan rentang waktu Harian, Mingguan, Bulanan, atau rentang tanggal kustom.
 * **Key Capabilities**:
-  - **Filter Periode Dinamis (`TimeRangePicker`)**: Tombol filter antarmuka yang memungkinkan supervisor beralih antara melihat data Hari Ini (Harian), 7 Hari Terakhir (Mingguan), 30 Hari Terakhir (Bulanan), atau rentang tanggal kustom.
+  - **Filter Periode Dinamis (`TimeRangePicker`)**: Tombol filter antarmuka yang memungkinkan supervisor beralih antara melihat data Harian, Mingguan, Bulanan, atau rentang tanggal kustom secara praktis.
   - **Metrik Kinerja Terisolasi**: Menghitung secara dinamis total lintasan terbaca, total pasangan ritase, jumlah armada unik, dan rata-rata akurasi AI yang terisolasi khusus untuk periode waktu yang dipilih.
   - **Grafik Distribusi Bar Chart**: Renders grafik batang frekuensi pergerakan lintasan per jam (untuk harian) atau per tanggal (untuk mingguan/bulanan) dengan tooltip interaktif saat di-hover.
-  - **Analisis Kinerja Deteksi per Gate**: Menyajikan rincian data lintasan (Inbound masuk vs Outbound keluar) per gerbang pos cek kamera aktif secara spesifik sesuai rentang tanggal terpilih.
+  - **Pemuatan Data Sampel 30 Hari**: Menyediakan data crossings tiruan yang terstruktur rapi selama 30 hari ke belakang di database SQLite agar visualisasi grafik terisi dengan metrik yang realistis.
 
+### 3.49 Laporan Ritase Harian 24 Jam Penuh (06.00 - 06.00)
+* **Implementation Status**: `[DONE]` (diimplementasikan di ad-hoc feature request)
+* **Description**: Preset default Laporan Harian yang mencakup 24 jam penuh operasional tambang dimulai dari jam masuk shift pagi (06.00) hingga jam masuk shift pagi keesokan harinya (06.00).
+* **Key Capabilities**:
+  - **Preset Tombol Laporan Harian**: Menambahkan opsi preset tombol baru "Laporan Harian" di samping preset Shift Siang dan Shift Malam.
+  - **Inisialisasi Default Halaman Laporan**: Otomatis memilih preset Laporan Harian 24 jam penuh saat halaman laporan pertama kali dibuka oleh operator.
+  - **Format Penamaan File Ekspor**: Penamaan file PDF dan Excel hasil ekspor otomatis tersemat kode suffix `HARIAN_0600-0600` secara otomatis untuk membedakan dengan laporan shift biasa.
+### 3.50 Pagination Nomor Lambung Posisi Armada
+* **Implementation Status**: `[DONE]` (diimplementasikan di ad-hoc feature request)
+* **Description**: Fitur pembagian halaman (pagination) minimalis pada daftar nomor lambung truk yang berada di dalam pit maupun yang sudah keluar di panel posisi armada.
+* **Key Capabilities**:
+  - **Batas Tampilan Fleksibel**: Menampilkan maksimal 24 unit nomor lambung truk sekaligus per halaman untuk menjaga kerapian tata letak UI.
+  - **Navigasi Halaman Minimalis**: Tombol Sebelumnya/Selanjutnya dan indikator halaman ("Halaman X dari Y") yang dinonaktifkan secara otomatis saat berada di batas awal/akhir halaman.
+  - **Penyembunyian Cetak**: Tombol navigasi pagination disembunyikan secara otomatis saat dicetak (`data-print="hide"`) agar hasil cetak laporan tetap bersih.
 
+### 3.51 Pagination Tabel Ritase per Truk
+* **Implementation Status**: `[DONE]` (diimplementasikan di ad-hoc feature request)
+* **Description**: Fitur pembagian halaman (pagination) minimalis pada tabel rekapitulasi ritase per armada di halaman Status Ritase dan halaman Riwayat Pembacaan.
+* **Key Capabilities**:
+  - **Batas Tampilan Tabel Kompak**: Membatasi tampilan ritase per truk hanya 10 baris per halaman, mencegah halaman membengkak panjang ke bawah saat database memuat data historis volume tinggi.
+  - **Navigasi Halaman Selaras**: Menggunakan tombol Sebelumnya/Selanjutnya yang seragam dan indikator halaman ("Halaman X dari Y") yang dinonaktifkan otomatis.
+  - **Penyembunyian Cetak**: Tombol navigasi pagination secara otomatis disembunyikan dari hasil cetak fisik/PDF menggunakan directive CSS print (`data-print="hide"`).
 
+### 3.52 Pagination Daftar Pembacaan Nomor Lambung
+* **Implementation Status**: `[DONE]` (diimplementasikan di ad-hoc feature request)
+* **Description**: Fitur pembagian halaman (pagination) minimalis pada daftar riwayat pembacaan nomor lambung oleh AI Kamera di halaman Riwayat Pembacaan Kamera Pos.
+* **Key Capabilities**:
+  - **Optimasi Beban Render Client**: Membatasi tampilan log deteksi maksimal 10 baris per halaman, mencegah browser freeze/lag akibat merender ribuan elemen list deteksi secara bersamaan.
+  - **Navigasi Halaman Selaras**: Dilengkapi tombol Sebelumnya/Selanjutnya yang seragam dan indikator halaman ("Halaman X dari Y") yang dinonaktifkan otomatis.
+  - **Penyembunyian Cetak**: Tombol navigasi pagination secara otomatis disembunyikan dari hasil cetak fisik/PDF menggunakan directive CSS print (`data-print="hide"`).
 
-
+### 3.53 Batas Waktu Waktu Nyata Pada Dashboard Analisis Harian
+* **Implementation Status**: `[DONE]` (diimplementasikan di ad-hoc feature request)
+* **Description**: Pengamanan logika filter tanggal default pada backend agar tidak melompati hari operasional saat ini akibat adanya data crossings masa depan di database (dini hari esok).
+* **Key Capabilities**:
+  - **Batasan Waktu Sistem Terkini (`max_dt`)**: Membatasi pencarian tanggal terbaru di database maksimal pada waktu server saat ini (`datetime.now()`).
+  - **Pencegahan Data Kosong**: Menjamin grafik dan KPI di halaman Analisis Kinerja Operasional terisi secara dinamis dengan data hari ini secara otomatis ketika pertama kali dimuat.
