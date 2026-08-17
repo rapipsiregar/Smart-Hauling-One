@@ -377,6 +377,7 @@ def build_dataset(since: str | None = None, until: str | None = None) -> dict:
         "identified": len(known_crossings),
         "unique_trucks": len(fleet_list),
         "total_reads": sum(c["reads"] for c in crossings),
+        "avg_confidence": avg_conf,
         "unknown": len(crossings) - len(known_crossings),
     }
     dataset = {"crossings": crossings, "fleet": fleet_list, "kpis": kpis}

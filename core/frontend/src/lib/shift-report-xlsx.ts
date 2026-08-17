@@ -22,6 +22,7 @@ export function shiftReportXlsxFilename(win: MiningDayWindow, generatedAt: Date)
   const company = win.company || "BIB";
   const pad = (n: number) => String(n).padStart(2, "0");
   const expTime = `${pad(generatedAt.getHours())}${pad(generatedAt.getMinutes())}`;
+  const span = win.startDate === win.endDate ? win.startDate : `${win.startDate}_sd_${win.endDate}`;
   return `LAPORAN_RITASE_${company}_${span}_${expTime}.xlsx`;
 }
 

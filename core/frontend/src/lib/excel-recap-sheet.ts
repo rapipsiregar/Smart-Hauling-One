@@ -1,5 +1,5 @@
 import { api } from "./api-client";
-import { ShiftWindow } from "./shift-metrics";
+import { MiningDayWindow } from "./shift-metrics";
 
 function parseDate(ts: string | null): Date | null {
   if (!ts) return null;
@@ -136,7 +136,7 @@ export function applyGlobalExcelStyle(sheet: any, yellowCols?: number[]): void {
   });
 }
 
-export async function buildObDariCompanySheet(wb: any, win: ShiftWindow): Promise<void> {
+export async function buildObDariCompanySheet(wb: any, win: MiningDayWindow): Promise<void> {
   const company = win.company || "BIB";
   const sheetName = `OB DARI ${company}`;
   const mainSheet = wb.addWorksheet(sheetName);
@@ -171,7 +171,7 @@ export async function buildObDariCompanySheet(wb: any, win: ShiftWindow): Promis
   const crossingsForCompany = allCrossings.filter((c: any) => belongsToCompany(c, company));
 
   // Bangun daftar tanggal dari tanggal 1 sampai win.date
-  const selectedDate = new Date(win.date);
+  const selectedDate = new Date(win.endDate);
   const year = selectedDate.getFullYear();
   const month = selectedDate.getMonth();
   const endDay = selectedDate.getDate();

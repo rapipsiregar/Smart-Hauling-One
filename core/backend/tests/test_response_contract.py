@@ -51,7 +51,7 @@ FLEET_UNIT_KEYS = {
 }
 KPI_KEYS = {
     "totalPassages", "identified", "unknown", "uniqueTrucks", "totalReads",
-    "avgConfidence", "perGate", "period", "periodLabel",
+    "avgConfidence", "perGate",
 }
 SHIFT_KEYS = {
     "date", "model", "totalPassages", "totalRitase", "totalCrossings",
