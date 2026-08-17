@@ -1392,3 +1392,27 @@ This document lists all active and implemented features of the Smart Gate (Integ
 * **Key Capabilities**:
   - **Batasan Waktu Sistem Terkini (`max_dt`)**: Membatasi pencarian tanggal terbaru di database maksimal pada waktu server saat ini (`datetime.now()`).
   - **Pencegahan Data Kosong**: Menjamin grafik dan KPI di halaman Analisis Kinerja Operasional terisi secara dinamis dengan data hari ini secara otomatis ketika pertama kali dimuat.
+
+### 2.47 Kinerja Pos Check Point (CP 01 - CP 04)
+* **Implementation Status**: `[DONE]` (diimplementasikan di ad-hoc feature request)
+* **Description**: Pembaruan dashboard kinerja utama (sebelumnya Kinerja Kontraktor) agar menyajikan analisis data operasional berbasis pos Check Point (CP 01 s.d CP 04) yang terintegrasi penuh dengan data crossings riil.
+* **Key Capabilities**:
+  - **Visualisasi Berbasis Checkpoint**: Menampilkan metrik operasional per pos gerbang CP 01 - CP 04 yang mencakup total kendaraan melintas, rasio arah masuk/keluar, jumlah armada truk aktif, dan rata-rata akurasi AI.
+  - **Integrasi Data Riil Tanpa Gimmick**: Seluruh angka dihitung dinamis dari data transaksi crossings di database SQLite, dan otomatis menampilkan status standby (0) jika data kosong.
+  - **Pills Entitas Terasosiasi**: Menampilkan data master entitas perusahaan/konsesi (KGB, TIA, BIB, CK, PPA) yang terasosiasi secara visual di masing-masing kartu Checkpoint.
+
+### 3.54 Halaman Tren Pergerakan & Analitik
+* **Implementation Status**: `[DONE]` (diimplementasikan di ad-hoc feature request)
+* **Description**: Halaman analitik baru untuk memvisualisasikan tren volume pergerakan armada truk secara historis dengan dukungan filter rentang waktu harian, mingguan, bulanan, dan tahunan.
+* **Key Capabilities**:
+  - **Filter Waktu Lengkap (Termasuk Tahunan)**: Menambahkan filter rentang waktu Tahunan ke pemilih waktu (slicer) dan backend, sehingga pengguna bisa meninjau data pergerakan di tahun tertentu yang dikelompokkan per bulan.
+  - **Grafik Tren Garis SVG Interaktif**: Menggambar grafik garis tren yang mulus menggunakan elemen SVG native berkinerja tinggi, lengkap dengan titik interaktif (hover dot tooltips) untuk melihat angka volume lintasan detail.
+  - **Panel KPI Akumulatif**: Menyajikan rangkuman total lintasan, total ritase, armada unik, dan rata-rata presisi AI dalam periode tren terpilih secara selaras.
+
+### 3.55 Siklus Harian Tunggal 24 Jam Penuh Tanpa Shift
+* **Implementation Status**: `[DONE]` (diimplementasikan di ad-hoc feature request)
+* **Description**: Penyederhanaan alur pelaporan ritase dengan menghapus opsi pembagian Shift Siang dan Shift Malam, serta menetapkan satu siklus harian penuh 24 jam (pukul 06:00 s.d 06:00 hari berikutnya) sebagai standar utama laporan.
+* **Key Capabilities**:
+  - **Penghapusan Pilihan Shift Siang/Malam**: Menghilangkan tombol filter Shift Siang dan Shift Malam dari antarmuka pengguna di modul laporan shift untuk mencegah fragmentasi data.
+  - **Preset Siklus Harian Tunggal**: Menyediakan preset default Siklus Harian (24 Jam) yang menyaring data dari pukul 06:00 pagi hingga pukul 06:00 pagi keesokan harinya secara otomatis.
+  - **Penamaan Berkas Ekspor**: Menyinkronkan format penamaan berkas laporan Excel dan PDF hasil ekspor agar secara konsisten mencerminkan siklus harian penuh.

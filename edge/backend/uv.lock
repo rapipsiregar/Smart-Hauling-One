@@ -4509,6 +4509,7 @@ inference-vl = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "httpx" },
     { name = "pytest" },
 ]
 
@@ -4531,7 +4532,10 @@ requires-dist = [
 provides-extras = ["inference", "inference-vl"]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.0" }]
+dev = [
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pytest", specifier = ">=8.0" },
+]
 
 [[package]]
 name = "sniffio"

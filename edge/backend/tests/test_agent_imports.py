@@ -30,7 +30,7 @@ _HAS_VISION_DEPS = importlib.util.find_spec("cv2") is not None
 def _modules_under(package: str) -> list[str]:
     root = EDGE_BACKEND / package
     return sorted(
-        f"{package}." + str(path.relative_to(root).with_suffix("")).replace("/", ".")
+        f"{package}." + ".".join(path.relative_to(root).with_suffix("").parts)
         for path in root.rglob("*.py")
         if "__pycache__" not in path.parts and path.name != "__init__.py"
     )
